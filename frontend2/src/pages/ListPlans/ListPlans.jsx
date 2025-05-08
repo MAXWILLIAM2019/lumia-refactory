@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout/Layout';
 import styles from './ListPlans.module.css';
+import { planoService } from '../../services/planoService';
 
 export default function ListPlans() {
   const navigate = useNavigate();
@@ -10,39 +11,29 @@ export default function ListPlans() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // TODO: Implementar chamada à API
-    // Por enquanto usando dados mockados
-    const mockPlans = [
-      {
-        id: 1,
-        nome: 'Plano de Estudos - Matemática',
-        cargo: 'Professor de Matemática',
-        descricao: 'Plano completo de estudos para professores de matemática',
-        duracao: 6,
-        disciplinas: [
-          {
-            nome: 'Matemática',
-            assuntos: ['Álgebra', 'Geometria', 'Trigonometria']
-          }
-        ]
-      },
-      {
-        id: 2,
-        nome: 'Plano de Estudos - Português',
-        cargo: 'Professor de Português',
-        descricao: 'Plano completo de estudos para professores de português',
-        duracao: 4,
-        disciplinas: [
-          {
-            nome: 'Português',
-            assuntos: ['Gramática', 'Literatura', 'Redação']
-          }
-        ]
+    const fetchPlans = async () => {
+      console.log('1. Iniciando busca de planos...');
+      try {
+        console.log('2. Chamando planoService.listarPlanos()');
+        const data = await planoService.listarPlanos();
+        console.log('3. Dados recebidos:', data);
+        setPlans(data);
+        console.log('4. Estado plans atualizado:', data);
+      } catch (error) {
+        console.error('5. Erro ao buscar planos:', error);
+        console.error('6. Detalhes do erro:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        setError(error.message || 'Erro ao carregar planos. Tente novamente.');
+      } finally {
+        console.log('7. Finalizando carregamento');
+        setLoading(false);
       }
-    ];
+    };
 
-    setPlans(mockPlans);
-    setLoading(false);
+    fetchPlans();
   }, []);
 
   const handleEdit = (planId) => {
@@ -52,11 +43,11 @@ export default function ListPlans() {
   const handleDelete = async (planId) => {
     if (window.confirm('Tem certeza que deseja excluir este plano?')) {
       try {
-        // TODO: Implementar chamada à API
+        await planoService.excluirPlano(planId);
         setPlans(prev => prev.filter(plan => plan.id !== planId));
       } catch (error) {
         console.error('Erro ao excluir plano:', error);
-        setError('Erro ao excluir plano. Tente novamente.');
+        setError(error.message || 'Erro ao excluir plano. Tente novamente.');
       }
     }
   };
@@ -132,13 +123,13 @@ export default function ListPlans() {
                 <div className={styles.disciplines}>
                   <h3>Disciplinas</h3>
                   <div className={styles.disciplinesList}>
-                    {plan.disciplinas.map(discipline => (
-                      <div key={discipline.nome} className={styles.discipline}>
+                    {plan.Disciplinas?.map(discipline => (
+                      <div key={discipline.id} className={styles.discipline}>
                         <span className={styles.disciplineName}>
                           {discipline.nome}
                         </span>
                         <span className={styles.assuntosCount}>
-                          {discipline.assuntos.length} {discipline.assuntos.length === 1 ? 'assunto' : 'assuntos'}
+                          {discipline.Assuntos?.length || 0} {discipline.Assuntos?.length === 1 ? 'assunto' : 'assuntos'}
                         </span>
                       </div>
                     ))}

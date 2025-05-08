@@ -4,7 +4,12 @@ const cors = require('cors');
 const sequelize = require('./db');
 const sprintRoutes = require('./routes/sprintRoutes');
 const alunoRoutes = require('./routes/alunoRoutes');
-const Aluno = require('./models/Aluno'); // Importar modelo para sincronização
+const planoRoutes = require('./routes/planoRoutes');
+
+// Importa os modelos
+require('./models/Plano');
+require('./models/Disciplina');
+require('./models/Assunto');
 
 const app = express();
 
@@ -18,16 +23,22 @@ app.use(express.json());
 // Todas as rotas relacionadas a sprints começam com /api/sprints
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/alunos', alunoRoutes);
+app.use('/api/planos', planoRoutes);
 
 // Rota de teste para verificar se a API está funcionando
 app.get('/', (req, res) => {
   res.json({ message: 'API do Mentor está funcionando!' });
 });
 
+// Rota de teste para verificar se a API está funcionando
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API funcionando!' });
+});
+
 // Sincronização do banco de dados e inicialização do servidor
 // sequelize.sync(): Cria as tabelas no banco se não existirem
-sequelize.sync({ force: true }).then(() => {
-  console.log('Banco de dados sincronizado!');
+sequelize.sync({ alter: true }).then(() => {
+  console.log('Banco de dados sincronizado');
   console.log('Modelos disponíveis:', Object.keys(sequelize.models));
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {

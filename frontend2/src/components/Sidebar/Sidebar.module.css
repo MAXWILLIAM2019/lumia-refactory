@@ -1,3 +1,4 @@
+/* Estilos base da sidebar */
 .sidebar {
   background: #181c23;
   color: #fff;
@@ -14,10 +15,12 @@
   transition: width 0.3s ease;
 }
 
+/* Estado recolhido da sidebar */
 .closed {
   width: 64px;
 }
 
+/* Botão de toggle da sidebar */
 .toggleButton {
   position: absolute;
   right: -12px;
@@ -42,6 +45,7 @@
   transform: scale(1.1);
 }
 
+/* Esconde elementos quando a sidebar está recolhida */
 .closed .logo,
 .closed .profileCircle,
 .closed nav {
@@ -50,6 +54,7 @@
   transition: opacity 0.2s, visibility 0.2s;
 }
 
+/* Logo da aplicação */
 .logo {
   font-size: 2rem;
   font-weight: bold;
@@ -57,6 +62,7 @@
   transition: opacity 0.2s, visibility 0.2s;
 }
 
+/* Círculo do perfil */
 .profileCircle {
   width: 48px;
   height: 48px;
@@ -72,6 +78,7 @@
   transition: opacity 0.2s, visibility 0.2s;
 }
 
+/* Navegação */
 nav {
   transition: opacity 0.2s, visibility 0.2s;
 }
@@ -82,6 +89,7 @@ nav ul {
   width: 100%;
 }
 
+/* Itens do menu */
 nav li {
   padding: 12px 32px;
   cursor: pointer;
@@ -92,12 +100,14 @@ nav li {
   white-space: nowrap;
 }
 
+/* Item de menu ativo */
 .active {
   background: #2563eb;
   border-radius: 8px;
   font-weight: bold;
 }
 
+/* Badge para contadores */
 .badge {
   background: #3b82f6;
   color: #fff;
@@ -107,6 +117,7 @@ nav li {
   margin-left: 8px;
 }
 
+/* Badge para itens novos */
 .new {
   background: #22d3ee;
   color: #181c23;
@@ -117,6 +128,7 @@ nav li {
   font-weight: bold;
 }
 
+/* Botão de cadastro de sprints */
 .registerButton {
   background: #3b82f6 !important;
   color: #fff !important;
@@ -137,6 +149,7 @@ nav li {
   box-shadow: 0 2px 8px #f59e0b44 !important;
 }
 
+/* Botão de cadastro de alunos */
 .registerStudentButton {
   background: #22c55e !important;
   color: #fff !important;
@@ -157,6 +170,7 @@ nav li {
   box-shadow: 0 2px 8px #22c55e44 !important;
 }
 
+/* Botão de cadastro de planos */
 .registerPlanButton {
   background: #8b5cf6 !important;
   color: #fff !important;
@@ -177,6 +191,28 @@ nav li {
   box-shadow: 0 2px 8px #8b5cf644 !important;
 }
 
+/* Botão de listagem de planos */
+.listPlansButton {
+  background: #f59e0b !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s !important;
+  font-size: 0.9rem !important;
+  margin: 8px 0 !important;
+  text-align: center !important;
+}
+
+.listPlansButton:hover {
+  background: #d97706 !important;
+  transform: translateY(-2px) scale(1.04) !important;
+  box-shadow: 0 2px 8px #f59e0b44 !important;
+}
+
+/* Responsividade para telas médias */
 @media (max-width: 900px) {
   .sidebar {
     width: 64px;
@@ -201,6 +237,7 @@ nav li {
   }
 }
 
+/* Responsividade para telas pequenas */
 @media (max-width: 600px) {
   .sidebar {
     position: fixed;

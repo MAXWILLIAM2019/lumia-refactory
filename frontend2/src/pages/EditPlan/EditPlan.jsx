@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Layout from '../../components/Layout/Layout';
-import styles from './RegisterPlan.module.css';
+import styles from './EditPlan.module.css';
 import { planoService } from '../../services/planoService';
 
 const PREDEFINED_DISCIPLINES = [
@@ -17,8 +17,9 @@ const PREDEFINED_DISCIPLINES = [
   'Redação'
 ];
 
-export default function RegisterPlan() {
+export default function EditPlan() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [formData, setFormData] = useState({
     nome: '',
     descricao: '',
@@ -26,7 +27,7 @@ export default function RegisterPlan() {
     cargo: '',
     disciplinas: []
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedDisciplines, setSelectedDisciplines] = useState([]);
   const [selectedDiscipline, setSelectedDiscipline] = useState('');
@@ -34,6 +35,35 @@ export default function RegisterPlan() {
   const [currentDiscipline, setCurrentDiscipline] = useState(null);
   const [assuntos, setAssuntos] = useState([]);
   const [novoAssunto, setNovoAssunto] = useState('');
+
+  useEffect(() => {
+    const fetchPlano = async () => {
+      try {
+        const plano = await planoService.buscarPlanoPorId(id);
+        setFormData({
+          nome: plano.nome,
+          descricao: plano.descricao,
+          duracao: plano.duracao,
+          cargo: plano.cargo
+        });
+        
+        // Transforma as disciplinas do formato do backend para o formato do frontend
+        const disciplinasFormatadas = plano.Disciplinas.map(disciplina => ({
+          nome: disciplina.nome,
+          assuntos: disciplina.Assuntos.map(assunto => ({ nome: assunto.nome }))
+        }));
+        
+        setSelectedDisciplines(disciplinasFormatadas);
+      } catch (error) {
+        console.error('Erro ao buscar plano:', error);
+        setError(error.message || 'Erro ao carregar plano. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlano();
+  }, [id]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,7 +78,7 @@ export default function RegisterPlan() {
   };
 
   const handleAddDiscipline = () => {
-    if (selectedDiscipline && !selectedDisciplines.includes(selectedDiscipline)) {
+    if (selectedDiscipline && !selectedDisciplines.some(d => d.nome === selectedDiscipline)) {
       setCurrentDiscipline(selectedDiscipline);
       setShowModal(true);
     }
@@ -98,32 +128,32 @@ export default function RegisterPlan() {
         ...formData,
         disciplinas: selectedDisciplines
       };
-      console.log('1. Dados do plano antes de enviar:', dataToSubmit);
-      console.log('2. Verificando estrutura dos dados:');
-      console.log('- Nome:', dataToSubmit.nome);
-      console.log('- Cargo:', dataToSubmit.cargo);
-      console.log('- Descrição:', dataToSubmit.descricao);
-      console.log('- Duração:', dataToSubmit.duracao);
-      console.log('- Disciplinas:', dataToSubmit.disciplinas);
       
-      await planoService.cadastrarPlano(dataToSubmit);
-      console.log('3. Plano cadastrado com sucesso');
-      alert('Plano cadastrado com sucesso!');
-      navigate('/');
+      await planoService.atualizarPlano(id, dataToSubmit);
+      alert('Plano atualizado com sucesso!');
+      navigate('/planos');
     } catch (error) {
-      console.error('4. Erro detalhado ao cadastrar plano:', error);
-      console.error('5. Mensagem de erro:', error.message);
-      console.error('6. Stack trace:', error.stack);
-      setError(error.message || 'Erro ao cadastrar plano. Tente novamente.');
+      console.error('Erro ao atualizar plano:', error);
+      setError(error.message || 'Erro ao atualizar plano. Tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
+  if (loading) {
+    return (
+      <Layout>
+        <div className={styles.container}>
+          <div className={styles.loading}>Carregando plano...</div>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className={styles.container}>
-        <h1>Cadastrar Plano</h1>
+        <h1>Editar Plano</h1>
         
         {error && (
           <div className={styles.error}>
@@ -248,19 +278,11 @@ export default function RegisterPlan() {
               className={styles.submitButton}
               disabled={loading}
             >
-              {loading ? 'Cadastrando...' : 'Cadastrar Plano'}
+              {loading ? 'Atualizando...' : 'Atualizar Plano'}
             </button>
             <button
               type="button"
               onClick={() => navigate('/planos')}
-              className={styles.listButton}
-              disabled={loading}
-            >
-              Listar Planos
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
               className={styles.cancelButton}
               disabled={loading}
             >
