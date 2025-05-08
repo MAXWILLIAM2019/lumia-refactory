@@ -1,0 +1,147 @@
+@import '../../components/SprintHeader/SprintHeader.module.css';
+
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: #10131a;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #10131a;
+  min-width: 0;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.sprintRow {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 32px;
+  margin: 32px;
+  margin-bottom: 32px;
+}
+
+.sprintContainer {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  height: 100%;
+}
+
+.activitiesContainer {
+  margin-top: 32px;
+  padding: 0 32px;
+}
+
+.nextSprintContainer {
+  background: #181c23;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px #0004, 0 2px 8px #2563eb22;
+  padding: 8px 32px;
+  min-width: 240px;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  height: 100%;
+  margin: 0 32px 0 0;
+  text-align: center;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nextSprintContainer:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px #0005, 0 3px 12px #2563eb33;
+}
+
+.nextLabel {
+  color: #a1a1aa;
+  font-size: 0.9rem;
+  text-align: center;
+  width: 100%;
+}
+
+.nextTitle {
+  color: #2563eb;
+  font-size: 1rem;
+  margin: 4px 0 2px 0;
+  text-align: center;
+  width: 100%;
+}
+
+.nextDate {
+  color: #fff;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  text-align: center;
+  width: 100%;
+}
+
+.addButton {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+  font-size: 0.9rem;
+  width: 100%;
+  max-width: 200px;
+}
+
+.addButton:hover {
+  background: #f59e0b;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 2px 8px #f59e0b44;
+}
+
+.sprintTitleHeader {
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 0 0 16px 64px;
+  padding: 0;
+  transition: margin-left 0.3s ease;
+}
+
+@media (max-width: 1100px) {
+  .sprintRow {
+    flex-direction: column;
+    gap: 16px;
+    margin: 16px 4px;
+  }
+  .nextSprintContainer {
+    max-width: 100%;
+    width: 100%;
+    min-width: 0;
+    align-items: stretch;
+    margin: 0 4px 0 0;
+  }
+  .sprintContainer {
+    margin-bottom: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .sprintTitleHeader {
+    margin-left: 40px;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .nextSprintContainer {
+    margin: 0;
+  }
+} 
