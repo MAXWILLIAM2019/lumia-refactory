@@ -19,6 +19,10 @@ export default function Sidebar() {
     navigate('/register-student');
   };
 
+  const handleRegisterPlanClick = () => {
+    navigate('/register-plan');
+  };
+
   return (
     <aside className={`${styles.sidebar} ${!isOpen ? styles.closed : ''}`}>
       <button 
@@ -47,6 +51,9 @@ export default function Sidebar() {
           <li>Favoritos <span className={styles.new}>NEW</span></li>
           <li>Meu Perfil</li>
           <li className={styles.registerButton} onClick={handleRegisterClick}>
+            Cadastrar sprints
+          </li>
+          <li className={styles.registerPlanButton} onClick={handleRegisterPlanClick}>
             Cadastrar plano
           </li>
           <li className={styles.registerStudentButton} onClick={handleRegisterStudentClick}>

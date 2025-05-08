@@ -1,4 +1,5 @@
 const Aluno = require('../models/Aluno');
+const { Op } = require('sequelize');
 
 /**
  * Controller de Aluno
@@ -16,22 +17,21 @@ const Aluno = require('../models/Aluno');
  */
 exports.createAluno = async (req, res) => {
   try {
-    const { nome, email, cpf } = req.body;
-
-    if (!nome || !email || !cpf) {
-      return res.status(400).json({ message: 'Todos os campos são obrigatórios' });
-    }
-
-    const aluno = await Aluno.create({
-      nome,
-      email,
-      cpf
-    });
-
+    console.log('Dados recebidos:', req.body);
+    const aluno = await Aluno.create(req.body);
+    console.log('Aluno criado:', aluno);
     res.status(201).json(aluno);
   } catch (error) {
-    console.error('Erro ao criar aluno:', error);
-    res.status(400).json({ message: error.message });
+    console.error('Erro ao cadastrar aluno:', error);
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(400).json({ 
+        message: 'Já existe um aluno cadastrado com este email ou CPF' 
+      });
+    }
+    res.status(500).json({ 
+      message: 'Erro ao cadastrar aluno',
+      error: error.message 
+    });
   }
 };
 
@@ -42,13 +42,14 @@ exports.createAluno = async (req, res) => {
  */
 exports.getAllAlunos = async (req, res) => {
   try {
-    const alunos = await Aluno.findAll({
-      order: [['createdAt', 'DESC']]
-    });
+    const alunos = await Aluno.findAll();
     res.json(alunos);
   } catch (error) {
-    console.error('Erro ao buscar alunos:', error);
-    res.status(500).json({ message: error.message });
+    console.error('Erro ao listar alunos:', error);
+    res.status(500).json({ 
+      message: 'Erro ao listar alunos',
+      error: error.message 
+    });
   }
 };
 
@@ -61,15 +62,16 @@ exports.getAllAlunos = async (req, res) => {
 exports.getAlunoById = async (req, res) => {
   try {
     const aluno = await Aluno.findByPk(req.params.id);
-    
     if (!aluno) {
       return res.status(404).json({ message: 'Aluno não encontrado' });
     }
-    
     res.json(aluno);
   } catch (error) {
     console.error('Erro ao buscar aluno:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ 
+      message: 'Erro ao buscar aluno',
+      error: error.message 
+    });
   }
 };
 

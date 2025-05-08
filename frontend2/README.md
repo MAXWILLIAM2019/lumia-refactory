@@ -1,54 +1,40 @@
-# Sistema de Mentoria
+# Sistema de Mentoria - Frontend
 
 Este é o frontend do Sistema de Mentoria, desenvolvido com React + Vite.
 
 ## Tecnologias Utilizadas
 
-### Frontend
-- **React**: Biblioteca JavaScript para construção de interfaces
-- **Vite**: Build tool e servidor de desenvolvimento
-- **React Router**: Gerenciamento de rotas
-- **Tailwind CSS**: Framework CSS para estilização
-- **Axios**: Cliente HTTP para requisições à API
+### Core
+- [React](https://reactjs.org/) - Biblioteca JavaScript para construção de interfaces
+- [Vite](https://vitejs.dev/) - Build tool e servidor de desenvolvimento
+- [React Router](https://reactrouter.com/) - Roteamento da aplicação
+- [Axios](https://axios-http.com/) - Cliente HTTP para requisições à API
 
-### Backend
-- **Node.js**: Runtime JavaScript
-- **Express**: Framework web
-- **Sequelize**: ORM para banco de dados
-- **SQLite**: Banco de dados
+### UI/UX
+- [Tailwind CSS](https://tailwindcss.com/) - Framework CSS utilitário
+- [Flowbite](https://flowbite.com/) - Componentes UI baseados em Tailwind
+- [React Icons](https://react-icons.github.io/react-icons/) - Biblioteca de ícones
+
+### Estado e Gerenciamento
+- [React Context](https://reactjs.org/docs/context.html) - Gerenciamento de estado global
+- [React Query](https://tanstack.com/query/latest) - Gerenciamento de estado do servidor e cache
 
 ## Estrutura do Projeto
 
-### Frontend
 ```
-frontend2/
+frontend/
 ├── src/
 │   ├── components/     # Componentes reutilizáveis
+│   │   ├── layout/    # Componentes de layout (Sidebar, Header, etc)
+│   │   └── ui/        # Componentes de UI (Badge, Button, etc)
 │   ├── pages/         # Páginas da aplicação
 │   ├── services/      # Serviços de API
 │   ├── styles/        # Estilos globais
-│   └── routes/        # Configuração de rotas
-```
-
-### Backend
-```
-backend/
-└── mentor/
-    └── src/
-        ├── controllers/  # Controladores da aplicação
-        ├── models/       # Modelos do Sequelize
-        ├── routes/       # Rotas da API
-        └── db.js         # Configuração do banco de dados
+│   ├── App.jsx        # Componente principal
+│   └── main.jsx       # Ponto de entrada
 ```
 
 ## Endpoints da API
-
-### Alunos
-- `GET /api/alunos` - Listar todos os alunos
-- `POST /api/alunos` - Criar novo aluno
-- `GET /api/alunos/:id` - Buscar aluno por ID
-- `PUT /api/alunos/:id` - Atualizar aluno
-- `DELETE /api/alunos/:id` - Deletar aluno
 
 ### Sprints
 - `GET /api/sprints` - Listar todas as sprints
@@ -57,44 +43,55 @@ backend/
 - `PUT /api/sprints/:id` - Atualizar sprint
 - `DELETE /api/sprints/:id` - Deletar sprint
 
-## Como Executar
+### Alunos
+- `GET /api/alunos` - Listar todos os alunos
+- `POST /api/alunos` - Criar novo aluno
+- `GET /api/alunos/:id` - Buscar aluno por ID
+- `PUT /api/alunos/:id` - Atualizar aluno
+- `DELETE /api/alunos/:id` - Deletar aluno
 
-### Frontend
+## Scripts Disponíveis
+
+- `npm run dev` - Inicia o servidor de desenvolvimento
+- `npm run build` - Gera build de produção
+- `npm run preview` - Visualiza build de produção localmente
+
+## Configuração do Ambiente
+
+1. Instale as dependências:
 ```bash
-cd frontend2
 npm install
+```
+
+2. Configure as variáveis de ambiente:
+```bash
+cp .env.example .env
+```
+
+3. Inicie o servidor de desenvolvimento:
+```bash
 npm run dev
 ```
 
-### Backend
-```bash
-cd backend/mentor
-npm install
-npm start
-```
+## Convenções de Código
 
-## Desenvolvimento
+- Componentes: PascalCase (ex: `Sidebar.jsx`)
+- Funções: camelCase (ex: `handleSubmit`)
+- Variáveis: camelCase (ex: `userData`)
+- Constantes: UPPER_SNAKE_CASE (ex: `API_URL`)
 
-- O frontend roda na porta 5173 por padrão
-- O backend roda na porta 3000 por padrão
-- O banco de dados SQLite é criado automaticamente na primeira execução
+## Troubleshooting
 
-## Observações
+### Problemas Comuns
 
-- O projeto utiliza Sequelize como ORM para interação com o banco de dados
-- As rotas da API seguem o padrão REST
-- O frontend utiliza Tailwind CSS para estilização
-- O sistema de rotas é gerenciado pelo React Router
+1. **Erro de CORS**
+   - Verifique se o backend está rodando
+   - Confirme se as URLs da API estão corretas no `.env`
 
-# React + Vite
+2. **Erro de Build**
+   - Limpe o cache: `npm run clean`
+   - Reinstale as dependências: `npm install`
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+3. **Erro de Dependências**
+   - Delete `node_modules` e `package-lock.json`
+   - Execute `npm install` novamente

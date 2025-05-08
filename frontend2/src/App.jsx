@@ -3,6 +3,7 @@ import Dashboard from './pages/Dashboard/Dashboard';
 import RegisterSprint from './pages/RegisterSprint/RegisterSprint';
 import Sprints from './pages/Sprints/Sprints';
 import RegisterStudent from './pages/RegisterStudent/RegisterStudent';
+import RegisterPlan from './pages/RegisterPlan/RegisterPlan';
 import Layout from './components/Layout/Layout';
 import './App.css';
 
@@ -20,6 +21,7 @@ function App() {
           <Route path="/edit-sprint/:id" element={<RegisterSprint />} />
           <Route path="/sprints" element={<Sprints />} />
           <Route path="/register-student" element={<RegisterStudent />} />
+          <Route path="/register-plan" element={<RegisterPlan />} />
         </Routes>
       </Layout>
     </Router>

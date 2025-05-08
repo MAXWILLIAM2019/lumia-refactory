@@ -1,0 +1,444 @@
+.container {
+  padding: 32px;
+  width: 100%;
+  margin: 0 auto;
+  color: #fff;
+}
+
+.container h1 {
+  font-size: 2rem;
+  margin-bottom: 32px;
+  color: #2563eb;
+  margin-left: 64px;
+}
+
+.form {
+  background: #181c23;
+  padding: 40px;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px #0004, 0 2px 8px #2563eb22;
+  margin: 0 96px 0 96px;
+}
+
+.formGroup {
+  margin-bottom: 24px;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #a1a1aa;
+}
+
+.formGroup input,
+.formGroup textarea,
+.formGroup select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  background: #23283a;
+  color: #fff;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #3b82f633;
+}
+
+.formGroup input::placeholder,
+.formGroup textarea::placeholder {
+  color: #6b7280;
+}
+
+.disciplineSelector {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.disciplineSelect {
+  flex: 1;
+}
+
+.addDisciplineButton {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  font-size: 1.2rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addDisciplineButton:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+.addDisciplineButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.selectedDisciplines {
+  margin-top: 24px;
+  padding: 16px;
+  background: #23283a;
+  border-radius: 8px;
+  border: 1px solid #2d3748;
+}
+
+.selectedDisciplines h3 {
+  color: #a1a1aa;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+}
+
+.disciplinesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.selectedDiscipline {
+  background: #3b82f6;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.disciplineInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.disciplineName {
+  font-weight: 500;
+}
+
+.assuntosCount {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.removeDisciplineButton {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.removeDisciplineButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.submitButton {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+  font-size: 1rem;
+  flex: 1;
+}
+
+.submitButton:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px #05966944;
+}
+
+.listButton {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  font-size: 1rem;
+  flex: 1;
+}
+
+.listButton:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+.cancelButton {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  font-size: 1rem;
+  flex: 1;
+}
+
+.cancelButton:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+.error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  margin: 0 96px 24px 96px;
+}
+
+.error p {
+  margin: 0;
+}
+
+.error p:first-child {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #181c23;
+  border-radius: 18px;
+  padding: 32px;
+  width: 90%;
+  max-width: 600px;
+  box-shadow: 0 4px 20px #0004, 0 2px 8px #2563eb22;
+}
+
+.modal h2 {
+  color: #2563eb;
+  margin-bottom: 24px;
+  font-size: 1.5rem;
+}
+
+.assuntosInput {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.assuntoInput {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  background: #23283a;
+  color: #fff;
+  font-size: 1rem;
+}
+
+.assuntoInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #3b82f633;
+}
+
+.addAssuntoButton {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  font-size: 1.2rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addAssuntoButton:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+}
+
+.addAssuntoButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.assuntosList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.assuntoItem {
+  background: #3b82f6;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.removeAssuntoButton {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.removeAssuntoButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.modalButtons {
+  display: flex;
+  gap: 16px;
+}
+
+.confirmButton {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  font-size: 1rem;
+  flex: 1;
+}
+
+.confirmButton:hover {
+  background: #059669;
+  transform: translateY(-2px);
+}
+
+.confirmButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.cancelModalButton {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+  font-size: 1rem;
+  flex: 1;
+}
+
+.cancelModalButton:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .form {
+    margin: 0 16px;
+    padding: 24px;
+  }
+  
+  .error {
+    margin: 0 16px 24px 16px;
+  }
+
+  .disciplineSelector {
+    flex-direction: column;
+  }
+
+  .addDisciplineButton {
+    width: 100%;
+  }
+
+  .modal {
+    width: 95%;
+    padding: 24px;
+  }
+
+  .assuntosInput {
+    flex-direction: column;
+  }
+
+  .addAssuntoButton {
+    width: 100%;
+  }
+
+  .modalButtons {
+    flex-direction: column;
+  }
+} 

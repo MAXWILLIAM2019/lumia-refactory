@@ -4,6 +4,7 @@ const cors = require('cors');
 const sequelize = require('./db');
 const sprintRoutes = require('./routes/sprintRoutes');
 const alunoRoutes = require('./routes/alunoRoutes');
+const Aluno = require('./models/Aluno'); // Importar modelo para sincronização
 
 const app = express();
 
@@ -25,17 +26,23 @@ app.get('/', (req, res) => {
 
 // Sincronização do banco de dados e inicialização do servidor
 // sequelize.sync(): Cria as tabelas no banco se não existirem
-sequelize.sync().then(() => {
+sequelize.sync({ force: true }).then(() => {
   console.log('Banco de dados sincronizado!');
+  console.log('Modelos disponíveis:', Object.keys(sequelize.models));
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
   });
+}).catch(error => {
+  console.error('Erro ao sincronizar banco de dados:', error);
 });
 
 // Middleware de tratamento de erros
 // Captura qualquer erro não tratado nas rotas
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Algo deu errado!' });
+  console.error('Erro não tratado:', err);
+  res.status(500).json({ 
+    message: 'Algo deu errado!',
+    error: err.message
+  });
 }); 

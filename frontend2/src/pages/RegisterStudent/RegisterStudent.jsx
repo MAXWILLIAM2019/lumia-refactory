@@ -46,15 +46,17 @@ export default function RegisterStudent() {
     setError('');
     
     try {
-      await alunoService.cadastrarAluno(formData);
+      console.log('Enviando dados:', formData);
+      const response = await alunoService.cadastrarAluno(formData);
+      console.log('Resposta do servidor:', response);
       alert('Aluno cadastrado com sucesso!');
       setFormData({ nome: '', email: '', cpf: '' });
       if (showList) {
         carregarAlunos();
       }
     } catch (error) {
-      console.error('Erro:', error);
-      setError('Erro ao cadastrar aluno. Tente novamente.');
+      console.error('Erro detalhado:', error);
+      setError(error.message || 'Erro ao cadastrar aluno. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -65,7 +67,12 @@ export default function RegisterStudent() {
       <div className={styles.container}>
         <h1>Cadastrar Aluno</h1>
         
-        {error && <div className={styles.error}>{error}</div>}
+        {error && (
+          <div className={styles.error}>
+            <p>Erro: {error}</p>
+            <p>Por favor, verifique os dados e tente novamente.</p>
+          </div>
+        )}
         
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>

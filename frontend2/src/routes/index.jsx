@@ -15,5 +15,5 @@ export const router = createBrowserRouter([
   {
     path: '/register-student',
     element: <RegisterStudent />,
-  },
+  }
 ]); 
