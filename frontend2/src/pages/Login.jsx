@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useNavigate, Link } from 'react-router-dom';
+import BackgroundConnections from '../components/BackgroundConnections';
+import styles from './Login.module.css';
+import api from '../services/api';
+import authService from '../services/authService';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,10 +15,11 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -24,74 +28,89 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3000/api/auth/login', formData);
+      console.log('Tentando fazer login com:', formData.email);
       
-      // Salva o token no localStorage
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('admin', JSON.stringify(response.data.admin));
+      const response = await api.post('/auth/login', {
+        email: formData.email,
+        senha: formData.senha
+      });
 
-      // Redireciona para a página inicial
-      navigate('/');
+      console.log('Resposta do servidor:', response.data);
+
+      if (response.data.success && response.data.token) {
+        authService.setToken(response.data.token);
+        console.log('Token armazenado com sucesso');
+        navigate('/dashboard');
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
     } catch (error) {
-      setError(error.response?.data?.message || 'Erro ao fazer login');
+      console.error('Erro no login:', error);
+      if (error.response?.status === 401) {
+        setError('Email ou senha incorretos');
+      } else if (error.response?.data?.message) {
+        setError(error.response.data.message);
+      } else {
+        setError('Erro ao fazer login. Tente novamente mais tarde.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-lg">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Login
-          </h2>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
-              <span className="block sm:inline">{error}</span>
-            </div>
-          )}
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label htmlFor="senha" className="sr-only">Senha</label>
-              <input
-                id="senha"
-                name="senha"
-                type="password"
-                required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Senha"
-                value={formData.senha}
-                onChange={handleChange}
-              />
-            </div>
+    <div className={styles.container}>
+      <BackgroundConnections />
+      <div className={styles.loginBox}>
+        <h1 className={styles.title}>Bem-vindo</h1>
+        
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <div className={styles.formGroup}>
+            <label htmlFor="email" className={styles.label}>
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={styles.input}
+              placeholder="Seu email"
+              required
+            />
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
+          <div className={styles.formGroup}>
+            <label htmlFor="senha" className={styles.label}>
+              Senha
+            </label>
+            <input
+              type="password"
+              id="senha"
+              name="senha"
+              value={formData.senha}
+              onChange={handleChange}
+              className={styles.input}
+              placeholder="Sua senha"
+              required
+            />
           </div>
+
+          {error && <div className={styles.error}>{error}</div>}
+
+          <button 
+            type="submit" 
+            className={styles.button}
+            disabled={loading}
+          >
+            {loading ? 'Entrando...' : 'Entrar'}
+          </button>
         </form>
+
+        <div className={styles.registerLink}>
+          Não tem uma conta? <Link to="/register">Registre-se</Link>
+        </div>
       </div>
     </div>
   );

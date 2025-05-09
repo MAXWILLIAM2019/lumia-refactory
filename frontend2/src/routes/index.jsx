@@ -7,15 +7,19 @@ import RegisterPlan from '../pages/RegisterPlan/RegisterPlan';
 import ListPlans from '../pages/ListPlans/ListPlans';
 import EditPlan from '../pages/EditPlan/EditPlan';
 import Layout from '../components/Layout/Layout';
+import authService from '../services/authService';
 
 // Componente para rotas protegidas
 const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
+  const isAuthenticated = authService.isAuthenticated();
+  console.log('Verificando autenticação:', isAuthenticated);
   
-  if (!token) {
-    return <Navigate to="/login" />;
+  if (!isAuthenticated) {
+    console.log('Usuário não autenticado, redirecionando para login');
+    return <Navigate to="/login" replace />;
   }
 
+  console.log('Usuário autenticado, renderizando rota protegida');
   return <Layout>{children}</Layout>;
 };
 
@@ -29,7 +33,7 @@ const AppRoutes = () => {
 
         {/* Rotas protegidas */}
         <Route
-          path="/"
+          path="/dashboard"
           element={
             <PrivateRoute>
               <Dashboard />
@@ -115,8 +119,16 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Redireciona para login se a rota não existir */}
-        <Route path="*" element={<Navigate to="/login" />} />
+        {/* Redireciona a raiz para o dashboard se autenticado, senão para login */}
+        <Route
+          path="/"
+          element={
+            <Navigate to={authService.isAuthenticated() ? "/dashboard" : "/login"} replace />
+          }
+        />
+
+        {/* Redireciona qualquer rota não definida para o login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

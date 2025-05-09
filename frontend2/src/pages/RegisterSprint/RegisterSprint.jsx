@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { sprintService } from '../../services/sprintService';
 import styles from './RegisterSprint.module.css';
 
 const PREDEFINED_DISCIPLINES = [
@@ -15,9 +16,9 @@ const PREDEFINED_DISCIPLINES = [
   'Redação'
 ];
 
-export default function RegisterSprint() {
-  const { id } = useParams();
+const RegisterSprint = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [loading, setLoading] = useState(id ? true : false);
   const [formData, setFormData] = useState({
     title: '',
@@ -34,34 +35,28 @@ export default function RegisterSprint() {
 
   useEffect(() => {
     if (id) {
-      fetchSprint();
+      loadSprint();
     }
   }, [id]);
 
-  const fetchSprint = async () => {
+  const loadSprint = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sprints/${id}`);
-      if (!response.ok) {
-        throw new Error('Erro ao buscar sprint');
-      }
-      const sprint = await response.json();
-      
+      const sprint = await sprintService.buscarSprintPorId(id);
       setFormData({
         title: sprint.nome,
         startDate: sprint.dataInicio,
         endDate: sprint.dataFim,
         activities: sprint.atividades.map(atividade => ({
-          discipline: PREDEFINED_DISCIPLINES.includes(atividade.disciplina) ? atividade.disciplina : 'custom',
-          customDiscipline: !PREDEFINED_DISCIPLINES.includes(atividade.disciplina) ? atividade.disciplina : '',
+          discipline: atividade.disciplina,
+          customDiscipline: '',
           title: atividade.titulo,
           type: atividade.tipo,
           relevance: atividade.relevancia
         }))
       });
     } catch (error) {
-      console.error('Erro:', error);
-      alert('Erro ao carregar sprint');
-      navigate('/sprints');
+      console.error('Erro ao carregar sprint:', error);
+      alert('Erro ao carregar sprint. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -71,32 +66,26 @@ export default function RegisterSprint() {
     e.preventDefault();
     
     try {
-      const url = id ? `http://localhost:3000/api/sprints/${id}` : 'http://localhost:3000/api/sprints';
-      const method = id ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          nome: formData.title,
-          dataInicio: formData.startDate,
-          dataFim: formData.endDate,
-          atividades: formData.activities.map(activity => ({
-            disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
-            tipo: activity.type,
-            titulo: activity.title,
-            relevancia: activity.relevance
-          }))
-        })
-      });
+      const sprintData = {
+        nome: formData.title,
+        dataInicio: formData.startDate,
+        dataFim: formData.endDate,
+        atividades: formData.activities.map(activity => ({
+          disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
+          tipo: activity.type,
+          titulo: activity.title,
+          relevancia: activity.relevance
+        }))
+      };
 
-      if (!response.ok) {
-        throw new Error(id ? 'Erro ao atualizar sprint' : 'Erro ao criar sprint');
+      if (id) {
+        await sprintService.atualizarSprint(id, sprintData);
+        alert('Sprint atualizada com sucesso!');
+      } else {
+        await sprintService.cadastrarSprint(sprintData);
+        alert('Sprint cadastrada com sucesso!');
       }
-
-      alert(id ? 'Sprint atualizada com sucesso!' : 'Sprint cadastrada com sucesso!');
+      
       navigate('/sprints');
     } catch (error) {
       console.error('Erro:', error);
@@ -304,12 +293,7 @@ export default function RegisterSprint() {
               onClick={async () => {
                 if (window.confirm('Tem certeza que deseja excluir esta sprint?')) {
                   try {
-                    const response = await fetch(`http://localhost:3000/api/sprints/${id}`, {
-                      method: 'DELETE'
-                    });
-                    if (!response.ok) {
-                      throw new Error('Erro ao excluir sprint');
-                    }
+                    await sprintService.excluirSprint(id);
                     alert('Sprint excluída com sucesso!');
                     navigate('/sprints');
                   } catch (error) {
@@ -334,4 +318,6 @@ export default function RegisterSprint() {
       </form>
     </div>
   );
-} 
+};
+
+export default RegisterSprint; 
