@@ -128,17 +128,37 @@ export const planoService = {
 
   async atualizarPlano(id, planoData) {
     try {
-      console.log('Atualizando plano:', id);
-      console.log('Dados do plano:', planoData);
+      console.log('1. Iniciando atualização do plano');
+      console.log('2. ID do plano:', id);
+      console.log('3. Dados do plano:', JSON.stringify(planoData, null, 2));
+      console.log('4. URL da API:', `${API_URL}/planos/${id}`);
+      
       const response = await axios.put(`${API_URL}/planos/${id}`, planoData, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
-      console.log('Plano atualizado:', response.data);
+      
+      console.log('5. Resposta da API:', response.data);
+      console.log('6. Status da resposta:', response.status);
+      console.log('7. Headers da resposta:', response.headers);
+      
       return response.data;
     } catch (error) {
-      console.error('Erro ao atualizar plano:', error);
+      console.error('8. Erro ao atualizar plano:', error);
+      console.error('9. Detalhes do erro:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers,
+          data: error.config?.data
+        }
+      });
+      
       if (!error.response) {
         throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está rodando.');
       }

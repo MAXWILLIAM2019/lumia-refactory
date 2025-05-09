@@ -17,6 +17,10 @@
   transition: margin-left 0.3s ease;
 }
 
+.mainContent.sidebarClosed {
+  margin-left: 64px;
+}
+
 @media (max-width: 900px) {
   .mainContent {
     margin-left: 64px;

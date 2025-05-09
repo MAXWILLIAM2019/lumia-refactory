@@ -34,6 +34,7 @@ export default function RegisterPlan() {
   const [currentDiscipline, setCurrentDiscipline] = useState(null);
   const [assuntos, setAssuntos] = useState([]);
   const [novoAssunto, setNovoAssunto] = useState('');
+  const [editingDiscipline, setEditingDiscipline] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,7 +49,7 @@ export default function RegisterPlan() {
   };
 
   const handleAddDiscipline = () => {
-    if (selectedDiscipline && !selectedDisciplines.includes(selectedDiscipline)) {
+    if (selectedDiscipline && !selectedDisciplines.some(d => d.nome === selectedDiscipline)) {
       setCurrentDiscipline(selectedDiscipline);
       setShowModal(true);
     }
@@ -65,12 +66,28 @@ export default function RegisterPlan() {
     setAssuntos(prev => prev.filter(a => a !== assunto));
   };
 
+  const handleEditDiscipline = (discipline) => {
+    setCurrentDiscipline(discipline.nome);
+    setAssuntos(discipline.assuntos.map(a => a.nome));
+    setShowModal(true);
+    setEditingDiscipline(discipline);
+  };
+
   const handleConfirmDiscipline = () => {
     if (assuntos.length > 0) {
-      setSelectedDisciplines(prev => [...prev, {
-        nome: currentDiscipline,
-        assuntos: assuntos.map(assunto => ({ nome: assunto }))
-      }]);
+      if (editingDiscipline) {
+        setSelectedDisciplines(prev => prev.map(d => 
+          d.nome === editingDiscipline.nome 
+            ? { ...d, assuntos: assuntos.map(assunto => ({ nome: assunto })) }
+            : d
+        ));
+        setEditingDiscipline(null);
+      } else {
+        setSelectedDisciplines(prev => [...prev, {
+          nome: currentDiscipline,
+          assuntos: assuntos.map(assunto => ({ nome: assunto }))
+        }]);
+      }
       setShowModal(false);
       setCurrentDiscipline(null);
       setAssuntos([]);
@@ -82,6 +99,7 @@ export default function RegisterPlan() {
     setShowModal(false);
     setCurrentDiscipline(null);
     setAssuntos([]);
+    setEditingDiscipline(null);
   };
 
   const removeDiscipline = (discipline) => {
@@ -229,13 +247,26 @@ export default function RegisterPlan() {
                         {discipline.assuntos.length} {discipline.assuntos.length === 1 ? 'assunto' : 'assuntos'}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeDiscipline(discipline)}
-                      className={styles.removeDisciplineButton}
-                    >
-                      ×
-                    </button>
+                    <div className={styles.disciplineActions}>
+                      <button
+                        type="button"
+                        onClick={() => handleEditDiscipline(discipline)}
+                        className={styles.editDisciplineButton}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                        </svg>
+                        Editar Assuntos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeDiscipline(discipline)}
+                        className={styles.removeDisciplineButton}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -272,7 +303,7 @@ export default function RegisterPlan() {
         {showModal && (
           <div className={styles.modalOverlay}>
             <div className={styles.modal}>
-              <h2>Adicionar Assuntos - {currentDiscipline}</h2>
+              <h2>{editingDiscipline ? 'Editar Assuntos' : 'Adicionar Assuntos'} - {currentDiscipline}</h2>
               
               <div className={styles.assuntosInput}>
                 <input
@@ -316,7 +347,7 @@ export default function RegisterPlan() {
                   disabled={assuntos.length === 0}
                   className={styles.confirmButton}
                 >
-                  Confirmar
+                  {editingDiscipline ? 'Salvar Alterações' : 'Confirmar'}
                 </button>
                 <button
                   type="button"

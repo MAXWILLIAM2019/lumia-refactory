@@ -6,6 +6,7 @@ import Sprints from './pages/Sprints/Sprints';
 import RegisterStudent from './pages/RegisterStudent/RegisterStudent';
 import RegisterPlan from './pages/RegisterPlan/RegisterPlan';
 import ListPlans from './pages/ListPlans/ListPlans';
+import EditPlan from './pages/EditPlan/EditPlan';
 import Layout from './components/Layout/Layout';
 import './App.css';
 
@@ -22,6 +23,7 @@ import './App.css';
  * - /register-plan: Cadastro de planos
  * - /planos: Listagem de planos
  * - /planos/cadastrar: Cadastro de planos (rota alternativa)
+ * - /planos/editar/:id: Edição de plano específico
  */
 function App() {
   return (
@@ -36,6 +38,7 @@ function App() {
           <Route path="/register-plan" element={<RegisterPlan />} />
           <Route path="/planos" element={<ListPlans />} />
           <Route path="/planos/cadastrar" element={<RegisterPlan />} />
+          <Route path="/planos/editar/:id" element={<EditPlan />} />
         </Routes>
       </Layout>
     </Router>

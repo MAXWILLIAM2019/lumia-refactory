@@ -35,6 +35,7 @@ export default function EditPlan() {
   const [currentDiscipline, setCurrentDiscipline] = useState(null);
   const [assuntos, setAssuntos] = useState([]);
   const [novoAssunto, setNovoAssunto] = useState('');
+  const [editingDiscipline, setEditingDiscipline] = useState(null);
 
   useEffect(() => {
     const fetchPlano = async () => {
@@ -95,12 +96,30 @@ export default function EditPlan() {
     setAssuntos(prev => prev.filter(a => a !== assunto));
   };
 
+  const handleEditDiscipline = (discipline) => {
+    setCurrentDiscipline(discipline.nome);
+    setAssuntos(discipline.assuntos.map(a => a.nome));
+    setShowModal(true);
+    setEditingDiscipline(discipline);
+  };
+
   const handleConfirmDiscipline = () => {
     if (assuntos.length > 0) {
-      setSelectedDisciplines(prev => [...prev, {
-        nome: currentDiscipline,
-        assuntos: assuntos.map(assunto => ({ nome: assunto }))
-      }]);
+      if (editingDiscipline) {
+        // Atualiza a disciplina existente
+        setSelectedDisciplines(prev => prev.map(d => 
+          d.nome === editingDiscipline.nome 
+            ? { ...d, assuntos: assuntos.map(assunto => ({ nome: assunto })) }
+            : d
+        ));
+        setEditingDiscipline(null);
+      } else {
+        // Adiciona nova disciplina
+        setSelectedDisciplines(prev => [...prev, {
+          nome: currentDiscipline,
+          assuntos: assuntos.map(assunto => ({ nome: assunto }))
+        }]);
+      }
       setShowModal(false);
       setCurrentDiscipline(null);
       setAssuntos([]);
@@ -112,6 +131,7 @@ export default function EditPlan() {
     setShowModal(false);
     setCurrentDiscipline(null);
     setAssuntos([]);
+    setEditingDiscipline(null);
   };
 
   const removeDiscipline = (discipline) => {
@@ -124,16 +144,28 @@ export default function EditPlan() {
     setError('');
     
     try {
+      console.log('1. Iniciando atualização do plano');
+      console.log('2. ID do plano:', id);
+      
       const dataToSubmit = {
         ...formData,
         disciplinas: selectedDisciplines
       };
       
+      console.log('3. Dados a serem enviados:', JSON.stringify(dataToSubmit, null, 2));
+      
       await planoService.atualizarPlano(id, dataToSubmit);
+      console.log('4. Plano atualizado com sucesso');
+      
       alert('Plano atualizado com sucesso!');
       navigate('/planos');
     } catch (error) {
-      console.error('Erro ao atualizar plano:', error);
+      console.error('5. Erro ao atualizar plano:', error);
+      console.error('6. Detalhes do erro:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       setError(error.message || 'Erro ao atualizar plano. Tente novamente.');
     } finally {
       setLoading(false);
@@ -259,13 +291,22 @@ export default function EditPlan() {
                         {discipline.assuntos.length} {discipline.assuntos.length === 1 ? 'assunto' : 'assuntos'}
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeDiscipline(discipline)}
-                      className={styles.removeDisciplineButton}
-                    >
-                      ×
-                    </button>
+                    <div className={styles.disciplineActions}>
+                      <button
+                        type="button"
+                        onClick={() => handleEditDiscipline(discipline)}
+                        className={styles.editDisciplineButton}
+                      >
+                        Editar Assuntos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeDiscipline(discipline)}
+                        className={styles.removeDisciplineButton}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -294,7 +335,7 @@ export default function EditPlan() {
         {showModal && (
           <div className={styles.modalOverlay}>
             <div className={styles.modal}>
-              <h2>Adicionar Assuntos - {currentDiscipline}</h2>
+              <h2>{editingDiscipline ? 'Editar Assuntos' : 'Adicionar Assuntos'} - {currentDiscipline}</h2>
               
               <div className={styles.assuntosInput}>
                 <input
@@ -338,7 +379,7 @@ export default function EditPlan() {
                   disabled={assuntos.length === 0}
                   className={styles.confirmButton}
                 >
-                  Confirmar
+                  {editingDiscipline ? 'Salvar Alterações' : 'Confirmar'}
                 </button>
                 <button
                   type="button"

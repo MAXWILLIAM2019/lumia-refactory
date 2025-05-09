@@ -140,14 +140,22 @@ const criarPlano = async (req, res) => {
 // Atualizar um plano
 const atualizarPlano = async (req, res) => {
   try {
+    console.log('1. Iniciando atualização do plano');
+    console.log('2. ID recebido:', req.params.id);
+    console.log('3. Dados recebidos:', JSON.stringify(req.body, null, 2));
+    
     const { id } = req.params;
     const { nome, cargo, descricao, duracao, disciplinas } = req.body;
 
+    console.log('4. Buscando plano no banco...');
     const plano = await Plano.findByPk(id);
     if (!plano) {
+      console.log('5. Plano não encontrado');
       return res.status(404).json({ error: 'Plano não encontrado' });
     }
+    console.log('6. Plano encontrado:', plano.toJSON());
 
+    console.log('7. Atualizando dados do plano...');
     // Atualiza o plano
     await plano.update({
       nome,
@@ -155,20 +163,25 @@ const atualizarPlano = async (req, res) => {
       descricao,
       duracao
     });
+    console.log('8. Dados do plano atualizados');
 
     // Se houver disciplinas, atualiza elas
     if (disciplinas && Array.isArray(disciplinas)) {
+      console.log('9. Atualizando disciplinas...');
       // Remove disciplinas antigas
       await Disciplina.destroy({ where: { PlanoId: id } });
+      console.log('10. Disciplinas antigas removidas');
 
       // Cria novas disciplinas
       for (const disciplina of disciplinas) {
+        console.log('11. Criando disciplina:', disciplina.nome);
         const disciplinaCriada = await Disciplina.create({
           nome: disciplina.nome,
           PlanoId: id
         });
 
         if (disciplina.assuntos && Array.isArray(disciplina.assuntos)) {
+          console.log('12. Criando assuntos para disciplina:', disciplina.nome);
           for (const assunto of disciplina.assuntos) {
             await Assunto.create({
               nome: assunto.nome,
@@ -177,8 +190,10 @@ const atualizarPlano = async (req, res) => {
           }
         }
       }
+      console.log('13. Disciplinas e assuntos atualizados');
     }
 
+    console.log('14. Buscando plano atualizado...');
     // Retorna o plano atualizado
     const planoAtualizado = await Plano.findByPk(id, {
       include: [
@@ -188,10 +203,12 @@ const atualizarPlano = async (req, res) => {
         }
       ]
     });
+    console.log('15. Plano atualizado:', planoAtualizado.toJSON());
 
     res.json(planoAtualizado);
   } catch (error) {
-    console.error('Erro ao atualizar plano:', error);
+    console.error('16. Erro ao atualizar plano:', error);
+    console.error('17. Stack trace:', error.stack);
     res.status(500).json({ error: 'Erro ao atualizar plano', details: error.message });
   }
 };

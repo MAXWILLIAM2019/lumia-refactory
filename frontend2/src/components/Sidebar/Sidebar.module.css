@@ -81,6 +81,28 @@
 /* Navegação */
 nav {
   transition: opacity 0.2s, visibility 0.2s;
+  width: 100%;
+  height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+nav::-webkit-scrollbar-track {
+  background: #23283a;
+  border-radius: 3px;
+}
+
+nav::-webkit-scrollbar-thumb {
+  background: #3b82f6;
+  border-radius: 3px;
+}
+
+nav::-webkit-scrollbar-thumb:hover {
+  background: #2563eb;
 }
 
 nav ul {
@@ -98,6 +120,11 @@ nav li {
   align-items: center;
   justify-content: space-between;
   white-space: nowrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+nav li:last-child {
+  border-bottom: none;
 }
 
 /* Item de menu ativo */
@@ -105,6 +132,7 @@ nav li {
   background: #2563eb;
   border-radius: 8px;
   font-weight: bold;
+  border-bottom: none;
 }
 
 /* Badge para contadores */
@@ -141,6 +169,7 @@ nav li {
   font-size: 0.9rem !important;
   margin: 16px 0 !important;
   text-align: center !important;
+  border-bottom: none !important;
 }
 
 .registerButton:hover {
@@ -162,6 +191,7 @@ nav li {
   font-size: 0.9rem !important;
   margin: 8px 0 !important;
   text-align: center !important;
+  border-bottom: none !important;
 }
 
 .registerStudentButton:hover {
@@ -183,6 +213,7 @@ nav li {
   font-size: 0.9rem !important;
   margin: 8px 0 !important;
   text-align: center !important;
+  border-bottom: none !important;
 }
 
 .registerPlanButton:hover {
@@ -204,6 +235,7 @@ nav li {
   font-size: 0.9rem !important;
   margin: 8px 0 !important;
   text-align: center !important;
+  border-bottom: none !important;
 }
 
 .listPlansButton:hover {
