@@ -1,14 +1,5 @@
-// Importações dos componentes e bibliotecas necessárias
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard/Dashboard';
-import RegisterSprint from './pages/RegisterSprint/RegisterSprint';
-import Sprints from './pages/Sprints/Sprints';
-import RegisterStudent from './pages/RegisterStudent/RegisterStudent';
-import RegisterPlan from './pages/RegisterPlan/RegisterPlan';
-import ListPlans from './pages/ListPlans/ListPlans';
-import EditPlan from './pages/EditPlan/EditPlan';
-import Layout from './components/Layout/Layout';
-import './App.css';
+import React from 'react';
+import AppRoutes from './routes';
 
 /**
  * Componente principal da aplicação
@@ -26,23 +17,7 @@ import './App.css';
  * - /planos/editar/:id: Edição de plano específico
  */
 function App() {
-  return (
-    <Router>
-      <Layout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/register-sprint" element={<RegisterSprint />} />
-          <Route path="/edit-sprint/:id" element={<RegisterSprint />} />
-          <Route path="/sprints" element={<Sprints />} />
-          <Route path="/register-student" element={<RegisterStudent />} />
-          <Route path="/register-plan" element={<RegisterPlan />} />
-          <Route path="/planos" element={<ListPlans />} />
-          <Route path="/planos/cadastrar" element={<RegisterPlan />} />
-          <Route path="/planos/editar/:id" element={<EditPlan />} />
-        </Routes>
-      </Layout>
-    </Router>
-  );
+  return <AppRoutes />;
 }
 
 export default App;

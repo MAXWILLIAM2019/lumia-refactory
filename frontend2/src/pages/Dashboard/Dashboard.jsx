@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import Sidebar from '../../components/Sidebar/Sidebar';
 import SprintHeader from '../../components/SprintHeader/SprintHeader';
 import SprintStats from '../../components/SprintStats/SprintStats';
 import ActivitiesTable from '../../components/ActivitiesTable/ActivitiesTable';
@@ -97,40 +96,37 @@ export default function Dashboard() {
 
   return (
     <div className={styles.dashboard}>
-      <Sidebar />
-      <main className={styles.mainContent}>
-        <div className={styles.sprintRow}>
-          <div className={styles.sprintContainer}>
-            <SprintHeader 
-              sprintTitle={sprint?.nome}
-              progress={sprint ? (sprint.atividades.filter(a => a.status === 'Concluída').length / sprint.atividades.length) * 100 : 0}
-              startDate={sprint?.dataInicio}
-            >
-              <SprintStats stats={stats} />
-            </SprintHeader>
+      <div className={styles.sprintRow}>
+        <div className={styles.sprintContainer}>
+          <SprintHeader 
+            sprintTitle={sprint?.nome}
+            progress={sprint ? (sprint.atividades.filter(a => a.status === 'Concluída').length / sprint.atividades.length) * 100 : 0}
+            startDate={sprint?.dataInicio}
+          >
+            <SprintStats stats={stats} />
+          </SprintHeader>
+        </div>
+        {nextSprint && (
+          <div className={styles.nextSprintContainer}>
+            <span className="nextLabel">Próxima Sprint</span>
+            <strong className="nextTitle">{nextSprint.nome}</strong>
+            <span className="nextDate">
+              Próxima em: {new Date(nextSprint.dataInicio).toLocaleDateString('pt-BR')}
+            </span>
+            <button className="addButton">Adicionar sprint</button>
           </div>
-          {nextSprint && (
-            <div className={styles.nextSprintContainer}>
-              <span className="nextLabel">Próxima Sprint</span>
-              <strong className="nextTitle">{nextSprint.nome}</strong>
-              <span className="nextDate">
-                Próxima em: {new Date(nextSprint.dataInicio).toLocaleDateString('pt-BR')}
-              </span>
-              <button className="addButton">Adicionar sprint</button>
-            </div>
-          )}
-        </div>
-        <div className={styles.activitiesContainer}>
-          {sprint && (
-            <ActivitiesTable 
-              activities={formatActivities(sprint.atividades)}
-              onFilterChange={(filter) => {
-                // Implementar filtro
-              }}
-            />
-          )}
-        </div>
-      </main>
+        )}
+      </div>
+      <div className={styles.activitiesContainer}>
+        {sprint && (
+          <ActivitiesTable 
+            activities={formatActivities(sprint.atividades)}
+            onFilterChange={(filter) => {
+              // Implementar filtro
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 } 
