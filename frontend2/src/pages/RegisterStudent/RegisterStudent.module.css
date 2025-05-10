@@ -1,24 +1,40 @@
 .container {
   padding: 32px;
-  width: 100%;
-  margin: 0 auto;
   color: #fff;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .container h1 {
   font-size: 2rem;
   margin-bottom: 32px;
   color: #2563eb;
-  margin-left: 64px;
+  text-align: center;
+  width: 100%;
+  margin-left: 0;
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .form {
   background: #181c23;
-  padding: 40px;
+  padding: 40px 60px;
   border-radius: 18px;
   box-shadow: 0 4px 20px #0004, 0 2px 8px #2563eb22;
-  margin: 0 96px 0 96px;
-  max-width: 600px;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .formGroup {
@@ -168,7 +184,7 @@
   }
   
   .container h1 {
-    margin-left: 32px;
+    margin-left: 0;
     font-size: 1.5rem;
   }
   
@@ -180,4 +196,4 @@
   .buttonGroup {
     flex-direction: column;
   }
-} 
+}
