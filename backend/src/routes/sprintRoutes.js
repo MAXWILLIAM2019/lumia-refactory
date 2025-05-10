@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const sprintController = require('../controllers/sprintController');
+const auth = require('../middleware/auth');
+
+// Aplica o middleware de autenticação em todas as rotas
+router.use(auth);
 
 // Rota de teste
 router.get('/test', (req, res) => {
@@ -10,12 +14,16 @@ router.get('/test', (req, res) => {
 // Listar todas as sprints
 router.get('/', sprintController.getAllSprints);
 
-// Criar nova sprint
+// Criar uma nova sprint
 router.post('/', sprintController.createSprint);
 
-// Rotas para Sprint
+// Buscar uma sprint específica
 router.get('/:id', sprintController.getSprintById);
+
+// Atualizar uma sprint
 router.put('/:id', sprintController.updateSprint);
+
+// Excluir uma sprint
 router.delete('/:id', sprintController.deleteSprint);
 
 module.exports = router; 

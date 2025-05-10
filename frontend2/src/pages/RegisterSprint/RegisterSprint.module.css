@@ -1,8 +1,10 @@
 .container {
   padding: 32px;
-  width: 100%;
-  margin: 0 auto;
   color: #fff;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .container.editMode {
@@ -66,19 +68,23 @@
   font-size: 2rem;
   margin-bottom: 32px;
   color: #2563eb;
-  margin-left: 64px;
+  text-align: center;
+  width: 900px;
+  margin-left: -250px;
 }
 
 .form {
   background: #181c23;
-  padding: 40px;
+  padding: 40px 60px;
   border-radius: 18px;
   box-shadow: 0 4px 20px #0004, 0 2px 8px #2563eb22;
-  margin: 0 96px 0 96px;
+  width: 900px;
+  margin-left: -250px;
 }
 
 .formGroup {
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .formGroup label {
@@ -86,10 +92,12 @@
   margin-bottom: 8px;
   font-weight: 500;
   color: #a1a1aa;
+  width: 100%;
 }
 
 .formGroup input,
-.formGroup textarea {
+.formGroup textarea,
+.formGroup select {
   width: 100%;
   padding: 12px;
   border: 1px solid #2d3748;
@@ -101,7 +109,8 @@
 }
 
 .formGroup input:focus,
-.formGroup textarea:focus {
+.formGroup textarea:focus,
+.formGroup select:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px #3b82f633;
@@ -126,6 +135,8 @@
   display: flex;
   gap: 16px;
   margin-top: 32px;
+  width: 100%;
+  padding: 0;
 }
 
 .submitButton {
@@ -139,6 +150,8 @@
   transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
   font-size: 1rem;
   flex: 1;
+  width: 100%;
+  margin: 0;
 }
 
 .submitButton:hover {
@@ -158,6 +171,8 @@
   transition: background 0.2s, transform 0.15s;
   font-size: 1rem;
   flex: 1;
+  width: 100%;
+  margin: 0;
 }
 
 .cancelButton:hover {
@@ -173,15 +188,16 @@
   padding: 12px 24px;
   font-weight: bold;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+  transition: background 0.2s, transform 0.15s;
   font-size: 1rem;
   flex: 1;
+  width: 100%;
+  margin: 0;
 }
 
 .listButton:hover {
   background: #2563eb;
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px #2563eb44;
 }
 
 .activitiesSection {
@@ -452,14 +468,24 @@
   transform: translateY(-2px);
 }
 
-.errorMessage {
-  background-color: #ffebee;
-  color: #c62828;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  border: 1px solid #ef9a9a;
-  font-size: 14px;
+.error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  width: 900px;
+  margin-left: -250px;
+}
+
+.error p {
+  margin: 0;
+}
+
+.error p:first-child {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
 .customDisciplineField {

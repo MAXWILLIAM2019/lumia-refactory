@@ -3,6 +3,8 @@ const Administrador = require('../models/Administrador');
 
 const auth = async (req, res, next) => {
   try {
+    // Log do header Authorization
+    console.log('Authorization header recebido:', req.header('Authorization'));
     // Obtém o token do header
     const token = req.header('Authorization')?.replace('Bearer ', '');
 

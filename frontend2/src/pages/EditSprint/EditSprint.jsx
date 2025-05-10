@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './EditSprint.module.css';
+import api from '../../services/api';
 
 const PREDEFINED_DISCIPLINES = [
   'Matemática',
@@ -38,12 +39,8 @@ export default function EditSprint() {
 
   const fetchSprint = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sprints/${id}`);
-      if (!response.ok) {
-        throw new Error('Erro ao buscar sprint');
-      }
-      const sprint = await response.json();
-      
+      const response = await api.get(`/sprints/${id}`);
+      const sprint = response.data;
       setFormData({
         title: sprint.nome,
         startDate: sprint.dataInicio,
@@ -67,14 +64,9 @@ export default function EditSprint() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
-      const response = await fetch(`http://localhost:3000/api/sprints/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      await api.put(`/sprints/${id}`,
+        {
           nome: formData.title,
           dataInicio: formData.startDate,
           dataFim: formData.endDate,
@@ -84,13 +76,8 @@ export default function EditSprint() {
             titulo: activity.title,
             relevancia: activity.relevance
           }))
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Erro ao atualizar sprint');
-      }
-
+        }
+      );
       alert('Sprint atualizada com sucesso!');
       navigate('/sprints');
     } catch (error) {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Sprints.module.css';
+import api from '../../services/api';
 
 /**
  * Componente Sprints
@@ -20,12 +21,8 @@ export default function Sprints() {
    */
   const fetchSprints = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/sprints');
-      if (!response.ok) {
-        throw new Error('Erro ao buscar sprints');
-      }
-      const data = await response.json();
-      setSprints(data);
+      const response = await api.get('/sprints');
+      setSprints(response.data);
     } catch (error) {
       console.error('Erro:', error);
       alert('Erro ao carregar sprints');

@@ -1,12 +1,10 @@
-import axios from 'axios';
-
-const API_URL = 'http://localhost:3000/api';
+import api from './api';
 
 export const alunoService = {
   async cadastrarAluno(alunoData) {
     try {
       console.log('Enviando dados para API:', alunoData);
-      const response = await axios.post(`${API_URL}/alunos`, alunoData);
+      const response = await api.post('/alunos', alunoData);
       console.log('Resposta da API:', response.data);
       return response.data;
     } catch (error) {
@@ -18,7 +16,7 @@ export const alunoService = {
 
   async listarAlunos() {
     try {
-      const response = await axios.get(`${API_URL}/alunos`);
+      const response = await api.get('/alunos');
       return response.data;
     } catch (error) {
       console.error('Erro ao listar alunos:', error);
@@ -28,7 +26,7 @@ export const alunoService = {
 
   async buscarAlunoPorId(id) {
     try {
-      const response = await axios.get(`${API_URL}/alunos/${id}`);
+      const response = await api.get(`/alunos/${id}`);
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar aluno:', error);

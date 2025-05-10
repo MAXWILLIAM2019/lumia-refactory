@@ -3,6 +3,7 @@ import SprintHeader from '../../components/SprintHeader/SprintHeader';
 import SprintStats from '../../components/SprintStats/SprintStats';
 import ActivitiesTable from '../../components/ActivitiesTable/ActivitiesTable';
 import styles from './Dashboard.module.css';
+import api from '../../services/api';
 
 /**
  * Componente Dashboard
@@ -25,11 +26,8 @@ export default function Dashboard() {
 
   const fetchSprints = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/sprints');
-      if (!response.ok) {
-        throw new Error('Erro ao buscar sprints');
-      }
-      const data = await response.json();
+      const response = await api.get('/sprints');
+      const data = response.data;
       
       // Ordenar sprints por data de início
       const sortedSprints = data.sort((a, b) => 

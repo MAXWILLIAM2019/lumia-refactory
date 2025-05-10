@@ -18,6 +18,8 @@ const Atividade = require('../models/Atividade');
  */
 exports.createSprint = async (req, res) => {
   try {
+    // Log do header Authorization
+    console.log('Authorization header recebido (cadastrar sprint):', req.header('Authorization'));
     const { nome, dataInicio, dataFim, atividades } = req.body;
 
     // Criar a sprint

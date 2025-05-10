@@ -15,23 +15,18 @@ const authService = {
 
   isAuthenticated: () => {
     const token = localStorage.getItem('token');
-    return !!token;
+    return !!token; // Retorna true se existir um token, false caso contrário
   },
 
   validateToken: async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return false;
-
-      // Primeiro verifica se o token está expirado localmente
-      if (!this.isAuthenticated()) {
-        return false;
-      }
-
-      // Se não estiver expirado, valida no servidor
+      
       const response = await api.get('/auth/validate');
       return response.data.valid;
     } catch (error) {
+      console.error('Erro ao validar token:', error);
       return false;
     }
   }
@@ -40,7 +35,7 @@ const authService = {
 // Configuração do Axios
 api.interceptors.request.use(
   (config) => {
-    const token = authService.getToken();
+    const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -51,14 +46,10 @@ api.interceptors.request.use(
   }
 );
 
+// Removendo temporariamente o interceptor de resposta
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      // Token inválido ou expirado
-      authService.removeToken();
-      window.location.href = '/login';
-    }
+  (error) => {
     return Promise.reject(error);
   }
 );

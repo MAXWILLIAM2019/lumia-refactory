@@ -6,13 +6,17 @@ import Dashboard from '../pages/Dashboard/Dashboard';
 import RegisterPlan from '../pages/RegisterPlan/RegisterPlan';
 import ListPlans from '../pages/ListPlans/ListPlans';
 import EditPlan from '../pages/EditPlan/EditPlan';
+import RegisterSprint from '../pages/RegisterSprint/RegisterSprint';
 import Layout from '../components/Layout/Layout';
 import authService from '../services/authService';
+import RegisterStudent from '../pages/RegisterStudent/RegisterStudent';
 
 // Componente para rotas protegidas
 const PrivateRoute = ({ children }) => {
+  const token = localStorage.getItem('token');
   const isAuthenticated = authService.isAuthenticated();
-  console.log('Verificando autenticação:', isAuthenticated);
+  console.log('PrivateRoute - Token:', token);
+  console.log('PrivateRoute - isAuthenticated:', isAuthenticated);
   
   if (!isAuthenticated) {
     console.log('Usuário não autenticado, redirecionando para login');
@@ -43,18 +47,18 @@ const AppRoutes = () => {
 
         {/* Rotas de Planos */}
         <Route
-          path="/planos/cadastrar"
-          element={
-            <PrivateRoute>
-              <RegisterPlan />
-            </PrivateRoute>
-          }
-        />
-        <Route
           path="/planos"
           element={
             <PrivateRoute>
               <ListPlans />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/planos/cadastrar"
+          element={
+            <PrivateRoute>
+              <RegisterPlan />
             </PrivateRoute>
           }
         />
@@ -72,7 +76,7 @@ const AppRoutes = () => {
           path="/sprints/cadastrar"
           element={
             <PrivateRoute>
-              <div>Cadastrar Sprint (em desenvolvimento)</div>
+              <RegisterSprint />
             </PrivateRoute>
           }
         />
@@ -98,7 +102,7 @@ const AppRoutes = () => {
           path="/alunos/cadastrar"
           element={
             <PrivateRoute>
-              <div>Cadastrar Aluno (em desenvolvimento)</div>
+              <RegisterStudent />
             </PrivateRoute>
           }
         />

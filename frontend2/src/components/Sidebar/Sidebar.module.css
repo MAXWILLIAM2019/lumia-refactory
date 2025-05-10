@@ -22,15 +22,13 @@
 
 /* Botão de toggle da sidebar */
 .toggleButton {
-  position: absolute;
-  right: -12px;
-  top: 24px;
-  background: #2563eb;
+  position: static;
+  margin-left: 12px;
+  background: transparent;
   color: #fff;
   border: none;
   width: 24px;
   height: 24px;
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,7 +39,7 @@
 }
 
 .toggleButton:hover {
-  background: #1d4ed8;
+  background: transparent;
   transform: scale(1.1);
 }
 
@@ -113,12 +111,12 @@ nav ul {
 
 /* Itens do menu */
 nav li {
-  padding: 12px 32px;
+  padding: 12px 24px;
   cursor: pointer;
   transition: background 0.2s;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   white-space: nowrap;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
@@ -133,6 +131,62 @@ nav li:last-child {
   border-radius: 8px;
   font-weight: bold;
   border-bottom: none;
+}
+
+/* Classe base para todos os itens do menu */
+.menuItem {
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menuItem:hover {
+  background: #2563eb;
+  border-radius: 8px;
+}
+
+/* Conteúdo do item do menu */
+.menuItemContent {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding-left: 0;
+}
+
+/* Ícone do menu */
+.icon {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex-shrink: 0;
+  margin: 0;
+  margin-bottom: 8px;
+}
+
+/* Estilo específico para emojis */
+.icon:not(img) {
+  font-size: 1.2rem;
+}
+
+/* Estilo específico para SVGs */
+.icon[src$=".svg"] {
+  filter: brightness(0) invert(1);
+  object-fit: contain;
+  display: inline-block;
+  height: 24px;
+  width: 24px;
+}
+
+.active .icon[src$=".svg"] {
+  filter: brightness(0) invert(1);
 }
 
 /* Badge para contadores */
@@ -156,126 +210,110 @@ nav li:last-child {
   font-weight: bold;
 }
 
-/* Botão de cadastro de sprints */
+/* Classe base para botões de ação */
+.actionButton {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  margin: 8px 0;
+  text-align: center;
+  border-bottom: none;
+  width: 100%;
+}
+
+.actionButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Variações de cor para os botões */
 .registerButton {
-  background: #3b82f6 !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 8px !important;
-  padding: 12px 16px !important;
-  font-weight: bold !important;
-  cursor: pointer !important;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.15s !important;
-  font-size: 0.9rem !important;
-  margin: 16px 0 !important;
-  text-align: center !important;
-  border-bottom: none !important;
+  composes: actionButton;
+  background: #3b82f6;
 }
 
 .registerButton:hover {
-  background: #f59e0b !important;
-  transform: translateY(-2px) scale(1.04) !important;
-  box-shadow: 0 2px 8px #f59e0b44 !important;
+  background: #2563eb;
 }
 
-/* Botão de cadastro de alunos */
 .registerStudentButton {
-  background: #22c55e !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 8px !important;
-  padding: 12px 16px !important;
-  font-weight: bold !important;
-  cursor: pointer !important;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.15s !important;
-  font-size: 0.9rem !important;
-  margin: 8px 0 !important;
-  text-align: center !important;
-  border-bottom: none !important;
+  composes: actionButton;
+  background: #22c55e;
 }
 
 .registerStudentButton:hover {
-  background: #16a34a !important;
-  transform: translateY(-2px) scale(1.04) !important;
-  box-shadow: 0 2px 8px #22c55e44 !important;
+  background: #16a34a;
 }
 
-/* Botão de cadastro de planos */
 .registerPlanButton {
-  background: #8b5cf6 !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 8px !important;
-  padding: 12px 16px !important;
-  font-weight: bold !important;
-  cursor: pointer !important;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.15s !important;
-  font-size: 0.9rem !important;
-  margin: 8px 0 !important;
-  text-align: center !important;
-  border-bottom: none !important;
+  composes: actionButton;
+  background: #8b5cf6;
 }
 
 .registerPlanButton:hover {
-  background: #7c3aed !important;
-  transform: translateY(-2px) scale(1.04) !important;
-  box-shadow: 0 2px 8px #8b5cf644 !important;
+  background: #7c3aed;
 }
 
-/* Botão de listagem de planos */
 .listPlansButton {
-  background: #f59e0b !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 8px !important;
-  padding: 12px 16px !important;
-  font-weight: bold !important;
-  cursor: pointer !important;
-  transition: background 0.2s, transform 0.15s, box-shadow 0.15s !important;
-  font-size: 0.9rem !important;
-  margin: 8px 0 !important;
-  text-align: center !important;
-  border-bottom: none !important;
+  composes: actionButton;
+  background: #f59e0b;
 }
 
 .listPlansButton:hover {
-  background: #d97706 !important;
-  transform: translateY(-2px) scale(1.04) !important;
-  box-shadow: 0 2px 8px #f59e0b44 !important;
+  background: #d97706;
 }
 
 /* Responsividade para telas médias */
 @media (max-width: 900px) {
   .sidebar {
     width: 64px;
-    padding: 16px 0;
   }
+  
   .logo {
-    font-size: 1.2rem;
-    margin-bottom: 16px;
+    font-size: 1.5rem;
   }
+  
   .profileCircle {
-    width: 32px;
-    height: 32px;
-    font-size: 1rem;
-    margin-bottom: 16px;
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
   }
+  
   nav li {
-    padding: 8px 8px;
-    font-size: 0.9rem;
-  }
-  nav li span {
-    display: none;
+    padding: 12px 16px;
   }
 }
 
 /* Responsividade para telas pequenas */
 @media (max-width: 600px) {
   .sidebar {
-    position: fixed;
-    left: 0;
-    top: 0;
-    height: 100vh;
-    z-index: 10;
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+  
+  .logo {
+    font-size: 1.2rem;
+  }
+  
+  .profileCircle {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+  
+  nav {
+    height: auto;
+    max-height: 300px;
+  }
+  
+  nav li {
+    padding: 8px 16px;
   }
 } 
