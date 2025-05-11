@@ -148,6 +148,7 @@ const RegisterSprint = () => {
             value={formData.title}
             onChange={handleChange}
             required
+            style={{ width: '100%', boxSizing: 'border-box' }}
           />
         </div>
 
@@ -161,6 +162,7 @@ const RegisterSprint = () => {
               value={formData.startDate}
               onChange={handleChange}
               required
+              style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
 
@@ -173,6 +175,7 @@ const RegisterSprint = () => {
               value={formData.endDate}
               onChange={handleChange}
               required
+              style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
         </div>
