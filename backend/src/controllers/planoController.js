@@ -1,4 +1,6 @@
 const { Plano, Disciplina, Assunto } = require('../models');
+const sequelize = require('../db');
+const { Op } = require('sequelize');
 
 // Listar todos os planos
 const listarPlanos = async (req, res) => {
@@ -31,8 +33,15 @@ const listarPlanos = async (req, res) => {
       include: [
         {
           model: Disciplina,
-          include: [Assunto],
-          required: false // Torna o JOIN em LEFT JOIN para evitar exclusão de planos sem disciplinas
+          as: 'disciplinas',
+          through: { attributes: [] }, // Não incluir atributos da tabela de junção
+          required: false, // Torna o JOIN em LEFT JOIN para evitar exclusão de planos sem disciplinas
+          include: [
+            {
+              model: Assunto,
+              as: 'assuntos'
+            }
+          ]
         }
       ]
     });
@@ -61,7 +70,14 @@ const buscarPlanoPorId = async (req, res) => {
       include: [
         {
           model: Disciplina,
-          include: [Assunto]
+          as: 'disciplinas',
+          through: { attributes: [] }, // Não incluir atributos da tabela de junção
+          include: [
+            {
+              model: Assunto,
+              as: 'assuntos'
+            }
+          ]
         }
       ]
     });
@@ -114,7 +130,30 @@ const criarPlano = async (req, res) => {
       }
     }
 
-    console.log('4. Criando plano...');
+    // Verificar se todas as disciplinas já existem previamente
+    console.log('4. Verificando se as disciplinas já estão cadastradas...');
+    for (const disciplina of disciplinas) {
+      // Verifica se a disciplina já existe e está ativa
+      const disciplinaObj = await Disciplina.findOne({
+        where: sequelize.and(
+          sequelize.where(
+            sequelize.fn('LOWER', sequelize.col('nome')),
+            sequelize.fn('LOWER', disciplina.nome)
+          ),
+          { ativa: true }
+        )
+      });
+      
+      // Se não existir, retorna erro
+      if (!disciplinaObj) {
+        console.log('4.1. Disciplina não encontrada ou inativa:', disciplina.nome);
+        return res.status(400).json({ 
+          error: `A disciplina "${disciplina.nome}" não está cadastrada ou não está ativa. Utilize o módulo de Disciplinas para cadastrá-la ou ativá-la primeiro.` 
+        });
+      }
+    }
+
+    console.log('5. Criando plano...');
     // Cria o plano
     const plano = await Plano.create({
       nome,
@@ -123,41 +162,69 @@ const criarPlano = async (req, res) => {
       duracao
     });
 
-    console.log('5. Plano criado:', plano.toJSON());
+    console.log('6. Plano criado:', plano.toJSON());
 
-    // Cria as disciplinas e assuntos
-    console.log('6. Criando disciplinas e assuntos...');
+    // Processa cada disciplina
+    console.log('7. Processando disciplinas...');
     for (const disciplina of disciplinas) {
-      console.log('6.1. Criando disciplina:', disciplina.nome);
-      const disciplinaCriada = await Disciplina.create({
-        nome: disciplina.nome,
-        PlanoId: plano.id
-      });
-
-      console.log('6.2. Criando assuntos para disciplina:', disciplina.nome);
-      console.log('6.3. Assuntos a serem criados:', disciplina.assuntos);
+      console.log('7.1. Processando disciplina:', disciplina.nome);
       
-      for (const assunto of disciplina.assuntos) {
-        console.log('6.4. Criando assunto:', assunto.nome);
-        await Assunto.create({
-          nome: assunto.nome,
-          DisciplinaId: disciplinaCriada.id
+      // Busca a disciplina (já sabemos que existe devido à verificação anterior)
+      const disciplinaObj = await Disciplina.findOne({
+        where: sequelize.where(
+          sequelize.fn('LOWER', sequelize.col('nome')),
+          sequelize.fn('LOWER', disciplina.nome)
+        )
+      });
+      
+      // Associa a disciplina ao plano usando a tabela de junção
+      await plano.addDisciplina(disciplinaObj);
+      console.log('7.2. Disciplina associada ao plano');
+      
+      // Processa os assuntos da disciplina
+      if (disciplina.assuntos && disciplina.assuntos.length > 0) {
+        console.log('7.3. Processando assuntos da disciplina');
+        
+        // Verifica se a disciplina já tem assuntos
+        const assuntosExistentes = await Assunto.findAll({
+          where: { disciplinaId: disciplinaObj.id }
         });
+        
+        // Se não tiver assuntos ou se os assuntos forem diferentes, atualiza
+        if (assuntosExistentes.length === 0) {
+          console.log('7.4. Adicionando assuntos à disciplina');
+          
+          // Cria os assuntos para a disciplina
+          const assuntosData = disciplina.assuntos.map(assunto => ({
+            nome: assunto.nome,
+            disciplinaId: disciplinaObj.id
+          }));
+          
+          await Assunto.bulkCreate(assuntosData);
+          console.log('7.5. Assuntos criados com sucesso');
+        }
       }
     }
 
     // Retorna o plano criado com suas disciplinas e assuntos
-    console.log('7. Buscando plano completo...');
+    console.log('8. Buscando plano completo...');
     const planoCompleto = await Plano.findByPk(plano.id, {
       include: [
         {
           model: Disciplina,
-          include: [Assunto]
+          as: 'disciplinas',
+          through: { attributes: [] }, // Não incluir atributos da tabela de junção
+          include: [
+            {
+              model: Assunto,
+              as: 'assuntos'
+            }
+          ]
         }
       ]
     });
 
-    console.log('8. Plano completo criado:', planoCompleto.toJSON());
+    console.log('9. Plano completo criado:', planoCompleto.toJSON());
     res.status(201).json(planoCompleto);
   } catch (error) {
     console.error('Erro ao criar plano:', error);
@@ -200,48 +267,95 @@ const atualizarPlano = async (req, res) => {
 
     // Se houver disciplinas, atualiza elas
     if (disciplinas && Array.isArray(disciplinas)) {
-      console.log('9. Atualizando disciplinas...');
-      // Remove disciplinas antigas
-      await Disciplina.destroy({ where: { PlanoId: id } });
-      console.log('10. Disciplinas antigas removidas');
-
-      // Cria novas disciplinas
+      console.log('9. Verificando se todas as disciplinas existem...');
+      
+      // Verifica se todas as disciplinas já existem
       for (const disciplina of disciplinas) {
-        console.log('11. Criando disciplina:', disciplina.nome);
-        const disciplinaCriada = await Disciplina.create({
-          nome: disciplina.nome,
-          PlanoId: id
+        const disciplinaObj = await Disciplina.findOne({
+          where: sequelize.and(
+            sequelize.where(
+              sequelize.fn('LOWER', sequelize.col('nome')),
+              sequelize.fn('LOWER', disciplina.nome)
+            ),
+            { ativa: true }
+          )
         });
-
-        if (disciplina.assuntos && Array.isArray(disciplina.assuntos)) {
-          console.log('12. Criando assuntos para disciplina:', disciplina.nome);
-          for (const assunto of disciplina.assuntos) {
-            await Assunto.create({
+        
+        if (!disciplinaObj) {
+          console.log('9.1. Disciplina não encontrada ou inativa:', disciplina.nome);
+          return res.status(400).json({ 
+            error: `A disciplina "${disciplina.nome}" não está cadastrada ou não está ativa. Utilize o módulo de Disciplinas para cadastrá-la ou ativá-la primeiro.` 
+          });
+        }
+      }
+      
+      console.log('10. Todas as disciplinas existem. Atualizando associações...');
+      
+      // Remove todas as associações existentes entre plano e disciplinas
+      console.log('11. Removendo associações antigas');
+      await plano.setDisciplinas([]);
+      
+      // Processa cada disciplina
+      for (const disciplina of disciplinas) {
+        console.log('12. Processando disciplina:', disciplina.nome);
+        
+        // Busca a disciplina (já sabemos que existe devido à verificação anterior)
+        const disciplinaObj = await Disciplina.findOne({
+          where: sequelize.where(
+            sequelize.fn('LOWER', sequelize.col('nome')),
+            sequelize.fn('LOWER', disciplina.nome)
+          )
+        });
+        
+        // Associa a disciplina ao plano usando a tabela de junção
+        await plano.addDisciplina(disciplinaObj);
+        console.log('13. Disciplina associada ao plano');
+        
+        // Processa os assuntos da disciplina
+        if (disciplina.assuntos && disciplina.assuntos.length > 0) {
+          // Verificar se há assuntos novos para adicionar
+          const assuntosExistentes = await Assunto.findAll({
+            where: { disciplinaId: disciplinaObj.id }
+          });
+          
+          // Se não houver assuntos, adiciona os novos
+          if (assuntosExistentes.length === 0) {
+            // Adiciona os novos assuntos
+            const assuntosData = disciplina.assuntos.map(assunto => ({
               nome: assunto.nome,
-              DisciplinaId: disciplinaCriada.id
-            });
+              disciplinaId: disciplinaObj.id
+            }));
+            
+            await Assunto.bulkCreate(assuntosData);
           }
         }
       }
-      console.log('13. Disciplinas e assuntos atualizados');
+      console.log('14. Disciplinas e assuntos atualizados');
     }
 
-    console.log('14. Buscando plano atualizado...');
+    console.log('15. Buscando plano atualizado...');
     // Retorna o plano atualizado
     const planoAtualizado = await Plano.findByPk(id, {
       include: [
         {
           model: Disciplina,
-          include: [Assunto]
+          as: 'disciplinas',
+          through: { attributes: [] }, // Não incluir atributos da tabela de junção
+          include: [
+            {
+              model: Assunto,
+              as: 'assuntos'
+            }
+          ]
         }
       ]
     });
-    console.log('15. Plano atualizado:', planoAtualizado.toJSON());
+    console.log('16. Plano atualizado:', planoAtualizado.toJSON());
 
     res.json(planoAtualizado);
   } catch (error) {
-    console.error('16. Erro ao atualizar plano:', error);
-    console.error('17. Stack trace:', error.stack);
+    console.error('17. Erro ao atualizar plano:', error);
+    console.error('18. Stack trace:', error.stack);
     res.status(500).json({ error: 'Erro ao atualizar plano', details: error.message });
   }
 };

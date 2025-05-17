@@ -4,19 +4,6 @@ import Layout from '../../components/Layout/Layout';
 import styles from './ListPlans.module.css';
 import { planoService } from '../../services/planoService';
 
-const PREDEFINED_DISCIPLINES = [
-  'Matemática',
-  'Português',
-  'Física',
-  'Química',
-  'Biologia',
-  'História',
-  'Geografia',
-  'Inglês',
-  'Literatura',
-  'Redação'
-];
-
 export default function ListPlans() {
   const navigate = useNavigate();
   const [planos, setPlanos] = useState([]);
@@ -38,6 +25,21 @@ export default function ListPlans() {
   const [assuntos, setAssuntos] = useState([]);
   const [novoAssunto, setNovoAssunto] = useState('');
   const [editingDiscipline, setEditingDiscipline] = useState(null);
+  const [disciplinasAtivas, setDisciplinasAtivas] = useState([]);
+  const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      console.log('ListPlans - Token no localStorage:', !!token);
+      if (!token) {
+        console.log('ListPlans - Redirecionando para login (token ausente)');
+        navigate('/login');
+      }
+    };
+    
+    checkAuth();
+  }, [navigate]);
 
   useEffect(() => {
     fetchPlanos();
@@ -50,6 +52,7 @@ export default function ListPlans() {
       setError('');
       const data = await planoService.listarPlanos();
       console.log('Planos recebidos:', data);
+      console.log('Estrutura detalhada do primeiro plano:', data.length > 0 ? JSON.stringify(data[0], null, 2) : 'Nenhum plano');
       
       // Verifica se temos dados válidos
       if (!data || !Array.isArray(data)) {
@@ -81,11 +84,22 @@ export default function ListPlans() {
     });
     
     // Transforma as disciplinas do formato do backend para o formato do frontend
-    const disciplinasFormatadas = plano.Disciplinas.map(disciplina => ({
-      nome: disciplina.nome,
-      assuntos: disciplina.Assuntos.map(assunto => ({ nome: assunto.nome }))
-    }));
+    // Adapta para lidar com diferentes estruturas possíveis
+    const disciplinasSource = plano.Disciplinas || plano.disciplinas || [];
+    const disciplinasFormatadas = disciplinasSource.map(disciplina => {
+      // Adapta para diferentes estruturas de assuntos
+      const assuntosSource = disciplina.Assuntos || disciplina.assuntos || [];
+      return {
+        id: disciplina.id,
+        nome: disciplina.nome,
+        assuntos: assuntosSource.map(assunto => ({ 
+          id: assunto.id,
+          nome: assunto.nome
+        }))
+      };
+    });
     
+    console.log('Disciplinas formatadas:', disciplinasFormatadas);
     setSelectedDisciplines(disciplinasFormatadas);
     setShowEditModal(true);
   };
@@ -212,6 +226,31 @@ export default function ListPlans() {
     setSelectedDisciplines([]);
   };
 
+  // Função para carregar disciplinas ativas
+  const carregarDisciplinasAtivas = async () => {
+    try {
+      setLoadingDisciplinas(true);
+      // Aqui você precisará importar e usar o serviço de disciplinas
+      // const disciplinas = await disciplinaService.listarDisciplinasAtivas();
+      // Por enquanto, vamos simular com um array vazio
+      const disciplinas = [];
+      console.log('Disciplinas ativas carregadas:', disciplinas);
+      setDisciplinasAtivas(disciplinas);
+    } catch (error) {
+      console.error('Erro ao carregar disciplinas ativas:', error);
+      setError((prevError) => prevError + ' Erro ao carregar disciplinas.');
+    } finally {
+      setLoadingDisciplinas(false);
+    }
+  };
+
+  // Carregar disciplinas quando abrir o modal de edição
+  useEffect(() => {
+    if (showEditModal) {
+      carregarDisciplinasAtivas();
+    }
+  }, [showEditModal]);
+
   if (loading) {
     return (
       <Layout>
@@ -242,39 +281,52 @@ export default function ListPlans() {
         )}
 
         <div className={styles.plansGrid}>
-          {planos.map(plano => (
-            <div key={plano.id} className={styles.planCard}>
-              <div className={styles.planHeader}>
-                <h2>{plano.nome}</h2>
-                <div className={styles.planActions}>
-                  <button
-                    onClick={() => handleEdit(plano)}
-                    className={styles.editButton}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    onClick={() => handleDelete(plano.id)}
-                    className={styles.deleteButton}
-                  >
-                    Excluir
-                  </button>
-                </div>
-              </div>
-              <p className={styles.planDescription}>{plano.descricao}</p>
-              <div className={styles.planDetails}>
-                <span>Cargo: {plano.cargo}</span>
-                <span>Duração: {plano.duracao} meses</span>
-              </div>
-              <div className={styles.disciplinesList}>
-                {plano.Disciplinas.map(disciplina => (
-                  <div key={disciplina.id} className={styles.disciplineTag}>
-                    {disciplina.nome}
-                  </div>
-                ))}
-              </div>
+          {planos.length === 0 ? (
+            <div className={styles.emptyState}>
+              <p>Nenhum plano encontrado. Crie um novo plano para visualizá-lo aqui.</p>
             </div>
-          ))}
+          ) : (
+            planos.map(plano => {
+              // Verificar a estrutura do plano para adaptar ao renderizar
+              const disciplinas = plano.Disciplinas || plano.disciplinas || [];
+              console.log(`Renderizando plano ${plano.id}:`, plano.nome);
+              console.log(`Disciplinas do plano ${plano.id}:`, disciplinas);
+              
+              return (
+                <div key={plano.id} className={styles.planCard}>
+                  <div className={styles.planHeader}>
+                    <h2>{plano.nome}</h2>
+                    <div className={styles.planActions}>
+                      <button
+                        onClick={() => handleEdit(plano)}
+                        className={styles.editButton}
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() => handleDelete(plano.id)}
+                        className={styles.deleteButton}
+                      >
+                        Excluir
+                      </button>
+                    </div>
+                  </div>
+                  <p className={styles.planDescription}>{plano.descricao}</p>
+                  <div className={styles.planDetails}>
+                    <span>Cargo: {plano.cargo}</span>
+                    <span>Duração: {plano.duracao} meses</span>
+                  </div>
+                  <div className={styles.disciplinesList}>
+                    {disciplinas.map(disciplina => (
+                      <div key={disciplina.id || `disc-${Math.random()}`} className={styles.disciplineTag}>
+                        {disciplina.nome}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Modal de Edição */}
@@ -359,11 +411,6 @@ export default function ListPlans() {
                       className={styles.disciplineSelect}
                     >
                       <option value="">Selecione uma disciplina</option>
-                      {PREDEFINED_DISCIPLINES.map(discipline => (
-                        <option key={discipline} value={discipline}>
-                          {discipline}
-                        </option>
-                      ))}
                     </select>
                     <button
                       type="button"

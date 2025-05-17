@@ -42,6 +42,41 @@ exports.listarDisciplinas = async (req, res) => {
 };
 
 /**
+ * Lista apenas as disciplinas ativas
+ * 
+ * @param {Object} req - Requisição HTTP
+ * @param {Object} res - Resposta HTTP
+ * @returns {Array} Lista de disciplinas ativas com seus assuntos
+ */
+exports.listarDisciplinasAtivas = async (req, res) => {
+  try {
+    const disciplinas = await Disciplina.findAll({
+      where: {
+        ativa: true
+      },
+      include: [
+        {
+          model: Assunto,
+          as: 'assuntos'
+        }
+      ],
+      order: [
+        ['nome', 'ASC'],
+        [{ model: Assunto, as: 'assuntos' }, 'nome', 'ASC']
+      ]
+    });
+    
+    res.status(200).json(disciplinas);
+  } catch (error) {
+    console.error('Erro ao listar disciplinas ativas:', error);
+    res.status(500).json({ 
+      message: 'Erro ao listar disciplinas ativas',
+      error: error.message 
+    });
+  }
+};
+
+/**
  * Busca uma disciplina pelo ID
  * 
  * @param {Object} req - Requisição HTTP
@@ -171,13 +206,13 @@ exports.atualizarDisciplina = async (req, res) => {
     // Se o nome for alterado, verifica se já existe outra disciplina com o mesmo nome
     if (nome && nome !== disciplina.nome) {
       const disciplinaExistente = await Disciplina.findOne({
-        where: {
-          id: { [Op.ne]: id },
-          ...sequelize.where(
+        where: sequelize.and(
+          { id: { [Op.ne]: id } },
+          sequelize.where(
             sequelize.fn('LOWER', sequelize.col('nome')),
             sequelize.fn('LOWER', nome)
           )
-        }
+        )
       });
       
       if (disciplinaExistente) {

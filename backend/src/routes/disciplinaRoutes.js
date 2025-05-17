@@ -19,6 +19,13 @@ router.use(authMiddleware);
 router.get('/', disciplinaController.listarDisciplinas);
 
 /**
+ * @route   GET /api/disciplinas/ativas
+ * @desc    Lista apenas as disciplinas ativas
+ * @access  Privado (requer token)
+ */
+router.get('/ativas', disciplinaController.listarDisciplinasAtivas);
+
+/**
  * @route   GET /api/disciplinas/:id
  * @desc    Busca uma disciplina pelo ID
  * @access  Privado (requer token)

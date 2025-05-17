@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './Disciplinas.module.css';
 import axios from '../../services/api';
+import editIcon from '../../assets/icons/edit.svg';
+import deleteIcon from '../../assets/icons/delete.svg';
 
 export default function Disciplinas() {
   const navigate = useNavigate();
@@ -10,9 +12,25 @@ export default function Disciplinas() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedDisciplina, setSelectedDisciplina] = useState(null);
 
   useEffect(() => {
     fetchDisciplinas();
+  }, []);
+
+  // Fechar o modal ao pressionar ESC
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.keyCode === 27) { // ESC key
+        setModalVisible(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
   }, []);
 
   const fetchDisciplinas = async () => {
@@ -36,11 +54,20 @@ export default function Disciplinas() {
     navigate('/disciplinas/cadastrar');
   };
 
-  const handleEditClick = (id) => {
+  const handleEditClick = (id, e) => {
+    // Evitar propagação do evento para não abrir o modal
+    if (e) {
+      e.stopPropagation();
+    }
     navigate(`/disciplinas/editar/${id}`);
   };
 
-  const handleDeleteClick = async (id) => {
+  const handleDeleteClick = async (id, e) => {
+    // Evitar propagação do evento para não abrir o modal
+    if (e) {
+      e.stopPropagation();
+    }
+    
     if (window.confirm('Tem certeza que deseja excluir esta disciplina?')) {
       try {
         await axios.delete(`/disciplinas/${id}`);
@@ -59,6 +86,16 @@ export default function Disciplinas() {
 
   const handleStatusFilterChange = (status) => {
     setStatusFilter(status);
+  };
+
+  const handleAssuntosClick = (disciplina) => {
+    setSelectedDisciplina(disciplina);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedDisciplina(null);
   };
 
   // Destaca o termo de busca no texto
@@ -189,17 +226,17 @@ export default function Disciplinas() {
               <div className={styles.disciplinaActions}>
                 <button
                   className={styles.editButton}
-                  onClick={() => handleEditClick(disciplina.id)}
+                  onClick={(e) => handleEditClick(disciplina.id, e)}
                   title="Editar disciplina"
                 >
-                  ✏️
+                  <img src={editIcon} alt="Editar" />
                 </button>
                 <button
                   className={styles.deleteButton}
-                  onClick={() => handleDeleteClick(disciplina.id)}
+                  onClick={(e) => handleDeleteClick(disciplina.id, e)}
                   title="Excluir disciplina"
                 >
-                  🗑️
+                  <img src={deleteIcon} alt="Excluir" />
                 </button>
               </div>
             </div>
@@ -208,16 +245,24 @@ export default function Disciplinas() {
               {disciplina.ativa ? 'Ativa' : 'Inativa'}
             </div>
             
-            <div className={styles.assuntosContainer}>
+            <div 
+              className={styles.assuntosContainer}
+              onClick={() => handleAssuntosClick(disciplina)}
+            >
               <h3>Assuntos</h3>
               {disciplina.assuntos && disciplina.assuntos.length > 0 ? (
-                <ul className={styles.assuntosList}>
-                  {disciplina.assuntos.map((assunto, index) => (
-                    <li key={index} className={styles.assuntoItem}
-                      dangerouslySetInnerHTML={{ __html: highlightMatch(assunto.nome, searchTerm) }}>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className={styles.assuntosList}>
+                    {disciplina.assuntos.map((assunto, index) => (
+                      <li key={index} className={styles.assuntoItem}
+                        dangerouslySetInnerHTML={{ __html: highlightMatch(assunto.nome, searchTerm) }}>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className={styles.fadeOverlay}>
+                    <span className={styles.expandText}>Ver todos</span>
+                  </div>
+                </>
               ) : (
                 <p className={styles.emptyAssuntos}>Nenhum assunto cadastrado</p>
               )}
@@ -225,6 +270,48 @@ export default function Disciplinas() {
           </div>
         ))}
       </div>
+
+      {/* Modal de Assuntos */}
+      {modalVisible && selectedDisciplina && (
+        <div className={styles.modalOverlay} onClick={handleCloseModal}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Assuntos - {selectedDisciplina.nome}</h3>
+              <button 
+                className={styles.closeModalButton}
+                onClick={handleCloseModal}
+              >
+                &times;
+              </button>
+            </div>
+            <div className={styles.modalContent}>
+              {selectedDisciplina.assuntos && selectedDisciplina.assuntos.length > 0 ? (
+                <ul className={styles.modalAssuntosList}>
+                  {selectedDisciplina.assuntos.map((assunto, index) => (
+                    <li key={index} className={styles.modalAssuntoItem}>
+                      <span dangerouslySetInnerHTML={{ __html: highlightMatch(assunto.nome, searchTerm) }}></span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className={styles.emptyModalAssuntos}>Nenhum assunto cadastrado para esta disciplina.</p>
+              )}
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                className={styles.editModalButton}
+                onClick={() => {
+                  handleCloseModal();
+                  handleEditClick(selectedDisciplina.id);
+                }}
+              >
+                <img src={editIcon} alt="Editar" />
+                <span>Editar Disciplina</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
