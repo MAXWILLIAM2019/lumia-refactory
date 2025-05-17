@@ -11,6 +11,8 @@ import Layout from '../components/Layout/Layout';
 import authService from '../services/authService';
 import RegisterStudent from '../pages/RegisterStudent/RegisterStudent';
 import Sprints from '../pages/Sprints/Sprints';
+import Disciplinas from '../pages/Disciplinas/Disciplinas';
+import CadastrarDisciplina from '../pages/CadastrarDisciplina/CadastrarDisciplina';
 
 // Componente para rotas protegidas
 const PrivateRoute = ({ children }) => {
@@ -120,6 +122,32 @@ const AppRoutes = () => {
           element={
             <PrivateRoute>
               <div>Editar Aluno (em desenvolvimento)</div>
+            </PrivateRoute>
+          }
+        />
+
+        {/* Rotas de Disciplinas */}
+        <Route
+          path="/disciplinas"
+          element={
+            <PrivateRoute>
+              <Disciplinas />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/disciplinas/cadastrar"
+          element={
+            <PrivateRoute>
+              <CadastrarDisciplina />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/disciplinas/editar/:id"
+          element={
+            <PrivateRoute>
+              <CadastrarDisciplina />
             </PrivateRoute>
           }
         />

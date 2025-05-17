@@ -1,27 +1,37 @@
+/**
+ * Modelo Disciplina
+ * 
+ * Representa uma disciplina do sistema com seus assuntos.
+ * Este modelo define a estrutura da tabela Disciplina no banco de dados,
+ * incluindo validações e regras de negócio para cada campo.
+ */
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 
 /**
- * Modelo Disciplina
- * Representa uma disciplina dentro de um plano de estudos
+ * Definição do modelo Disciplina com os seguintes campos:
  * 
- * Campos:
- * - nome: Nome da disciplina
- * 
- * Relacionamentos:
- * - belongsTo Plano: Uma disciplina pertence a um plano
- * - hasMany Assunto: Uma disciplina pode ter vários assuntos
- * 
- * Nota: Os relacionamentos são definidos no arquivo index.js para evitar
- * problemas de referência circular e duplicação.
+ * @property {number} id - Identificador único da disciplina (gerado automaticamente)
+ * @property {string} nome - Nome da disciplina (obrigatório)
+ * @property {boolean} ativa - Indica se a disciplina está ativa (default: true)
+ * @property {Date} createdAt - Data de criação do registro (automático)
+ * @property {Date} updatedAt - Data da última atualização (automático)
  */
 const Disciplina = sequelize.define('Disciplina', {
   nome: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    comment: 'Nome da disciplina'
+  },
+  ativa: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    comment: 'Indica se a disciplina está ativa'
   }
 }, {
-  timestamps: true // Adiciona createdAt e updatedAt
+  timestamps: true, // Adiciona createdAt e updatedAt
+  comment: 'Armazena as disciplinas disponíveis no sistema'
 });
 
 module.exports = Disciplina; 

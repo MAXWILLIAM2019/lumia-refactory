@@ -6,6 +6,7 @@ const sprintRoutes = require('./routes/sprintRoutes');
 const alunoRoutes = require('./routes/alunoRoutes');
 const planoRoutes = require('./routes/planoRoutes');
 const authRoutes = require('./routes/authRoutes');
+const disciplinaRoutes = require('./routes/disciplinaRoutes');
 
 // Importa os modelos
 require('./models/Plano');
@@ -29,6 +30,7 @@ app.use('/api/sprints', sprintRoutes);
 app.use('/api/alunos', alunoRoutes);
 app.use('/api/planos', planoRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/disciplinas', disciplinaRoutes);
 
 // Rota para atualizar uma meta
 app.put('/api/metas/:id', async (req, res) => {

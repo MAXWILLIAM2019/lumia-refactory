@@ -1,0 +1,430 @@
+.container {
+  padding: 32px 16px;
+  color: #fff;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+}
+
+.container h1 {
+  font-size: 2rem;
+  margin-bottom: 32px;
+  color: #2563eb;
+  text-align: center;
+  width: 100%;
+  margin-left: 0;
+}
+
+.form {
+  background: #181c23;
+  padding: 40px 24px;
+  border-radius: 18px;
+  box-shadow: 0 4px 20px #0004, 0 2px 8px #2563eb22;
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.formGroup {
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.statusToggleGroup {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+  padding: 8px 8px 8px 0;
+}
+
+.statusLabel {
+  font-weight: 500;
+  color: #a1a1aa;
+  margin-right: 16px;
+}
+
+.statusValue {
+  margin-left: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.statusValue:empty::before {
+  content: '\00a0';
+}
+
+/* Estilo para quando a disciplina está ativa */
+input:checked + .toggleLabel + .statusValue {
+  color: #10b981;
+}
+
+/* Estilo para quando a disciplina está inativa */
+input:not(:checked) + .toggleLabel + .statusValue {
+  color: #ef4444;
+}
+
+.toggleContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.toggleCheckbox {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  width: 56px;
+  height: 30px;
+  background: #2d3748;
+  border-radius: 100px;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.toggleLabel:before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 100px;
+  transition: 0.2s;
+}
+
+.toggleLabel:active:before {
+  width: 65px;
+}
+
+.toggleLabel .toggleButton {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 24px;
+  height: 24px;
+  background: #fff;
+  border-radius: 45px;
+  transition: 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggleCheckbox:checked + .toggleLabel {
+  background-color: #10b981;
+}
+
+.toggleCheckbox:checked + .toggleLabel .toggleButton {
+  left: calc(100% - 3px);
+  transform: translateX(-100%);
+}
+
+.toggleCheckbox:disabled + .toggleLabel {
+  background: #6b7280;
+  cursor: not-allowed;
+}
+
+.toggleCheckbox:disabled + .toggleLabel .toggleButton {
+  background: #d1d5db;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 12px;
+  font-weight: 500;
+  color: #a1a1aa;
+  width: 100%;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  background: #23283a;
+  color: #fff;
+  font-size: 1.05rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #3b82f633;
+}
+
+.formGroup input::placeholder {
+  color: #6b7280;
+}
+
+.assuntosInput {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.assuntoInput {
+  flex: 1;
+  padding: 14px 16px;
+  border: 1px solid #2d3748;
+  border-radius: 8px;
+  background: #23283a;
+  color: #fff;
+  font-size: 1.05rem;
+  min-height: 52px;
+}
+
+.assuntoInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px #3b82f633;
+}
+
+.addAssuntoButton {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 52px;
+  height: 52px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addAssuntoButton:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.addAssuntoButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.assuntosContainer {
+  background: #23283a;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.assuntosContainer h3 {
+  color: #a1a1aa;
+  margin-bottom: 16px;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.assuntosList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.assuntoItem {
+  background: #3b82f6;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.removeAssuntoButton {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.removeAssuntoButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.removeAssuntoButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+  width: 100%;
+  padding: 0;
+}
+
+.submitButton {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+  font-size: 1rem;
+  flex: 1;
+  width: 100%;
+  margin: 0;
+}
+
+.submitButton:hover {
+  background: #059669;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px #05966944;
+}
+
+.submitButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.listButton {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+  font-size: 1rem;
+  flex: 1;
+  width: 100%;
+  margin: 0;
+}
+
+.listButton:hover {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.listButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.cancelButton {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.15s;
+  font-size: 1rem;
+  flex: 1;
+  width: 100%;
+  margin: 0;
+}
+
+.cancelButton:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+}
+
+.cancelButton:disabled {
+  background: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.error {
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  max-width: 900px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.error p {
+  margin: 0;
+}
+
+.error p:first-child {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 48px;
+  color: #a1a1aa;
+  font-size: 1.2rem;
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 24px 16px;
+  }
+  
+  .form {
+    padding: 24px 16px;
+  }
+  
+  .buttonGroup {
+    flex-direction: column;
+  }
+  
+  .assuntosInput {
+    flex-direction: column;
+  }
+  
+  .addAssuntoButton {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .form {
+    max-width: 95%;
+  }
+} 

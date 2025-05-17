@@ -5,6 +5,7 @@ import registerSprintIcon from '../../assets/icons/register-sprint.svg';
 import registerPlanIcon from '../../assets/icons/register-plan.svg';
 import listPlansIcon from '../../assets/icons/list-plans.svg';
 import registerStudentIcon from '../../assets/icons/register-student.svg';
+import disciplinasIcon from '../../assets/icons/disciplinas.svg';
 
 /**
  * Componente Sidebar
@@ -37,6 +38,10 @@ export default function Sidebar() {
 
   const handleListPlansClick = () => {
     navigate('/planos');
+  };
+
+  const handleDisciplinasClick = () => {
+    navigate('/disciplinas');
   };
 
   return (
@@ -91,6 +96,15 @@ export default function Sidebar() {
             <div className={styles.menuItemContent}>
               <img src={registerStudentIcon} alt="Cadastrar Aluno" className={styles.icon} />
               <span>Cadastrar aluno</span>
+            </div>
+          </li>
+          <li 
+            className={`${styles.menuItem} ${location.pathname === '/disciplinas' || location.pathname.startsWith('/disciplinas/') ? styles.active : ''}`}
+            onClick={handleDisciplinasClick}
+          >
+            <div className={styles.menuItemContent}>
+              <img src={disciplinasIcon} alt="Disciplinas" className={styles.icon} />
+              <span>Disciplinas</span>
             </div>
           </li>
         </ul>
