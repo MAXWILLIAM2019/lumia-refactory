@@ -24,6 +24,7 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
   const [showDropdown, setShowDropdown] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [activeTooltip, setActiveTooltip] = useState(null);
   const [formData, setFormData] = useState({
     completed: false,
     horas: '00',
@@ -34,9 +35,54 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Efeito para fechar o tooltip ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Se há um tooltip ativo e o clique não foi em um elemento com classe tooltip
+      if (activeTooltip && !event.target.closest('.tooltipContainer')) {
+        setActiveTooltip(null);
+      }
+    };
+
+    // Adiciona o event listener
+    document.addEventListener('click', handleClickOutside);
+
+    // Cleanup: remove o event listener
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [activeTooltip]);
+
   const filters = [
     { id: 'all', label: 'Metas', count: activities.length }
   ];
+
+  // Função para limitar o tamanho do texto do comando
+  const limitarTextoComando = (comando) => {
+    if (!comando) return '';
+    
+    // Remove as tags HTML para contar apenas o texto
+    const textoSemHtml = comando.replace(/<[^>]*>?/gm, '');
+    
+    if (textoSemHtml.length <= 20) {
+      return comando;
+    }
+    
+    // Retorna os primeiros 20 caracteres + "..."
+    return textoSemHtml.substring(0, 20) + '...';
+  };
+
+  // Função para manipular a exibição do tooltip
+  const handleTooltipClick = (e, codigo) => {
+    e.stopPropagation(); // Evitar que o clique propague para a linha da tabela
+
+    // Se já está ativo, desativa; se não, ativa
+    if (activeTooltip === codigo) {
+      setActiveTooltip(null);
+    } else {
+      setActiveTooltip(codigo);
+    }
+  };
 
   // Aplicar filtro por tipo e termo de busca
   const filteredActivities = activities
@@ -209,7 +255,7 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
       // Calcular o desempenho baseado nas questões (se houver)
       let desempenho = 0;
       if (formData.totalQuestoes > 0 && formData.questoesCorretas > 0) {
-        desempenho = Math.round((formData.questoesCorretas / formData.totalQuestoes) * 100);
+        desempenho = parseFloat(((formData.questoesCorretas / formData.totalQuestoes) * 100).toFixed(2));
       }
       
       // Preparar os dados para envio
@@ -242,12 +288,13 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
     }
   };
 
-  // Retorna uma porcentagem de acerto das questões
+  // Retorna uma porcentagem de acerto das questões com duas casas decimais
   const calcularPorcentagemAcerto = () => {
     if (formData.totalQuestoes > 0 && formData.questoesCorretas > 0) {
-      return Math.round((formData.questoesCorretas / formData.totalQuestoes) * 100);
+      const porcentagem = (formData.questoesCorretas / formData.totalQuestoes) * 100;
+      return porcentagem.toFixed(2).replace('.', ',');
     }
-    return 0;
+    return "0,00";
   };
 
   // Funções para incrementar e decrementar os valores de tempo
@@ -307,6 +354,8 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
     
     return <div className={styles.starsContainer}>{stars}</div>;
   };
+
+
 
   return (
     <div className={styles.container}>
@@ -382,7 +431,23 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
               <td>{a.tipo}</td>
               <td>{a.titulo}</td>
               <td>
-                <div className={styles.comandoCell} dangerouslySetInnerHTML={{ __html: a.comando }} />
+                <div 
+                  className={`${styles.tooltipContainer} ${activeTooltip === a.codigo ? styles.tooltipActive : ''}`}
+                >
+                  <div 
+                    className={styles.comandoCell} 
+                    dangerouslySetInnerHTML={{ __html: limitarTextoComando(a.comando) }} 
+                    onClick={(e) => handleTooltipClick(e, a.codigo)}
+                  />
+                  {a.comando && (
+                    <div 
+                      className={`${styles.tooltip} ${activeTooltip === a.codigo ? styles.tooltipActive : ''}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div dangerouslySetInnerHTML={{ __html: a.comando }} />
+                    </div>
+                  )}
+                </div>
               </td>
               <td><RelevanciaStars relevancia={a.relevancia} /></td>
               <td>{a.tempo}</td>
@@ -556,7 +621,7 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
                     <div className={styles.questionResultGroup}>
                       <div className={styles.questionResultLabel}>Desempenho</div>
                       <div className={styles.questionResultValue}>
-                        {calcularPorcentagemAcerto()}%
+                        {calcularPorcentagemAcerto()}
                       </div>
                     </div>
                   </div>

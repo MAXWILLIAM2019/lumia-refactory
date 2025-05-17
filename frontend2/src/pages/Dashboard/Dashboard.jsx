@@ -112,8 +112,14 @@ export default function Dashboard() {
     const daysDiff = Math.max(1, Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)));
     const dailyAvg = totalHours / daysDiff;
 
+    // Calcular performance com duas casas decimais
+    let performanceFormatada = "0,00%";
+    if (totalMetas > 0) {
+      performanceFormatada = `${((completedMetas / totalMetas) * 100).toFixed(2).replace('.', ',')}%`;
+    }
+
     setStats({
-      performance: `${((completedMetas / totalMetas) * 100).toFixed(2)}%`,
+      performance: performanceFormatada,
       hoursStudied: `${Math.floor(totalHours)}h${Math.round((totalHours % 1) * 60)}m`,
       questionsSolved,
       dailyAvg: `${Math.floor(dailyAvg)}h${Math.round((dailyAvg % 1) * 60)}m`
@@ -136,6 +142,13 @@ export default function Dashboard() {
         total: 5,
         preenchidas: relevancia
       };
+      
+      // Formatação do desempenho com duas casas decimais
+      let desempenhoFormatado = '--';
+      if (meta.desempenho) {
+        // Converter para número, fixar em 2 casas decimais e substituir ponto por vírgula
+        desempenhoFormatado = `${parseFloat(meta.desempenho).toFixed(2).replace('.', ',')}%`;
+      }
 
       return {
         disciplina: meta.disciplina,
@@ -143,7 +156,7 @@ export default function Dashboard() {
         titulo: meta.titulo,
         relevancia: relevanciaFormatada,
         tempo: tempoFormatado,
-        desempenho: meta.desempenho ? `${meta.desempenho}%` : '--',
+        desempenho: desempenhoFormatado,
         comando: meta.comandos || '',
         link: meta.link || '',
         status: meta.status || 'Pendente',

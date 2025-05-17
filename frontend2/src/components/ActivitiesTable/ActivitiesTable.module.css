@@ -110,13 +110,15 @@
   border-collapse: collapse;
   background: #23283a;
   border-radius: 0 0 12px 12px;
-  overflow: hidden;
+  overflow: visible !important;
 }
 
 .table th, .table td {
   padding: 12px 8px;
   text-align: left;
   color: #fff;
+  position: relative;
+  overflow: visible !important;
 }
 
 .table th {
@@ -158,14 +160,44 @@
 .comandoCell {
   max-width: 250px;
   max-height: 80px;
-  overflow: auto;
+  overflow: hidden;
   font-size: 0.85rem;
   line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  position: relative;
+  padding: 4px 8px;
+  border: 1px solid rgba(150, 150, 170, 0.15);
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: #e2e8f0;
+  background-color: rgba(18, 21, 29, 0.03);
+  border-left: 3px solid transparent;
 }
+
+.comandoCell:hover {
+  background-color: rgba(18, 21, 29, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilo quando o tooltip está ativo */
+.tooltipActive .comandoCell {
+  border-left: 3px solid #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* Removido o ícone de olho em favor de uma borda */
 
 .comandoCell p {
   margin: 0;
   padding: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .comandoCell ul, .comandoCell ol {
@@ -190,6 +222,90 @@
   color: #fbbf24;
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilos para o tooltip */
+.tooltipContainer {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  z-index: 1;
+}
+
+.tooltip {
+  visibility: hidden;
+  position: absolute;
+  z-index: 9999;
+  width: 300px;
+  max-width: 300px;
+  background-color: rgba(18, 21, 29, 0.92);
+  color: #fff;
+  text-align: left;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  opacity: 0;
+  transform: translateY(-5px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease, box-shadow 0.2s ease;
+  white-space: normal;
+  overflow: visible;
+  word-wrap: break-word;
+  pointer-events: auto;
+  left: -20px;
+  bottom: 130%;
+  backdrop-filter: blur(8px);
+}
+
+/* Estilos para o conteúdo interno do tooltip */
+.tooltip p {
+  margin: 0 0 0.75rem 0;
+  color: #e2e8f0;
+}
+
+.tooltip p:last-child {
+  margin-bottom: 0;
+}
+
+.tooltip ul, .tooltip ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  color: #e2e8f0;
+}
+
+.tooltip li {
+  margin-bottom: 0.25rem;
+}
+
+.tooltip a {
+  color: #3b82f6;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.tooltip a:hover {
+  color: #60a5fa;
+  text-decoration: underline;
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 20px;
+  border-width: 8px;
+  border-style: solid;
+  border-color: rgba(18, 21, 29, 0.92) transparent transparent transparent;
+  transition: border-color 0.3s ease;
+}
+
+.tooltipActive {
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+  pointer-events: auto !important;
 }
 
 @media (max-width: 900px) {
