@@ -124,12 +124,10 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Redireciona a raiz para o dashboard se autenticado, senão para login */}
+        {/* Redireciona a raiz para a página de login */}
         <Route
           path="/"
-          element={
-            <Navigate to={authService.isAuthenticated() ? "/dashboard" : "/login"} replace />
-          }
+          element={<Navigate to="/login" replace />}
         />
 
         {/* Redireciona qualquer rota não definida para o login */}

@@ -36,11 +36,44 @@ const authService = {
 
   /**
    * Verifica se o usuário está autenticado localmente
-   * @returns {boolean} true se o token existir, false caso contrário
+   * @returns {boolean} true se o token existir e for válido, false caso contrário
    */
   isAuthenticated: () => {
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
-    return !!token;
+    
+    if (!token) {
+      return false;
+    }
+    
+    try {
+      // Verificação básica de formato de token JWT
+      const tokenParts = token.split('.');
+      if (tokenParts.length !== 3) {
+        console.log('Token com formato inválido');
+        return false;
+      }
+      
+      // Verifica expiração do token, se houver payload
+      // Os tokens JWT têm a segunda parte como payload, que deve ser decodificada de base64
+      const payload = JSON.parse(atob(tokenParts[1]));
+      
+      if (payload.exp) {
+        const expirationTime = payload.exp * 1000; // Converte de segundos para milissegundos
+        const currentTime = Date.now();
+        
+        if (currentTime > expirationTime) {
+          console.log('Token expirado');
+          // Remove o token expirado
+          authService.removeToken();
+          return false;
+        }
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao verificar token:', error);
+      return false;
+    }
   },
 
   /**
