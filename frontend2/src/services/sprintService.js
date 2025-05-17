@@ -11,6 +11,16 @@ export const sprintService = {
     }
   },
 
+  async listarSprints() {
+    try {
+      const response = await api.get('/sprints');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao listar sprints:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao listar sprints');
+    }
+  },
+
   async atualizarSprint(id, sprintData) {
     try {
       const response = await api.put(`/sprints/${id}`, sprintData);
@@ -28,6 +38,16 @@ export const sprintService = {
     } catch (error) {
       console.error('Erro ao buscar sprint:', error);
       throw new Error(error.response?.data?.message || 'Erro ao buscar sprint');
+    }
+  },
+  
+  async excluirSprint(id) {
+    try {
+      const response = await api.delete(`/sprints/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao excluir sprint:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao excluir sprint');
     }
   }
 }; 

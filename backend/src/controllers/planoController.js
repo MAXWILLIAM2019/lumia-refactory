@@ -4,19 +4,52 @@ const { Plano, Disciplina, Assunto } = require('../models');
 const listarPlanos = async (req, res) => {
   try {
     console.log('1. Iniciando listagem de planos');
+    
+    // Verifica se os modelos estão disponíveis
+    console.log('2. Verificando modelos disponíveis:', 
+      'Plano:', !!Plano, 
+      'Disciplina:', !!Disciplina, 
+      'Assunto:', !!Assunto
+    );
+    
+    // Tenta primeiro verificar se a tabela existe/está acessível
+    try {
+      console.log('3. Verificando acesso à tabela Planos');
+      const testQuery = await Plano.findOne();
+      console.log('4. Teste de acesso à tabela bem-sucedido:', !!testQuery);
+    } catch (tableError) {
+      console.error('5. Erro ao acessar tabela Planos:', tableError);
+      return res.status(500).json({ 
+        error: 'Erro ao acessar tabela de planos', 
+        details: tableError.message 
+      });
+    }
+    
+    // Tenta fazer a consulta principal
+    console.log('6. Executando consulta principal');
     const planos = await Plano.findAll({
       include: [
         {
           model: Disciplina,
-          include: [Assunto]
+          include: [Assunto],
+          required: false // Torna o JOIN em LEFT JOIN para evitar exclusão de planos sem disciplinas
         }
       ]
     });
-    console.log('2. Planos encontrados:', JSON.stringify(planos, null, 2));
+    
+    console.log('7. Consulta concluída, número de planos encontrados:', planos?.length || 0);
+    
+    // Se não houver planos, retorna um array vazio em vez de null/undefined
+    if (!planos || planos.length === 0) {
+      console.log('8. Nenhum plano encontrado, retornando array vazio');
+      return res.json([]);
+    }
+    
+    console.log('9. Planos encontrados, retornando dados');
     res.json(planos);
   } catch (error) {
-    console.error('3. Erro ao listar planos:', error);
-    console.error('4. Stack trace:', error.stack);
+    console.error('10. Erro ao listar planos:', error);
+    console.error('11. Stack trace:', error.stack);
     res.status(500).json({ error: 'Erro ao listar planos', details: error.message });
   }
 };

@@ -1,3 +1,11 @@
+/**
+ * Componente de Cadastro e Listagem de Alunos
+ * 
+ * Este componente implementa:
+ * - Formulário para cadastro de novos alunos
+ * - Interface para visualização da lista de alunos cadastrados
+ * - Tratamento de erros e feedback ao usuário
+ */
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout/Layout';
@@ -6,11 +14,15 @@ import styles from './RegisterStudent.module.css';
 
 export default function RegisterStudent() {
   const navigate = useNavigate();
+  
+  // Estado do formulário de cadastro
   const [formData, setFormData] = useState({
     nome: '',
     email: '',
     cpf: ''
   });
+  
+  // Estados de controle da UI
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
@@ -18,12 +30,19 @@ export default function RegisterStudent() {
   const [alunos, setAlunos] = useState([]);
   const [showList, setShowList] = useState(false);
 
+  /**
+   * Efeito que carrega os alunos quando a lista é exibida
+   */
   useEffect(() => {
     if (showList) {
       carregarAlunos();
     }
   }, [showList]);
 
+  /**
+   * Efeito que controla a exibição do toast de erro
+   * para casos específicos como email/CPF duplicados
+   */
   useEffect(() => {
     if (error && error.includes('Já existe um aluno cadastrado com este email ou CPF')) {
       setShowToast(true);
@@ -32,16 +51,32 @@ export default function RegisterStudent() {
     }
   }, [error]);
 
+  /**
+   * Carrega a lista de alunos do backend
+   */
   const carregarAlunos = async () => {
     try {
+      console.log('Tentando carregar lista de alunos...');
       const data = await alunoService.listarAlunos();
-      setAlunos(data);
+      console.log('Dados recebidos:', data);
+      
+      // Garante que data é sempre um array, mesmo se a API retornar null/undefined
+      setAlunos(Array.isArray(data) ? data : []);
+      
+      // Limpa qualquer erro anterior se a requisição for bem-sucedida
+      if (error) setError('');
     } catch (error) {
       console.error('Erro ao carregar alunos:', error);
-      setError('Erro ao carregar lista de alunos');
+      setError(error.message || 'Erro ao carregar lista de alunos');
+      // Inicializa alunos como array vazio em caso de erro
+      setAlunos([]);
     }
   };
 
+  /**
+   * Atualiza o estado do formulário quando o usuário digita
+   * @param {Event} e - Evento de mudança do input
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -50,6 +85,10 @@ export default function RegisterStudent() {
     }));
   };
 
+  /**
+   * Submete o formulário para cadastrar um novo aluno
+   * @param {Event} e - Evento de submit do formulário
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -77,7 +116,7 @@ export default function RegisterStudent() {
       <div className={styles.container}>
         <h1 className={styles.titulo}>Cadastrar Aluno</h1>
         <div className={styles.formContainer}>
-          {/* Toast de erro */}
+          {/* Toast de erro para feedback sobre email/CPF duplicados */}
           {showToast && (
             <div style={{
               position: 'absolute',
@@ -115,7 +154,7 @@ export default function RegisterStudent() {
             </div>
           )}
           
-          {/* Banner de erro para outros casos */}
+          {/* Banner de erro para outros tipos de erro */}
           {error && !error.includes('Já existe um aluno cadastrado com este email ou CPF') && (
             <div className={styles.error}>
               <p><strong>Erro:</strong> {error}</p>
@@ -123,6 +162,7 @@ export default function RegisterStudent() {
             </div>
           )}
           
+          {/* Formulário de cadastro de aluno */}
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
               <label htmlFor="nome">Nome Completo</label>
@@ -194,6 +234,7 @@ export default function RegisterStudent() {
             </div>
           </form>
 
+          {/* Tabela de listagem de alunos */}
           {showList && (
             <div className={styles.tableContainer}>
               <h2>Lista de Alunos</h2>

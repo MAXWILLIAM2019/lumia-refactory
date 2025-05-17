@@ -1,0 +1,80 @@
+.container {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+  background-color: #f9f9f9;
+  max-width: 500px;
+}
+
+.container h3 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-size: 18px;
+  color: #333;
+}
+
+.infoGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.success {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.error {
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.warning {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+.tokenValue {
+  font-family: monospace;
+  background-color: #eee;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.refreshButton {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.refreshButton:hover {
+  background-color: #2563eb;
+}
+
+.refreshButton:disabled {
+  background-color: #93c5fd;
+  cursor: not-allowed;
+} 

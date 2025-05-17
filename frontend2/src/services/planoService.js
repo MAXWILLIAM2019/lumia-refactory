@@ -29,10 +29,48 @@ export const planoService = {
       console.log('1. Iniciando listagem de planos');
       const response = await api.get('/planos');
       console.log('2. Resposta da API:', response.data);
+      
+      // Garante que sempre retornamos um array, mesmo se a API retornar null/undefined
+      if (!response.data) {
+        console.log('3. Dados não encontrados, retornando array vazio');
+        return [];
+      }
+      
+      // Verifica se os dados recebidos têm o formato esperado
+      if (!Array.isArray(response.data)) {
+        console.warn('4. Resposta da API não é um array:', response.data);
+        // Se não for um array mas for um objeto, pode ser o caso de um único plano
+        if (response.data && typeof response.data === 'object') {
+          console.log('5. Convertendo objeto único em array');
+          return [response.data];
+        }
+        // Caso contrário, retorna array vazio
+        return [];
+      }
+      
+      console.log('6. Processamento concluído, retornando dados');
       return response.data;
     } catch (error) {
-      console.error('3. Erro ao listar planos:', error);
-      throw error;
+      console.error('7. Erro ao listar planos:', error);
+      
+      // Adiciona mais detalhes ao erro para diagnóstico
+      if (error.response) {
+        console.error('8. Dados da resposta de erro:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      } else if (error.request) {
+        console.error('9. Erro na requisição (sem resposta):', error.request);
+      }
+      
+      // Propaga o erro com uma mensagem mais descritiva
+      throw new Error(
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.message || 
+        'Erro ao listar planos'
+      );
     }
   },
 

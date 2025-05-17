@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import BackgroundConnections from '../components/BackgroundConnections';
 import styles from './Login.module.css';
-import api from '../services/api';
 import authService from '../services/authService';
 
 const Login = () => {
@@ -28,22 +27,18 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log('Tentando fazer login com:', formData.email);
+      console.log('Iniciando processo de login...');
       
-      const response = await api.post('/auth/login', {
+      // Usa o método login do authService
+      const response = await authService.login({
         email: formData.email,
         senha: formData.senha
       });
 
-      console.log('Resposta do servidor:', response.data);
-
-      if (response.data.success && response.data.token) {
-        authService.setToken(response.data.token);
-        console.log('Token armazenado com sucesso');
-        navigate('/dashboard');
-      } else {
-        throw new Error('Resposta inválida do servidor');
-      }
+      console.log('Login bem-sucedido:', response);
+      
+      // Redireciona para o dashboard após login
+      navigate('/dashboard');
     } catch (error) {
       console.error('Erro no login:', error);
       if (error.response?.status === 401) {

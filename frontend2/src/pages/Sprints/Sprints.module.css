@@ -192,6 +192,56 @@
   color: #6b7280;
 }
 
+.errorMessage {
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.errorMessage p {
+  margin: 0;
+}
+
+.errorMessage button {
+  background-color: #b91c1c;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.errorMessage button:hover {
+  background-color: #991b1b;
+}
+
+.emptyState {
+  background-color: #f3f4f6;
+  padding: 2rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.emptyState p {
+  color: #6b7280;
+  margin: 0;
+}
+
+.noActivities {
+  color: #9ca3af;
+  font-style: italic;
+  text-align: center;
+  margin: 1rem 0;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 1rem;

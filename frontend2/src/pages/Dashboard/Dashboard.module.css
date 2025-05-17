@@ -5,15 +5,17 @@
   flex-direction: column;
   width: 100%;
   background: #10131a;
-  padding: 32px;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .sprintRow {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: 32px;
-  margin-bottom: 32px;
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
 .sprintContainer {
@@ -23,19 +25,26 @@
   flex-direction: column;
   justify-content: stretch;
   height: 100%;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
 }
 
 .activitiesContainer {
   margin-top: 32px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 24px;
 }
 
 .nextSprintContainer {
-  background: #181c23;
-  border-radius: 18px;
-  box-shadow: 0 4px 20px #0004, 0 2px 8px #2563eb22;
-  padding: 8px 32px;
-  min-width: 240px;
-  max-width: 300px;
+  width: 260px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -100,6 +109,74 @@
   font-weight: 500;
   margin: 0 0 16px 0;
   padding: 0;
+}
+
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 18px;
+  color: #666;
+}
+
+/* Estilos para mensagens de erro */
+.error {
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  border-radius: 4px;
+  padding: 16px;
+  margin-bottom: 20px;
+  color: #b91c1c;
+}
+
+.error p {
+  margin: 0;
+  margin-bottom: 12px;
+  font-weight: 500;
+}
+
+.retryButton {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.retryButton:hover {
+  background-color: #dc2626;
+}
+
+/* Estilos para debug de autenticação */
+.authDebug {
+  background-color: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.authDebug h3 {
+  margin-top: 0;
+  color: #0369a1;
+  font-size: 16px;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #0369a1;
+}
+
+.hint a {
+  color: #0284c7;
+  text-decoration: underline;
+  font-weight: 500;
 }
 
 @media (max-width: 1100px) {

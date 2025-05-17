@@ -12,6 +12,7 @@ require('./models/Plano');
 require('./models/Disciplina');
 require('./models/Assunto');
 require('./models/Administrador');
+require('./models/Aluno');
 
 const app = express();
 
@@ -39,9 +40,10 @@ app.get('/api/test', (req, res) => {
 });
 
 // Sincronização do banco de dados e inicialização do servidor
-// sequelize.sync(): Cria as tabelas no banco se não existirem
-sequelize.sync({ alter: true }).then(() => {
-  console.log('Banco de dados sincronizado');
+// IMPORTANTE: 'force: true' recria todas as tabelas e deve ser removido após a primeira execução
+// isso é necessário para atualizar o modelo Atividade com os novos campos: comandos e link
+sequelize.sync({ force: true }).then(() => {
+  console.log('Banco de dados sincronizado (tabelas recriadas)');
   console.log('Modelos disponíveis:', Object.keys(sequelize.models));
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {

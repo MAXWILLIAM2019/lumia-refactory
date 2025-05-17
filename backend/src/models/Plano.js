@@ -13,6 +13,9 @@ const sequelize = require('../db');
  * 
  * Relacionamentos:
  * - hasMany Disciplina: Um plano pode ter várias disciplinas
+ * 
+ * Nota: Os relacionamentos são definidos no arquivo index.js para evitar
+ * problemas de referência circular e duplicação.
  */
 const Plano = sequelize.define('Plano', {
   nome: {

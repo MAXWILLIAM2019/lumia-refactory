@@ -10,6 +10,7 @@ import RegisterSprint from '../pages/RegisterSprint/RegisterSprint';
 import Layout from '../components/Layout/Layout';
 import authService from '../services/authService';
 import RegisterStudent from '../pages/RegisterStudent/RegisterStudent';
+import Sprints from '../pages/Sprints/Sprints';
 
 // Componente para rotas protegidas
 const PrivateRoute = ({ children }) => {
@@ -84,7 +85,7 @@ const AppRoutes = () => {
           path="/sprints"
           element={
             <PrivateRoute>
-              <div>Listar Sprints (em desenvolvimento)</div>
+              <Sprints />
             </PrivateRoute>
           }
         />
@@ -92,7 +93,7 @@ const AppRoutes = () => {
           path="/sprints/editar/:id"
           element={
             <PrivateRoute>
-              <div>Editar Sprint (em desenvolvimento)</div>
+              <RegisterSprint />
             </PrivateRoute>
           }
         />

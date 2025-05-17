@@ -8,8 +8,10 @@ const Sprint = require('./Sprint');
  * 
  * Campos:
  * - disciplina: Nome da disciplina (ex: "Matemática")
- * - tipo: Tipo da atividade (teoria, revisao, questao, reforco)
+ * - tipo: Tipo da atividade (teoria, questoes, revisao, reforco)
  * - titulo: Título da atividade
+ * - comandos: Comandos ou instruções específicas para a atividade
+ * - link: Link de referência para a atividade
  * - relevancia: Nível de relevância (1-5)
  * - tempoEstudado: Tempo gasto na atividade (formato: "HH:MM")
  * - desempenho: Pontuação de desempenho (0-100)
@@ -24,12 +26,20 @@ const Atividade = sequelize.define('Atividade', {
     allowNull: false
   },
   tipo: {
-    type: DataTypes.ENUM('teoria', 'revisao', 'questao', 'reforco'),
+    type: DataTypes.ENUM('teoria', 'questoes', 'revisao', 'reforco'),
     allowNull: false
   },
   titulo: {
     type: DataTypes.STRING,
     allowNull: false
+  },
+  comandos: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  link: {
+    type: DataTypes.STRING,
+    allowNull: true
   },
   relevancia: {
     type: DataTypes.INTEGER,

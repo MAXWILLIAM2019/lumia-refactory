@@ -1,6 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
-const Plano = require('./Plano');
 
 /**
  * Modelo Disciplina
@@ -12,6 +11,9 @@ const Plano = require('./Plano');
  * Relacionamentos:
  * - belongsTo Plano: Uma disciplina pertence a um plano
  * - hasMany Assunto: Uma disciplina pode ter vários assuntos
+ * 
+ * Nota: Os relacionamentos são definidos no arquivo index.js para evitar
+ * problemas de referência circular e duplicação.
  */
 const Disciplina = sequelize.define('Disciplina', {
   nome: {
@@ -21,9 +23,5 @@ const Disciplina = sequelize.define('Disciplina', {
 }, {
   timestamps: true // Adiciona createdAt e updatedAt
 });
-
-// Define o relacionamento com Plano
-Disciplina.belongsTo(Plano);
-Plano.hasMany(Disciplina);
 
 module.exports = Disciplina; 

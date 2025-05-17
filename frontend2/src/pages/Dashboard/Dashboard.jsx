@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import SprintHeader from '../../components/SprintHeader/SprintHeader';
 import SprintStats from '../../components/SprintStats/SprintStats';
 import ActivitiesTable from '../../components/ActivitiesTable/ActivitiesTable';
+import AuthCheck from '../../components/AuthCheck/AuthCheck';
 import styles from './Dashboard.module.css';
 import api from '../../services/api';
 
@@ -13,6 +14,8 @@ export default function Dashboard() {
   const [sprint, setSprint] = useState(null);
   const [nextSprint, setNextSprint] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showAuthDebug, setShowAuthDebug] = useState(false);
   const [stats, setStats] = useState({
     performance: '0%',
     hoursStudied: '0h00m',
@@ -26,7 +29,13 @@ export default function Dashboard() {
 
   const fetchSprints = async () => {
     try {
+      setLoading(true);
+      setError('');
+      console.log('Buscando sprints...');
+      
       const response = await api.get('/sprints');
+      console.log('Resposta recebida:', response.data);
+      
       const data = response.data;
       
       // Ordenar sprints por data de início
@@ -42,8 +51,15 @@ export default function Dashboard() {
         calculateStats(sortedSprints[0]);
       }
     } catch (error) {
-      console.error('Erro:', error);
-      alert('Erro ao carregar sprints');
+      console.error('Erro ao carregar sprints:', error);
+      
+      // Verificar se é um erro de autenticação
+      if (error.response?.status === 401) {
+        setError('Erro de autenticação. Por favor, faça login novamente.');
+        setShowAuthDebug(true);
+      } else {
+        setError(`Erro ao carregar sprints: ${error.message || 'Erro desconhecido'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -94,6 +110,25 @@ export default function Dashboard() {
 
   return (
     <div className={styles.dashboard}>
+      {error && (
+        <div className={styles.error}>
+          <p>{error}</p>
+          <button onClick={fetchSprints} className={styles.retryButton}>
+            Tentar novamente
+          </button>
+        </div>
+      )}
+      
+      {showAuthDebug && (
+        <div className={styles.authDebug}>
+          <h3>Diagnóstico de Autenticação</h3>
+          <AuthCheck />
+          <p className={styles.hint}>
+            Se o token estiver ausente ou inválido, tente fazer <a href="/login">login novamente</a>
+          </p>
+        </div>
+      )}
+      
       <div className={styles.sprintRow}>
         <div className={styles.sprintContainer}>
           <SprintHeader 

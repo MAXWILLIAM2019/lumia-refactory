@@ -1,35 +1,49 @@
+/**
+ * Modelo Aluno
+ * 
+ * Representa um aluno do sistema com seus dados cadastrais.
+ * Este modelo define a estrutura da tabela Aluno no banco de dados,
+ * incluindo validações e regras de negócio para cada campo.
+ */
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
 
 /**
- * Modelo Aluno
- * Representa um aluno do sistema
+ * Definição do modelo Aluno com os seguintes campos:
  * 
- * Campos:
- * - nome: Nome completo do aluno
- * - email: Email do aluno (único)
- * - cpf: CPF do aluno (único)
+ * @property {number} id - Identificador único do aluno (gerado automaticamente)
+ * @property {string} nome - Nome completo do aluno (obrigatório)
+ * @property {string} email - Email do aluno (obrigatório, único, formato válido)
+ * @property {string} cpf - CPF do aluno (obrigatório, único)
+ * @property {Date} createdAt - Data de criação do registro (automático)
+ * @property {Date} updatedAt - Data da última atualização (automático)
  */
 const Aluno = sequelize.define('Aluno', {
   nome: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: false,
+    comment: 'Nome completo do aluno'
   },
   email: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
     validate: {
-      isEmail: true
-    }
+      isEmail: {
+        msg: 'O email fornecido não é válido'
+      }
+    },
+    comment: 'Email do aluno (único e com formato válido)'
   },
   cpf: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true
+    unique: true,
+    comment: 'CPF do aluno (único, sem formatação)'
   }
 }, {
-  timestamps: true // Adiciona createdAt e updatedAt
+  timestamps: true, // Adiciona createdAt e updatedAt
+  comment: 'Armazena os dados de alunos do sistema de mentoria'
 });
 
 module.exports = Aluno; 

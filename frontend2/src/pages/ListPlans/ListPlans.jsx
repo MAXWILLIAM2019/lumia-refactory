@@ -45,11 +45,27 @@ export default function ListPlans() {
 
   const fetchPlanos = async () => {
     try {
+      console.log('Iniciando busca de planos...');
+      setLoading(true);
+      setError('');
       const data = await planoService.listarPlanos();
-      setPlanos(data);
+      console.log('Planos recebidos:', data);
+      
+      // Verifica se temos dados válidos
+      if (!data || !Array.isArray(data)) {
+        console.warn('Dados inválidos recebidos:', data);
+        setPlanos([]);
+        setError('Formato de dados inválido recebido do servidor');
+      } else {
+        setPlanos(data);
+        // Limpa qualquer erro anterior se a busca for bem-sucedida
+        setError('');
+      }
     } catch (error) {
-      console.error('Erro ao buscar planos:', error);
-      setError('Erro ao carregar planos. Tente novamente.');
+      console.error('Erro detalhado ao buscar planos:', error);
+      setError(error.message || 'Erro ao carregar planos. Tente novamente.');
+      // Em caso de erro, inicializa com array vazio para evitar problemas no componente
+      setPlanos([]);
     } finally {
       setLoading(false);
     }

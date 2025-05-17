@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { sprintService } from '../../services/sprintService';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import styles from './RegisterSprint.module.css';
 
 const PREDEFINED_DISCIPLINES = [
@@ -20,6 +22,10 @@ const RegisterSprint = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [loading, setLoading] = useState(id ? true : false);
+  const [showTextEditor, setShowTextEditor] = useState(false);
+  const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
+  const [editorContent, setEditorContent] = useState('');
+  
   const [formData, setFormData] = useState({
     title: '',
     startDate: '',
@@ -29,9 +35,31 @@ const RegisterSprint = () => {
       customDiscipline: '', 
       title: '',
       type: 'teoria', 
-      relevance: 1
+      relevance: 1,
+      comandos: '',
+      link: ''
     }]
   });
+
+  // Configuração do editor Quill
+  const modules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      ['blockquote', 'code-block'],
+      [{ 'header': 1 }, { 'header': 2 }],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      ['link'],
+      ['clean']
+    ],
+  };
+  
+  const formats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image', 'code-block'
+  ];
 
   useEffect(() => {
     if (id) {
@@ -51,7 +79,9 @@ const RegisterSprint = () => {
           customDiscipline: '',
           title: atividade.titulo,
           type: atividade.tipo,
-          relevance: atividade.relevancia
+          relevance: atividade.relevancia,
+          comandos: atividade.comandos || '',
+          link: atividade.link || ''
         }))
       });
     } catch (error) {
@@ -74,7 +104,9 @@ const RegisterSprint = () => {
           disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
           tipo: activity.type,
           titulo: activity.title,
-          relevancia: activity.relevance
+          relevancia: activity.relevance,
+          comandos: activity.comandos,
+          link: activity.link
         }))
       };
 
@@ -118,7 +150,9 @@ const RegisterSprint = () => {
         customDiscipline: '', 
         title: '',
         type: 'teoria', 
-        relevance: 1
+        relevance: 1,
+        comandos: '',
+        link: ''
       }]
     }));
   };
@@ -130,12 +164,73 @@ const RegisterSprint = () => {
     }));
   };
 
+  const openTextEditor = (index, initialContent) => {
+    setCurrentActivityIndex(index);
+    setEditorContent(initialContent || '');
+    setShowTextEditor(true);
+  };
+
+  const saveTextEditorContent = () => {
+    // Obtenha o elemento ql-editor para verificar se o conteúdo está vazio
+    const editorElement = document.querySelector('.ql-editor');
+    
+    // Se o conteúdo for apenas um parágrafo vazio <p><br></p>, considere-o como vazio
+    const isEmpty = editorElement?.innerHTML === '<p><br></p>';
+    
+    // Salve o conteúdo apenas se não estiver vazio
+    if (!isEmpty) {
+      handleActivityChange(currentActivityIndex, 'comandos', editorContent);
+    }
+    
+    setShowTextEditor(false);
+  };
+
   if (loading) {
     return <div className={styles.loading}>Carregando sprint...</div>;
   }
 
   return (
     <div className={`${styles.container} ${id ? styles.editMode : ''}`}>
+      {showTextEditor && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.textEditorModal}>
+            <div className={styles.textEditorHeader}>
+              <h3>Editor de Texto - Comandos</h3>
+              <button 
+                className={styles.closeButton}
+                onClick={() => setShowTextEditor(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.textEditorContent}>
+              <ReactQuill
+                value={editorContent}
+                onChange={setEditorContent}
+                modules={modules}
+                formats={formats}
+                placeholder="Digite as instruções ou comandos aqui..."
+                id="textEditorArea"
+              />
+            </div>
+            <div className={styles.textEditorFooter}>
+              <button 
+                className={styles.cancelButton}
+                onClick={() => setShowTextEditor(false)}
+              >
+                Cancelar
+              </button>
+              <button 
+                className={styles.saveButton}
+                onClick={saveTextEditorContent}
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <h1>{id ? 'Editar Sprint' : 'Nova Sprint'}</h1>
       
       <form onSubmit={handleSubmit} className={styles.form}>
@@ -198,72 +293,107 @@ const RegisterSprint = () => {
               </div>
 
               <div className={styles.activityContent}>
-                <div className={styles.formGroup}>
-                  <label>Disciplina</label>
-                  <select
-                    value={activity.discipline}
-                    onChange={(e) => handleActivityChange(index, 'discipline', e.target.value)}
-                    required
-                  >
-                    <option value="">Selecione uma disciplina</option>
-                    {PREDEFINED_DISCIPLINES.map(discipline => (
-                      <option key={discipline} value={discipline}>
-                        {discipline}
-                      </option>
-                    ))}
-                    <option value="custom">Outra</option>
-                  </select>
-                </div>
-
-                {activity.discipline === 'custom' && (
+                <div className={styles.activityRow}>
                   <div className={styles.formGroup}>
-                    <label>Nome da Disciplina</label>
+                    <label>Disciplina</label>
+                    <select
+                      value={activity.discipline}
+                      onChange={(e) => handleActivityChange(index, 'discipline', e.target.value)}
+                      required
+                    >
+                      <option value="">Selecione uma disciplina</option>
+                      {PREDEFINED_DISCIPLINES.map(discipline => (
+                        <option key={discipline} value={discipline}>
+                          {discipline}
+                        </option>
+                      ))}
+                      <option value="custom">Outra</option>
+                    </select>
+                  </div>
+
+                  {activity.discipline === 'custom' && (
+                    <div className={styles.formGroup}>
+                      <label>Nome da Disciplina</label>
+                      <input
+                        type="text"
+                        value={activity.customDiscipline}
+                        onChange={(e) => handleActivityChange(index, 'customDiscipline', e.target.value)}
+                        required
+                        className={styles.customDisciplineField}
+                      />
+                    </div>
+                  )}
+
+                  <div className={styles.formGroup}>
+                    <label>Título da Atividade</label>
                     <input
                       type="text"
-                      value={activity.customDiscipline}
-                      onChange={(e) => handleActivityChange(index, 'customDiscipline', e.target.value)}
+                      value={activity.title}
+                      onChange={(e) => handleActivityChange(index, 'title', e.target.value)}
                       required
-                      className={styles.customDisciplineField}
                     />
                   </div>
-                )}
 
-                <div className={styles.formGroup}>
-                  <label>Título da Atividade</label>
-                  <input
-                    type="text"
-                    value={activity.title}
-                    onChange={(e) => handleActivityChange(index, 'title', e.target.value)}
-                    required
-                  />
+                  <div className={styles.formGroup}>
+                    <label>Tipo</label>
+                    <select
+                      value={activity.type}
+                      onChange={(e) => handleActivityChange(index, 'type', e.target.value)}
+                      required
+                    >
+                      <option value="teoria">Teoria</option>
+                      <option value="questoes">Questões</option>
+                      <option value="revisao">Revisão</option>
+                      <option value="reforco">Reforço</option>
+                    </select>
+                  </div>
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label>Tipo</label>
-                  <select
-                    value={activity.type}
-                    onChange={(e) => handleActivityChange(index, 'type', e.target.value)}
-                    required
-                  >
-                    <option value="teoria">Teoria</option>
-                    <option value="exercicio">Exercício</option>
-                    <option value="prova">Prova</option>
-                  </select>
-                </div>
+                <div className={styles.activityRow}>
+                  <div className={styles.formGroup}>
+                    <label>Comandos</label>
+                    <div 
+                      className={styles.commandsField}
+                      onClick={() => openTextEditor(index, activity.comandos)}
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    >
+                      {activity.comandos ? 
+                        <div 
+                          className={styles.commandsPreview}
+                          dangerouslySetInnerHTML={{ __html: activity.comandos }}
+                        /> : 
+                        <div className={styles.commandsPlaceholder}>
+                          Clique para adicionar instruções ou comandos específicos
+                        </div>
+                      }
+                    </div>
+                  </div>
 
-                <div className={styles.formGroup}>
-                  <label>Relevância</label>
-                  <div className={styles.starsContainer}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        className={`${styles.starButton} ${activity.relevance >= star ? styles.active : ''}`}
-                        onClick={() => handleActivityChange(index, 'relevance', star)}
-                      >
-                        ★
-                      </button>
-                    ))}
+                  <div className={styles.formGroup}>
+                    <label>Link</label>
+                    <input
+                      type="url"
+                      value={activity.link}
+                      onChange={(e) => handleActivityChange(index, 'link', e.target.value)}
+                      placeholder="URL de referência (opcional)"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Relevância</label>
+                    <div className={styles.starsContainer}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          className={`${styles.starButton} ${activity.relevance >= star ? styles.active : ''}`}
+                          onClick={() => handleActivityChange(index, 'relevance', star)}
+                        >
+                          ★
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
