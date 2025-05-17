@@ -1,6 +1,6 @@
 const express = require('express');
 const Sprint = require('../models/Sprint');
-const Atividade = require('../models/Atividade');
+const Meta = require('../models/Meta');
 
 const router = express.Router();
 
@@ -41,13 +41,13 @@ router.delete('/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-// Listar atividades de uma sprint
-router.get('/:id/atividades', async (req, res) => {
+// Listar metas de uma sprint
+router.get('/:id/metas', async (req, res) => {
   const sprint = await Sprint.findByPk(req.params.id, {
-    include: { model: Atividade, as: 'atividades' }
+    include: { model: Meta, as: 'metas' }
   });
   if (!sprint) return res.status(404).json({ error: 'Sprint não encontrada' });
-  res.json(sprint.atividades);
+  res.json(sprint.metas);
 });
 
 module.exports = router; 

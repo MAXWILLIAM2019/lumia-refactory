@@ -3,7 +3,7 @@ const sequelize = require('../db');
 
 /**
  * Modelo Sprint
- * Representa uma sprint de estudos com suas atividades
+ * Representa uma sprint de estudos com suas metas
  * 
  * Campos:
  * - nome: Nome da sprint (ex: "Sprint 19")
@@ -11,7 +11,7 @@ const sequelize = require('../db');
  * - dataFim: Data de término da sprint
  * 
  * Relacionamentos:
- * - hasMany Atividade: Uma sprint pode ter várias atividades
+ * - hasMany Meta: Uma sprint pode ter várias metas
  */
 const Sprint = sequelize.define('Sprint', {
   nome: {

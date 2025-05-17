@@ -45,17 +45,17 @@ export default function EditSprint() {
         title: sprint.nome,
         startDate: sprint.dataInicio,
         endDate: sprint.dataFim,
-        activities: sprint.atividades.map(atividade => ({
-          discipline: PREDEFINED_DISCIPLINES.includes(atividade.disciplina) ? atividade.disciplina : 'custom',
-          customDiscipline: !PREDEFINED_DISCIPLINES.includes(atividade.disciplina) ? atividade.disciplina : '',
-          title: atividade.titulo,
-          type: atividade.tipo,
-          relevance: atividade.relevancia
+        activities: sprint.metas.map(meta => ({
+          discipline: PREDEFINED_DISCIPLINES.includes(meta.disciplina) ? meta.disciplina : 'custom',
+          customDiscipline: !PREDEFINED_DISCIPLINES.includes(meta.disciplina) ? meta.disciplina : '',
+          title: meta.titulo,
+          type: meta.tipo,
+          relevance: meta.relevancia
         }))
       });
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao carregar sprint');
+      alert('Erro ao carregar sprint. Tente novamente.');
       navigate('/sprints');
     } finally {
       setLoading(false);
@@ -70,7 +70,7 @@ export default function EditSprint() {
           nome: formData.title,
           dataInicio: formData.startDate,
           dataFim: formData.endDate,
-          atividades: formData.activities.map(activity => ({
+          metas: formData.activities.map(activity => ({
             disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
             tipo: activity.type,
             titulo: activity.title,
@@ -171,11 +171,11 @@ export default function EditSprint() {
         </div>
 
         <div className={styles.activitiesSection}>
-          <h2>Atividades</h2>
+          <h2>Metas</h2>
           {formData.activities.map((activity, index) => (
             <div key={index} className={styles.activityCard}>
               <div className={styles.activityHeader}>
-                <h3>Atividade {index + 1}</h3>
+                <h3>Meta {index + 1}</h3>
                 {formData.activities.length > 1 && (
                   <button
                     type="button"
@@ -217,7 +217,7 @@ export default function EditSprint() {
               )}
 
               <div className={styles.formGroup}>
-                <label>Título da Atividade</label>
+                <label>Título da Meta</label>
                 <input
                   type="text"
                   value={activity.title}
@@ -234,8 +234,9 @@ export default function EditSprint() {
                   required
                 >
                   <option value="teoria">Teoria</option>
-                  <option value="exercicio">Exercício</option>
-                  <option value="prova">Prova</option>
+                  <option value="questoes">Questões</option>
+                  <option value="revisao">Revisão</option>
+                  <option value="reforco">Reforço</option>
                 </select>
               </div>
 
@@ -261,7 +262,7 @@ export default function EditSprint() {
             onClick={addActivity}
             className={styles.addButton}
           >
-            + Adicionar Atividade
+            + Adicionar Meta
           </button>
         </div>
 

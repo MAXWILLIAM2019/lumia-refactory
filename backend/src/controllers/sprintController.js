@@ -1,26 +1,26 @@
 const Sprint = require('../models/Sprint');
-const Atividade = require('../models/Atividade');
+const Meta = require('../models/Meta');
 
 /**
  * Controller de Sprint
- * Gerencia todas as operações relacionadas a sprints e suas atividades
+ * Gerencia todas as operações relacionadas a sprints e suas metas
  */
 
 /**
- * Cria uma nova sprint com suas atividades
+ * Cria uma nova sprint com suas metas
  * @param {Object} req - Requisição HTTP
  * @param {Object} req.body - Corpo da requisição contendo dados da sprint
  * @param {string} req.body.nome - Nome da sprint
  * @param {string} req.body.dataInicio - Data de início
  * @param {string} req.body.dataFim - Data de término
- * @param {Array} req.body.atividades - Lista de atividades da sprint
+ * @param {Array} req.body.metas - Lista de metas da sprint
  * @param {Object} res - Resposta HTTP
  */
 exports.createSprint = async (req, res) => {
   try {
     // Log do header Authorization
     console.log('Authorization header recebido (cadastrar sprint):', req.header('Authorization'));
-    const { nome, dataInicio, dataFim, atividades } = req.body;
+    const { nome, dataInicio, dataFim, metas } = req.body;
 
     // Criar a sprint
     const sprint = await Sprint.create({
@@ -29,17 +29,17 @@ exports.createSprint = async (req, res) => {
       dataFim
     });
 
-    // Criar as atividades associadas à sprint
-    if (atividades && atividades.length > 0) {
-      const atividadesCriadas = await Promise.all(
-        atividades.map(atividade => 
-          Atividade.create({
-            ...atividade,
+    // Criar as metas associadas à sprint
+    if (metas && metas.length > 0) {
+      const metasCriadas = await Promise.all(
+        metas.map(meta => 
+          Meta.create({
+            ...meta,
             SprintId: sprint.id
           })
         )
       );
-      sprint.atividades = atividadesCriadas;
+      sprint.metas = metasCriadas;
     }
 
     res.status(201).json(sprint);
@@ -50,7 +50,7 @@ exports.createSprint = async (req, res) => {
 };
 
 /**
- * Busca todas as sprints com suas atividades
+ * Busca todas as sprints com suas metas
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
  */
@@ -58,8 +58,8 @@ exports.getAllSprints = async (req, res) => {
   try {
     const sprints = await Sprint.findAll({
       include: [{
-        model: Atividade,
-        as: 'atividades'
+        model: Meta,
+        as: 'metas'
       }],
       order: [['createdAt', 'DESC']]
     });
@@ -71,7 +71,7 @@ exports.getAllSprints = async (req, res) => {
 };
 
 /**
- * Busca uma sprint específica com suas atividades
+ * Busca uma sprint específica com suas metas
  * @param {Object} req - Requisição HTTP
  * @param {string} req.params.id - ID da sprint
  * @param {Object} res - Resposta HTTP
@@ -80,8 +80,8 @@ exports.getSprintById = async (req, res) => {
   try {
     const sprint = await Sprint.findByPk(req.params.id, {
       include: [{
-        model: Atividade,
-        as: 'atividades'
+        model: Meta,
+        as: 'metas'
       }]
     });
     
@@ -96,10 +96,10 @@ exports.getSprintById = async (req, res) => {
   }
 };
 
-// Atualizar uma sprint e suas atividades
+// Atualizar uma sprint e suas metas
 exports.updateSprint = async (req, res) => {
   try {
-    const { nome, dataInicio, dataFim, atividades } = req.body;
+    const { nome, dataInicio, dataFim, metas } = req.body;
     
     const sprint = await Sprint.findByPk(req.params.id);
     if (!sprint) {
@@ -113,29 +113,29 @@ exports.updateSprint = async (req, res) => {
       dataFim
     });
 
-    // Atualizar atividades
-    if (atividades) {
-      // Remover atividades antigas
-      await Atividade.destroy({
+    // Atualizar metas
+    if (metas) {
+      // Remover metas antigas
+      await Meta.destroy({
         where: { SprintId: sprint.id }
       });
 
-      // Criar novas atividades
+      // Criar novas metas
       await Promise.all(
-        atividades.map(atividade =>
-          Atividade.create({
-            ...atividade,
+        metas.map(meta =>
+          Meta.create({
+            ...meta,
             SprintId: sprint.id
           })
         )
       );
     }
 
-    // Buscar sprint atualizada com atividades
+    // Buscar sprint atualizada com metas
     const sprintAtualizada = await Sprint.findByPk(sprint.id, {
       include: [{
-        model: Atividade,
-        as: 'atividades'
+        model: Meta,
+        as: 'metas'
       }]
     });
 
@@ -145,7 +145,7 @@ exports.updateSprint = async (req, res) => {
   }
 };
 
-// Deletar uma sprint e suas atividades
+// Deletar uma sprint e suas metas
 exports.deleteSprint = async (req, res) => {
   try {
     const sprint = await Sprint.findByPk(req.params.id);
@@ -153,8 +153,8 @@ exports.deleteSprint = async (req, res) => {
       return res.status(404).json({ message: 'Sprint não encontrada' });
     }
 
-    // Deletar atividades associadas
-    await Atividade.destroy({
+    // Deletar metas associadas
+    await Meta.destroy({
       where: { SprintId: sprint.id }
     });
 

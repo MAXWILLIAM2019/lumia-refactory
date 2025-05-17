@@ -24,7 +24,7 @@ export default function Sidebar() {
   };
 
   const handleSprintClick = () => {
-    navigate('/');
+    navigate('/dashboard');
   };
 
   const handleRegisterStudentClick = () => {
@@ -49,12 +49,12 @@ export default function Sidebar() {
       <nav>
         <ul>
           <li 
-            className={`${styles.menuItem} ${location.pathname === '/' ? styles.active : ''}`}
+            className={`${styles.menuItem} ${location.pathname === '/' || location.pathname === '/dashboard' ? styles.active : ''}`}
             onClick={handleSprintClick}
           >
             <div className={styles.menuItemContent}>
-              <img src={sprintIcon} alt="Sprint" className={styles.icon} />
-              <span>Sprint</span>
+              <img src={sprintIcon} alt="Dashboard" className={styles.icon} />
+              <span>Dashboard</span>
             </div>
           </li>
           <li 

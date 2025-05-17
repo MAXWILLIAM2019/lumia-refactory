@@ -8,10 +8,11 @@ import api from '../../services/api';
 
 /**
  * Componente Dashboard
- * Página principal que exibe a sprint atual e suas atividades
+ * Página principal que exibe a sprint atual e suas metas
  */
 export default function Dashboard() {
   const [sprint, setSprint] = useState(null);
+  const [sprints, setSprints] = useState([]);
   const [nextSprint, setNextSprint] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,18 +38,20 @@ export default function Dashboard() {
       console.log('Resposta recebida:', response.data);
       
       const data = response.data;
+      setSprints(data);
       
       // Ordenar sprints por data de início
-      const sortedSprints = data.sort((a, b) => 
+      const sortedSprints = [...data].sort((a, b) => 
         new Date(b.dataInicio) - new Date(a.dataInicio)
       );
 
       if (sortedSprints.length > 0) {
-        setSprint(sortedSprints[0]);
+        // Buscar a sprint mais recente com suas metas detalhadas
+        fetchSprintById(sortedSprints[0].id);
+        
         if (sortedSprints.length > 1) {
           setNextSprint(sortedSprints[1]);
         }
-        calculateStats(sortedSprints[0]);
       }
     } catch (error) {
       console.error('Erro ao carregar sprints:', error);
@@ -65,16 +68,43 @@ export default function Dashboard() {
     }
   };
 
-  const calculateStats = (currentSprint) => {
-    if (!currentSprint || !currentSprint.atividades) return;
+  // Função para buscar uma sprint específica pelo ID
+  const fetchSprintById = async (sprintId) => {
+    try {
+      setLoading(true);
+      console.log(`Buscando detalhes da sprint ${sprintId}...`);
+      
+      const response = await api.get(`/sprints/${sprintId}`);
+      console.log('Detalhes da sprint recebida:', response.data);
+      
+      const sprintData = response.data;
+      setSprint(sprintData);
+      calculateStats(sprintData);
+    } catch (error) {
+      console.error(`Erro ao carregar detalhes da sprint ${sprintId}:`, error);
+      setError(`Erro ao carregar detalhes da sprint: ${error.message || 'Erro desconhecido'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const totalActivities = currentSprint.atividades.length;
-    const completedActivities = currentSprint.atividades.filter(a => a.status === 'Concluída').length;
-    const totalHours = currentSprint.atividades.reduce((acc, curr) => {
+  // Função para lidar com a mudança de sprint selecionada
+  const handleSprintChange = (sprintId) => {
+    if (sprintId) {
+      fetchSprintById(sprintId);
+    }
+  };
+
+  const calculateStats = (currentSprint) => {
+    if (!currentSprint || !currentSprint.metas) return;
+
+    const totalMetas = currentSprint.metas.length;
+    const completedMetas = currentSprint.metas.filter(m => m.status === 'Concluída').length;
+    const totalHours = currentSprint.metas.reduce((acc, curr) => {
       const [hours, minutes] = (curr.tempoEstudado || '00:00').split(':').map(Number);
       return acc + hours + (minutes / 60);
     }, 0);
-    const questionsSolved = currentSprint.atividades.filter(a => a.tipo === 'exercicio' && a.status === 'Concluída').length;
+    const questionsSolved = currentSprint.metas.filter(m => m.tipo === 'questoes' && m.status === 'Concluída').length;
     
     // Calcular média diária
     const startDate = new Date(currentSprint.dataInicio);
@@ -83,28 +113,32 @@ export default function Dashboard() {
     const dailyAvg = totalHours / daysDiff;
 
     setStats({
-      performance: `${((completedActivities / totalActivities) * 100).toFixed(2)}%`,
+      performance: `${((completedMetas / totalMetas) * 100).toFixed(2)}%`,
       hoursStudied: `${Math.floor(totalHours)}h${Math.round((totalHours % 1) * 60)}m`,
       questionsSolved,
       dailyAvg: `${Math.floor(dailyAvg)}h${Math.round((dailyAvg % 1) * 60)}m`
     });
   };
 
-  const formatActivities = (atividades) => {
-    if (!atividades) return [];
-    return atividades.map(atividade => ({
-      disciplina: atividade.disciplina,
-      tipo: atividade.tipo,
-      titulo: atividade.titulo,
-      relevancia: '★'.repeat(atividade.relevancia),
-      tempo: atividade.tempoEstudado || '--:--',
-      desempenho: atividade.desempenho ? `${atividade.desempenho}%` : '--',
-      status: atividade.status || 'Pendente',
-      codigo: atividade.id
+  const formatActivities = (metas) => {
+    if (!metas) return [];
+    return metas.map(meta => ({
+      disciplina: meta.disciplina,
+      tipo: meta.tipo,
+      titulo: meta.titulo,
+      relevancia: '★'.repeat(meta.relevancia),
+      tempo: meta.tempoEstudado || '--:--',
+      desempenho: meta.desempenho ? `${meta.desempenho}%` : '--',
+      comando: meta.comandos || '',
+      link: meta.link || '',
+      status: meta.status || 'Pendente',
+      codigo: meta.id,
+      totalQuestoes: meta.totalQuestoes,
+      questoesCorretas: meta.questoesCorretas
     }));
   };
 
-  if (loading) {
+  if (loading && !sprint) {
     return <div className={styles.loading}>Carregando...</div>;
   }
 
@@ -133,8 +167,9 @@ export default function Dashboard() {
         <div className={styles.sprintContainer}>
           <SprintHeader 
             sprintTitle={sprint?.nome}
-            progress={sprint ? (sprint.atividades.filter(a => a.status === 'Concluída').length / sprint.atividades.length) * 100 : 0}
+            progress={sprint ? (sprint.metas.filter(m => m.status === 'Concluída').length / sprint.metas.length) * 100 : 0}
             startDate={sprint?.dataInicio}
+            onSprintChange={handleSprintChange}
           >
             <SprintStats stats={stats} />
           </SprintHeader>
@@ -150,16 +185,22 @@ export default function Dashboard() {
           </div>
         )}
       </div>
-      <div className={styles.activitiesContainer}>
+      <div className={styles.metasContainer}>
         {sprint && (
           <ActivitiesTable 
-            activities={formatActivities(sprint.atividades)}
+            activities={formatActivities(sprint.metas)}
             onFilterChange={(filter) => {
               // Implementar filtro
+            }}
+            onRefresh={() => {
+              if (sprint) {
+                fetchSprintById(sprint.id);
+              }
             }}
           />
         )}
       </div>
+      {loading && <div className={styles.loadingOverlay}>Carregando metas...</div>}
     </div>
   );
 } 

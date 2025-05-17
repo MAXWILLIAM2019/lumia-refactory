@@ -3,24 +3,24 @@ const sequelize = require('../db');
 const Sprint = require('./Sprint');
 
 /**
- * Modelo Atividade
- * Representa uma atividade de estudo dentro de uma sprint
+ * Modelo Meta
+ * Representa uma meta de estudo dentro de uma sprint
  * 
  * Campos:
  * - disciplina: Nome da disciplina (ex: "Matemática")
- * - tipo: Tipo da atividade (teoria, questoes, revisao, reforco)
- * - titulo: Título da atividade
- * - comandos: Comandos ou instruções específicas para a atividade
- * - link: Link de referência para a atividade
+ * - tipo: Tipo da meta (teoria, questoes, revisao, reforco)
+ * - titulo: Título da meta
+ * - comandos: Comandos ou instruções específicas para a meta
+ * - link: Link de referência para a meta
  * - relevancia: Nível de relevância (1-5)
- * - tempoEstudado: Tempo gasto na atividade (formato: "HH:MM")
+ * - tempoEstudado: Tempo gasto na meta (formato: "HH:MM")
  * - desempenho: Pontuação de desempenho (0-100)
- * - status: Status da atividade (Pendente, Em Andamento, Concluída)
+ * - status: Status da meta (Pendente, Em Andamento, Concluída)
  * 
  * Relacionamentos:
- * - belongsTo Sprint: Uma atividade pertence a uma sprint
+ * - belongsTo Sprint: Uma meta pertence a uma sprint
  */
-const Atividade = sequelize.define('Atividade', {
+const Meta = sequelize.define('Meta', {
   disciplina: {
     type: DataTypes.STRING,
     allowNull: false
@@ -60,11 +60,19 @@ const Atividade = sequelize.define('Atividade', {
   status: {
     type: DataTypes.ENUM('Pendente', 'Em Andamento', 'Concluída'),
     defaultValue: 'Pendente'
+  },
+  totalQuestoes: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  questoesCorretas: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
   }
 });
 
 // Definir relacionamento com o alias correto
-Sprint.hasMany(Atividade, { as: 'atividades' });
-Atividade.belongsTo(Sprint);
+Sprint.hasMany(Meta, { as: 'metas' });
+Meta.belongsTo(Sprint);
 
-module.exports = Atividade; 
+module.exports = Meta; 

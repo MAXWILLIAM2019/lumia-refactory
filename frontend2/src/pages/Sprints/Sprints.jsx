@@ -101,26 +101,26 @@ export default function Sprints() {
             </div>
             
             <div className={styles.activities}>
-              <h3>Atividades</h3>
-              {sprint.atividades && sprint.atividades.length > 0 ? (
+              <h3>Metas</h3>
+              {sprint.metas && sprint.metas.length > 0 ? (
                 <ul>
-                  {sprint.atividades.map((atividade) => (
-                    <li key={atividade.id} className={styles.activityItem}>
+                  {sprint.metas.map((meta) => (
+                    <li key={meta.id} className={styles.activityItem}>
                       <div className={styles.activityInfo}>
-                        <span className={styles.discipline}>{atividade.disciplina}</span>
-                        <span className={styles.title}>{atividade.titulo}</span>
+                        <span className={styles.discipline}>{meta.disciplina}</span>
+                        <span className={styles.title}>{meta.titulo}</span>
                       </div>
                       <div className={styles.activityDetails}>
-                        <span className={styles.type}>{atividade.tipo}</span>
+                        <span className={styles.type}>{meta.tipo}</span>
                         <span className={styles.relevance}>
-                          {'★'.repeat(atividade.relevancia || 0)}
+                          {'★'.repeat(meta.relevancia || 0)}
                         </span>
                       </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className={styles.noActivities}>Nenhuma atividade cadastrada para esta sprint.</p>
+                <p className={styles.noActivities}>Nenhuma meta cadastrada para esta sprint.</p>
               )}
             </div>
           </div>

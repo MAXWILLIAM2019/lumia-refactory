@@ -74,14 +74,14 @@ const RegisterSprint = () => {
         title: sprint.nome,
         startDate: sprint.dataInicio,
         endDate: sprint.dataFim,
-        activities: sprint.atividades.map(atividade => ({
-          discipline: atividade.disciplina,
+        activities: sprint.metas.map(meta => ({
+          discipline: meta.disciplina,
           customDiscipline: '',
-          title: atividade.titulo,
-          type: atividade.tipo,
-          relevance: atividade.relevancia,
-          comandos: atividade.comandos || '',
-          link: atividade.link || ''
+          title: meta.titulo,
+          type: meta.tipo,
+          relevance: meta.relevancia,
+          comandos: meta.comandos || '',
+          link: meta.link || ''
         }))
       });
     } catch (error) {
@@ -100,7 +100,7 @@ const RegisterSprint = () => {
         nome: formData.title,
         dataInicio: formData.startDate,
         dataFim: formData.endDate,
-        atividades: formData.activities.map(activity => ({
+        metas: formData.activities.map(activity => ({
           disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
           tipo: activity.type,
           titulo: activity.title,
@@ -278,11 +278,11 @@ const RegisterSprint = () => {
         </div>
 
         <div className={styles.activitiesSection}>
-          <h2>Atividades</h2>
+          <h2>Metas</h2>
           {formData.activities.map((activity, index) => (
             <div key={index} className={styles.activityCard}>
               <div className={styles.activityHeader}>
-                <h3>Atividade {index + 1}</h3>
+                <h3>Meta {index + 1}</h3>
                 {formData.activities.length > 1 && (
                   <button
                     type="button"
@@ -327,7 +327,7 @@ const RegisterSprint = () => {
                   )}
 
                   <div className={styles.formGroup}>
-                    <label>Título da Atividade</label>
+                    <label>Título da Meta</label>
                     <input
                       type="text"
                       value={activity.title}
@@ -407,7 +407,7 @@ const RegisterSprint = () => {
             onClick={addActivity}
             className={styles.addButton}
           >
-            + Adicionar Atividade
+            + Adicionar Meta
           </button>
         </div>
 

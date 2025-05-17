@@ -31,7 +31,7 @@
   padding: 24px;
 }
 
-.activitiesContainer {
+.metasContainer {
   margin-top: 32px;
   background: white;
   border-radius: 8px;
@@ -205,4 +205,19 @@
   .dashboard {
     padding: 16px;
   }
+}
+
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 1.2rem;
+  z-index: 1000;
 } 
