@@ -122,20 +122,36 @@ export default function Dashboard() {
 
   const formatActivities = (metas) => {
     if (!metas) return [];
-    return metas.map(meta => ({
-      disciplina: meta.disciplina,
-      tipo: meta.tipo,
-      titulo: meta.titulo,
-      relevancia: '★'.repeat(meta.relevancia),
-      tempo: meta.tempoEstudado || '--:--',
-      desempenho: meta.desempenho ? `${meta.desempenho}%` : '--',
-      comando: meta.comandos || '',
-      link: meta.link || '',
-      status: meta.status || 'Pendente',
-      codigo: meta.id,
-      totalQuestoes: meta.totalQuestoes,
-      questoesCorretas: meta.questoesCorretas
-    }));
+    return metas.map(meta => {
+      // Formatação do tempo de "HH:MM" para "HHhMMm"
+      let tempoFormatado = '--:--';
+      if (meta.tempoEstudado && meta.tempoEstudado !== '--:--') {
+        const [horas, minutos] = meta.tempoEstudado.split(':');
+        tempoFormatado = `${horas}h${minutos}m`;
+      }
+
+      // Formatação da relevância: sempre 5 estrelas, com as primeiras N pintadas
+      const relevancia = meta.relevancia || 0;
+      const relevanciaFormatada = {
+        total: 5,
+        preenchidas: relevancia
+      };
+
+      return {
+        disciplina: meta.disciplina,
+        tipo: meta.tipo,
+        titulo: meta.titulo,
+        relevancia: relevanciaFormatada,
+        tempo: tempoFormatado,
+        desempenho: meta.desempenho ? `${meta.desempenho}%` : '--',
+        comando: meta.comandos || '',
+        link: meta.link || '',
+        status: meta.status || 'Pendente',
+        codigo: meta.id,
+        totalQuestoes: meta.totalQuestoes,
+        questoesCorretas: meta.questoesCorretas
+      };
+    });
   };
 
   if (loading && !sprint) {

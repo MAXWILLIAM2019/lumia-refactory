@@ -20,6 +20,7 @@ import api from '../../services/api';
 export default function ActivitiesTable({ activities, onFilterChange, onRefresh }) {
   const [activeFilter, setActiveFilter] = useState('all');
   const [tipoFilter, setTipoFilter] = useState('todos');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
@@ -31,15 +32,24 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
     questoesCorretas: 0
   });
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const filters = [
     { id: 'all', label: 'Metas', count: activities.length }
   ];
 
-  // Aplicar filtro por tipo se não for "todos"
-  const filteredActivities = tipoFilter === 'todos' 
-    ? activities 
-    : activities.filter(a => a.tipo === tipoFilter);
+  // Aplicar filtro por tipo e termo de busca
+  const filteredActivities = activities
+    .filter(a => tipoFilter === 'todos' || a.tipo === tipoFilter)
+    .filter(a => {
+      if (!searchTerm.trim()) return true;
+      const term = searchTerm.toLowerCase();
+      return (
+        a.titulo.toLowerCase().includes(term) ||
+        a.disciplina.toLowerCase().includes(term) ||
+        (a.comando && a.comando.toLowerCase().includes(term))
+      );
+    });
 
   const handleFilterClick = (filterId) => {
     setActiveFilter(filterId);
@@ -53,18 +63,29 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
     setShowDropdown(false);
   };
 
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
   const handleRowClick = (activity) => {
     setSelectedActivity(activity);
     
-    // Separar horas e minutos
+    // Extrair horas e minutos do formato HHhMMm
     let horas = '0';
     let minutos = '0';
     
     if (activity.tempo && activity.tempo !== '--:--') {
-      const [h, m] = activity.tempo.split(':');
-      // Remover zeros à esquerda para facilitar a edição
-      horas = String(parseInt(h, 10));
-      minutos = String(parseInt(m, 10));
+      // Verificar se está no novo formato HHhMMm
+      if (activity.tempo.includes('h') && activity.tempo.includes('m')) {
+        const partes = activity.tempo.split(/h|m/);
+        horas = String(parseInt(partes[0], 10));
+        minutos = String(parseInt(partes[1], 10));
+      } else {
+        // Formato anterior HH:MM
+        const [h, m] = activity.tempo.split(':');
+        horas = String(parseInt(h, 10));
+        minutos = String(parseInt(m, 10));
+      }
     }
     
     setFormData({
@@ -81,10 +102,16 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
   const handleModalClose = () => {
     setShowModal(false);
     setSelectedActivity(null);
+    setErrorMessage('');
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
+    // Limpar mensagem de erro quando o usuário altera o tempo
+    if (name === 'horas' || name === 'minutos') {
+      setErrorMessage('');
+    }
     
     // Validação específica para horas e minutos
     if (name === 'horas' || name === 'minutos') {
@@ -149,12 +176,25 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
       ...prev,
       completed: !prev.completed
     }));
+    
+    // Limpar mensagem de erro quando o usuário altera o toggle
+    setErrorMessage('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!selectedActivity) return;
+    
+    // Validação: Se estiver marcado como concluído e o tempo for zero, mostrar erro
+    const tempoTotal = parseInt(formData.horas, 10) * 60 + parseInt(formData.minutos, 10);
+    if (formData.completed && tempoTotal === 0) {
+      setErrorMessage('Não é possível marcar como concluída sem definir o tempo estudado.');
+      return;
+    }
+    
+    // Limpar mensagem de erro se passou pela validação
+    setErrorMessage('');
     
     try {
       setLoading(true);
@@ -163,7 +203,7 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
       const horasFormatadas = String(formData.horas).padStart(2, '0');
       const minutosFormatados = String(formData.minutos).padStart(2, '0');
       
-      // Formatar o tempo no formato HH:MM
+      // Formatar o tempo no formato HH:MM para o backend
       const tempoEstudado = `${horasFormatadas}:${minutosFormatados}`;
       
       // Calcular o desempenho baseado nas questões (se houver)
@@ -196,7 +236,7 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
       
     } catch (error) {
       console.error('Erro ao atualizar meta:', error);
-      alert('Ocorreu um erro ao atualizar a meta. Por favor, tente novamente.');
+      setErrorMessage('Ocorreu um erro ao atualizar a meta. Por favor, tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -208,6 +248,64 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
       return Math.round((formData.questoesCorretas / formData.totalQuestoes) * 100);
     }
     return 0;
+  };
+
+  // Funções para incrementar e decrementar os valores de tempo
+  const handleTimeIncrement = (field) => {
+    if (field === 'horas') {
+      const currentHours = parseInt(formData.horas, 10) || 0;
+      const newHours = currentHours >= 23 ? 23 : currentHours + 1;
+      setFormData(prev => ({ ...prev, horas: String(newHours) }));
+    } else if (field === 'minutos') {
+      const currentMinutes = parseInt(formData.minutos, 10) || 0;
+      const newMinutes = currentMinutes >= 59 ? 59 : currentMinutes + 1;
+      setFormData(prev => ({ ...prev, minutos: String(newMinutes) }));
+    }
+    
+    // Limpar mensagem de erro quando o usuário altera o tempo
+    setErrorMessage('');
+  };
+
+  const handleTimeDecrement = (field) => {
+    if (field === 'horas') {
+      const currentHours = parseInt(formData.horas, 10) || 0;
+      const newHours = currentHours <= 0 ? 0 : currentHours - 1;
+      setFormData(prev => ({ ...prev, horas: String(newHours) }));
+    } else if (field === 'minutos') {
+      const currentMinutes = parseInt(formData.minutos, 10) || 0;
+      const newMinutes = currentMinutes <= 0 ? 0 : currentMinutes - 1;
+      setFormData(prev => ({ ...prev, minutos: String(newMinutes) }));
+    }
+    
+    // Limpar mensagem de erro quando o usuário altera o tempo
+    setErrorMessage('');
+  };
+
+  // Componente para renderizar as estrelas de relevância
+  const RelevanciaStars = ({ relevancia }) => {
+    // Se estiver no formato antigo (string), retornar como está
+    if (typeof relevancia === 'string') return relevancia;
+    
+    // Se não tiver o formato esperado, retornar traço
+    if (!relevancia || !relevancia.hasOwnProperty('total') || !relevancia.hasOwnProperty('preenchidas')) {
+      return '-';
+    }
+    
+    const { total, preenchidas } = relevancia;
+    
+    const stars = [];
+    for (let i = 0; i < total; i++) {
+      stars.push(
+        <span 
+          key={i} 
+          className={i < preenchidas ? styles.starFilled : styles.starEmpty}
+        >
+          ★
+        </span>
+      );
+    }
+    
+    return <div className={styles.starsContainer}>{stars}</div>;
   };
 
   return (
@@ -227,6 +325,15 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
         </div>
         
         <div className={styles.tabsRight}>
+          <div className={styles.searchBox}>
+            <input
+              type="text"
+              placeholder="Pesquisar metas..."
+              value={searchTerm}
+              onChange={handleSearchChange}
+              className={styles.searchInput}
+            />
+          </div>
           <div className={styles.dropdown}>
             <button 
               className={styles.dropdownButton}
@@ -277,7 +384,7 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
               <td>
                 <div className={styles.comandoCell} dangerouslySetInnerHTML={{ __html: a.comando }} />
               </td>
-              <td>{a.relevancia}</td>
+              <td><RelevanciaStars relevancia={a.relevancia} /></td>
               <td>{a.tempo}</td>
               <td>{a.desempenho}</td>
               <td>
@@ -315,11 +422,28 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
             </div>
             
             <div className={styles.modalContent}>
-              <h4>{selectedActivity.titulo}</h4>
-              <p><strong>Disciplina:</strong> {selectedActivity.disciplina}</p>
-              <p><strong>Tipo:</strong> {selectedActivity.tipo}</p>
+              <div className={styles.metaHeader}>
+                <div className={styles.metaInfoGroup}>
+                  <span className={styles.metaInfoLabel}>Disciplina</span>
+                  <span className={styles.metaInfoValue}>{selectedActivity.disciplina}</span>
+                </div>
+                <div className={styles.metaInfoGroup}>
+                  <span className={styles.metaInfoLabel}>Tipo</span>
+                  <span className={styles.metaInfoValue}>{selectedActivity.tipo.charAt(0).toUpperCase() + selectedActivity.tipo.slice(1)}</span>
+                </div>
+                <div className={`${styles.metaInfoGroup} ${styles.titleGroup}`}>
+                  <span className={styles.metaInfoLabel}>Título</span>
+                  <span className={styles.metaInfoValue} title={selectedActivity.titulo}>{selectedActivity.titulo}</span>
+                </div>
+              </div>
               
               <form onSubmit={handleSubmit}>
+                {errorMessage && (
+                  <div className={styles.errorMessage}>
+                    {errorMessage}
+                  </div>
+                )}
+                
                 <div className={styles.toggleContainer}>
                   <label htmlFor="toggleCompleted">Concluir meta</label>
                   <div className={styles.toggleSwitch}>
@@ -340,6 +464,13 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
                   <label>Tempo de Estudo</label>
                   <div className={styles.timeInputContainer}>
                     <div className={styles.timeInputGroup}>
+                      <button 
+                        type="button" 
+                        className={styles.timeControlButton} 
+                        onClick={() => handleTimeIncrement('horas')}
+                      >
+                        +
+                      </button>
                       <input 
                         type="text" 
                         name="horas" 
@@ -350,10 +481,26 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
                         maxLength="2"
                         required
                       />
+                      <button 
+                        type="button" 
+                        className={styles.timeControlButton} 
+                        onClick={() => handleTimeDecrement('horas')}
+                      >
+                        -
+                      </button>
                       <span className={styles.timeLabel}>horas</span>
                     </div>
+                    
                     <span className={styles.timeSeparator}>:</span>
+                    
                     <div className={styles.timeInputGroup}>
+                      <button 
+                        type="button" 
+                        className={styles.timeControlButton} 
+                        onClick={() => handleTimeIncrement('minutos')}
+                      >
+                        +
+                      </button>
                       <input 
                         type="text" 
                         name="minutos" 
@@ -364,6 +511,13 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
                         maxLength="2"
                         required
                       />
+                      <button 
+                        type="button" 
+                        className={styles.timeControlButton} 
+                        onClick={() => handleTimeDecrement('minutos')}
+                      >
+                        -
+                      </button>
                       <span className={styles.timeLabel}>minutos</span>
                     </div>
                   </div>
@@ -400,7 +554,7 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
                     </div>
                     
                     <div className={styles.questionResultGroup}>
-                      <div className={styles.questionResultLabel}>Acertos</div>
+                      <div className={styles.questionResultLabel}>Desempenho</div>
                       <div className={styles.questionResultValue}>
                         {calcularPorcentagemAcerto()}%
                       </div>
