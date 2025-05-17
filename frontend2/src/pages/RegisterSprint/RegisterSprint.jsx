@@ -177,8 +177,10 @@ const RegisterSprint = () => {
     // Se o conteúdo for apenas um parágrafo vazio <p><br></p>, considere-o como vazio
     const isEmpty = editorElement?.innerHTML === '<p><br></p>';
     
-    // Salve o conteúdo apenas se não estiver vazio
-    if (!isEmpty) {
+    // Se estiver vazio, limpe o campo de comandos, caso contrário salve o conteúdo
+    if (isEmpty) {
+      handleActivityChange(currentActivityIndex, 'comandos', '');
+    } else {
       handleActivityChange(currentActivityIndex, 'comandos', editorContent);
     }
     
