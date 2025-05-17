@@ -71,8 +71,7 @@ const Meta = sequelize.define('Meta', {
   }
 });
 
-// Definir relacionamento com o alias correto
-Sprint.hasMany(Meta, { as: 'metas' });
-Meta.belongsTo(Sprint);
+// Nota: A definição de relacionamentos foi movida para o arquivo index.js
+// para evitar definições duplicadas e problemas de referência circular
 
 module.exports = Meta; 

@@ -1,5 +1,6 @@
 const Sprint = require('../models/Sprint');
 const Meta = require('../models/Meta');
+const Plano = require('../models/Plano');
 
 /**
  * Controller de Sprint
@@ -13,6 +14,7 @@ const Meta = require('../models/Meta');
  * @param {string} req.body.nome - Nome da sprint
  * @param {string} req.body.dataInicio - Data de início
  * @param {string} req.body.dataFim - Data de término
+ * @param {number} req.body.planoId - ID do plano associado
  * @param {Array} req.body.metas - Lista de metas da sprint
  * @param {Object} res - Resposta HTTP
  */
@@ -20,13 +22,25 @@ exports.createSprint = async (req, res) => {
   try {
     // Log do header Authorization
     console.log('Authorization header recebido (cadastrar sprint):', req.header('Authorization'));
-    const { nome, dataInicio, dataFim, metas } = req.body;
+    const { nome, dataInicio, dataFim, planoId, metas } = req.body;
+
+    // Verificar se o planoId foi fornecido
+    if (!planoId) {
+      return res.status(400).json({ message: 'É necessário associar a sprint a um plano de estudo' });
+    }
+
+    // Verificar se o plano existe
+    const plano = await Plano.findByPk(planoId);
+    if (!plano) {
+      return res.status(404).json({ message: 'Plano de estudo não encontrado' });
+    }
 
     // Criar a sprint
     const sprint = await Sprint.create({
       nome,
       dataInicio,
-      dataFim
+      dataFim,
+      PlanoId: planoId
     });
 
     // Criar as metas associadas à sprint
@@ -57,10 +71,16 @@ exports.createSprint = async (req, res) => {
 exports.getAllSprints = async (req, res) => {
   try {
     const sprints = await Sprint.findAll({
-      include: [{
-        model: Meta,
-        as: 'metas'
-      }],
+      include: [
+        {
+          model: Meta,
+          as: 'metas'
+        },
+        {
+          model: Plano,
+          attributes: ['id', 'nome', 'cargo', 'duracao']
+        }
+      ],
       order: [['createdAt', 'DESC']]
     });
     res.json(sprints);
@@ -79,10 +99,16 @@ exports.getAllSprints = async (req, res) => {
 exports.getSprintById = async (req, res) => {
   try {
     const sprint = await Sprint.findByPk(req.params.id, {
-      include: [{
-        model: Meta,
-        as: 'metas'
-      }]
+      include: [
+        {
+          model: Meta,
+          as: 'metas'
+        },
+        {
+          model: Plano,
+          attributes: ['id', 'nome', 'cargo', 'duracao']
+        }
+      ]
     });
     
     if (!sprint) {
@@ -99,18 +125,27 @@ exports.getSprintById = async (req, res) => {
 // Atualizar uma sprint e suas metas
 exports.updateSprint = async (req, res) => {
   try {
-    const { nome, dataInicio, dataFim, metas } = req.body;
+    const { nome, dataInicio, dataFim, planoId, metas } = req.body;
     
     const sprint = await Sprint.findByPk(req.params.id);
     if (!sprint) {
       return res.status(404).json({ message: 'Sprint não encontrada' });
     }
 
+    // Verificar se o plano existe, se um ID foi fornecido
+    if (planoId) {
+      const plano = await Plano.findByPk(planoId);
+      if (!plano) {
+        return res.status(404).json({ message: 'Plano de estudo não encontrado' });
+      }
+    }
+
     // Atualizar dados da sprint
     await sprint.update({
       nome,
       dataInicio,
-      dataFim
+      dataFim,
+      PlanoId: planoId || sprint.PlanoId
     });
 
     // Atualizar metas
@@ -133,10 +168,16 @@ exports.updateSprint = async (req, res) => {
 
     // Buscar sprint atualizada com metas
     const sprintAtualizada = await Sprint.findByPk(sprint.id, {
-      include: [{
-        model: Meta,
-        as: 'metas'
-      }]
+      include: [
+        {
+          model: Meta,
+          as: 'metas'
+        },
+        {
+          model: Plano,
+          attributes: ['id', 'nome', 'cargo', 'duracao']
+        }
+      ]
     });
 
     res.json(sprintAtualizada);
@@ -162,7 +203,8 @@ exports.deleteSprint = async (req, res) => {
     await sprint.destroy();
 
     res.json({ message: 'Sprint deletada com sucesso' });
-  } catch (error) {
+  }
+  catch (error) {
     res.status(500).json({ message: error.message });
   }
 }; 

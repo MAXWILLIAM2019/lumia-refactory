@@ -3,6 +3,10 @@ import api from './api';
 export const sprintService = {
   async cadastrarSprint(sprintData) {
     try {
+      if (!sprintData.planoId) {
+        throw new Error('É necessário selecionar um plano de estudo');
+      }
+      
       const response = await api.post('/sprints', sprintData);
       return response.data;
     } catch (error) {

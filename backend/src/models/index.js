@@ -8,6 +8,8 @@ const Plano = require('./Plano');
 const Disciplina = require('./Disciplina');
 const Assunto = require('./Assunto');
 const Aluno = require('./Aluno');
+const Sprint = require('./Sprint');
+const Meta = require('./Meta');
 
 // Garante que os relacionamentos são estabelecidos
 console.log('Configurando relacionamentos entre modelos...');
@@ -37,6 +39,24 @@ Assunto.belongsTo(Disciplina, {
   foreignKey: 'disciplinaId'
 });
 
+// Relacionamento Plano -> Sprint
+console.log('Configurando relacionamento Plano -> Sprint');
+Plano.hasMany(Sprint, {
+  onDelete: 'SET NULL',
+  as: 'sprints'
+});
+Sprint.belongsTo(Plano, {
+  foreignKey: 'PlanoId'
+});
+
+// Relacionamento Sprint -> Meta
+console.log('Configurando relacionamento Sprint -> Meta');
+Sprint.hasMany(Meta, {
+  onDelete: 'CASCADE',
+  as: 'metas'
+});
+Meta.belongsTo(Sprint);
+
 console.log('Relacionamentos configurados com sucesso!');
 
 // Exporte os modelos
@@ -44,5 +64,7 @@ module.exports = {
   Plano,
   Disciplina,
   Assunto,
-  Aluno
+  Aluno,
+  Sprint,
+  Meta
 }; 

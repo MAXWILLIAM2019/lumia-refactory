@@ -9,9 +9,15 @@ const sequelize = require('../db');
  * - nome: Nome da sprint (ex: "Sprint 19")
  * - dataInicio: Data de início da sprint
  * - dataFim: Data de término da sprint
+ * - PlanoId: ID do plano associado a esta sprint
  * 
  * Relacionamentos:
  * - hasMany Meta: Uma sprint pode ter várias metas
+ * - belongsTo Plano: Uma sprint pertence a um plano
+ * 
+ * Nota: Atualmente, cada sprint está associada a um único plano.
+ * Futuramente, pode ser necessário implementar uma relação muitos-para-muitos,
+ * onde uma sprint poderá estar associada a múltiplos planos.
  */
 const Sprint = sequelize.define('Sprint', {
   nome: {

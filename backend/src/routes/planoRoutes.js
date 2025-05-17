@@ -6,7 +6,8 @@ const {
   criarPlano,
   atualizarPlano,
   excluirPlano,
-  testarRota
+  testarRota,
+  buscarDisciplinasPorPlano
 } = require('../controllers/planoController');
 const auth = require('../middleware/auth');
 
@@ -24,6 +25,9 @@ router.post('/', criarPlano);
 
 // Buscar um plano específico
 router.get('/:id', buscarPlanoPorId);
+
+// Buscar disciplinas de um plano específico
+router.get('/:id/disciplinas', buscarDisciplinasPorPlano);
 
 // Atualizar um plano
 router.put('/:id', atualizarPlano);

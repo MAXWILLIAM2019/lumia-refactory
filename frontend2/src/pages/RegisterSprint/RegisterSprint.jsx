@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { sprintService } from '../../services/sprintService';
+import { planoService } from '../../services/planoService';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import styles from './RegisterSprint.module.css';
 
+// Disciplinas predefinidas para fallback (serão usadas apenas se a API falhar)
 const PREDEFINED_DISCIPLINES = [
   'Matemática',
   'Português',
@@ -25,11 +27,19 @@ const RegisterSprint = () => {
   const [showTextEditor, setShowTextEditor] = useState(false);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
   const [editorContent, setEditorContent] = useState('');
+  const [planos, setPlanos] = useState([]);
+  const [loadingPlanos, setLoadingPlanos] = useState(true);
+  const [disciplinasDoPlanoDisciplinas, setDisciplinasDoPlanoDisciplinas] = useState([]);
+  const [loadingDisciplinas, setLoadingDisciplinas] = useState(false);
+  const [assuntosDaDisciplina, setAssuntosDaDisciplina] = useState({});
+  const [showAssuntosDropdown, setShowAssuntosDropdown] = useState({});
+  const [lastLoadedPlanoId, setLastLoadedPlanoId] = useState(null);
   
   const [formData, setFormData] = useState({
     title: '',
     startDate: '',
     endDate: '',
+    planoId: '',
     activities: [{ 
       discipline: '', 
       customDiscipline: '', 
@@ -61,6 +71,141 @@ const RegisterSprint = () => {
     'link', 'image', 'code-block'
   ];
 
+  // Carregar planos ao inicializar o componente
+  useEffect(() => {
+    carregarPlanos();
+  }, []);
+
+  // Carregar disciplinas quando o plano é selecionado
+  useEffect(() => {
+    if (formData.planoId) {
+      // Verificar se o ID do plano mudou para evitar carregamentos desnecessários
+      if (formData.planoId !== lastLoadedPlanoId) {
+        console.log(`Plano alterado de ${lastLoadedPlanoId} para ${formData.planoId}`);
+        
+        // Resetar estados relacionados a disciplinas e assuntos
+        setDisciplinasDoPlanoDisciplinas([]);
+        setAssuntosDaDisciplina({});
+        
+        // Limpar as disciplinas selecionadas nas atividades
+        setFormData(prev => ({
+          ...prev,
+          activities: prev.activities.map(activity => ({
+            ...activity,
+            discipline: '', // Resetar a disciplina
+            customDiscipline: '',
+            // Manter outros campos intactos
+          }))
+        }));
+        
+        // Carregar disciplinas do novo plano
+        carregarDisciplinasDoPlanoDisciplinas(formData.planoId);
+        setLastLoadedPlanoId(formData.planoId);
+      }
+    } else {
+      // Se não há plano selecionado, limpar as disciplinas
+      setDisciplinasDoPlanoDisciplinas([]);
+      setAssuntosDaDisciplina({});
+      setLastLoadedPlanoId(null);
+    }
+  }, [formData.planoId, lastLoadedPlanoId]);
+
+  // Efeito para verificar e buscar assuntos quando uma disciplina é selecionada
+  useEffect(() => {
+    // Criar um objeto para controlar os dropdowns de assunto
+    const novoEstadoDropdown = {};
+    formData.activities.forEach((activity, index) => {
+      novoEstadoDropdown[index] = false;
+    });
+    setShowAssuntosDropdown(novoEstadoDropdown);
+
+    // Verificar para cada atividade se precisamos buscar assuntos
+    formData.activities.forEach((activity, index) => {
+      if (activity.discipline && activity.discipline !== 'custom' && !assuntosDaDisciplina[activity.discipline]) {
+        // Buscar assuntos para esta disciplina
+        buscarAssuntosDaDisciplina(activity.discipline);
+      }
+    });
+  }, [formData.activities]);
+
+  // Carregamento de planos para o dropdown
+  const carregarPlanos = async () => {
+    try {
+      setLoadingPlanos(true);
+      const planosData = await planoService.listarPlanos();
+      console.log('Planos carregados:', planosData);
+      setPlanos(planosData);
+    } catch (error) {
+      console.error('Erro ao carregar planos:', error);
+      alert('Não foi possível carregar os planos de estudo. Verifique sua conexão.');
+    } finally {
+      setLoadingPlanos(false);
+    }
+  };
+
+  // Carregamento de disciplinas do plano selecionado
+  const carregarDisciplinasDoPlanoDisciplinas = async (planoId) => {
+    if (!planoId) return;
+    
+    try {
+      console.log(`Carregando disciplinas do plano ${planoId}...`);
+      setLoadingDisciplinas(true);
+      const disciplinas = await planoService.buscarDisciplinasPorPlano(planoId);
+      console.log(`Disciplinas do plano ${planoId} carregadas:`, disciplinas);
+      
+      // Verificar se o planoId ainda é o mesmo (o usuário pode ter trocado enquanto carregava)
+      if (planoId === formData.planoId) {
+        setDisciplinasDoPlanoDisciplinas(disciplinas);
+      } else {
+        console.log('Plano alterado durante o carregamento. Ignorando resultados.');
+      }
+    } catch (error) {
+      console.error(`Erro ao carregar disciplinas do plano ${planoId}:`, error);
+    } finally {
+      setLoadingDisciplinas(false);
+    }
+  };
+
+  // Buscar assuntos de uma disciplina específica
+  const buscarAssuntosDaDisciplina = (disciplinaNome) => {
+    // Se já temos os assuntos em cache, não precisamos buscar novamente
+    if (assuntosDaDisciplina[disciplinaNome]) {
+      return;
+    }
+
+    // Procurar a disciplina nas disciplinas do plano
+    const disciplina = disciplinasDoPlanoDisciplinas.find(d => d.nome === disciplinaNome);
+    if (disciplina && disciplina.assuntos) {
+      console.log(`Assuntos encontrados para a disciplina ${disciplinaNome}:`, disciplina.assuntos);
+      // Armazenar os assuntos no cache
+      setAssuntosDaDisciplina(prev => ({
+        ...prev,
+        [disciplinaNome]: disciplina.assuntos
+      }));
+    } else {
+      console.log(`Nenhum assunto encontrado para a disciplina ${disciplinaNome}`);
+      // Disciplina não encontrada ou sem assuntos
+      setAssuntosDaDisciplina(prev => ({
+        ...prev,
+        [disciplinaNome]: []
+      }));
+    }
+  };
+
+  // Alternar visibilidade do dropdown de assuntos
+  const toggleAssuntosDropdown = (index) => {
+    setShowAssuntosDropdown(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  // Selecionar um assunto como título da meta
+  const selecionarAssuntoComoTitulo = (index, assuntoNome) => {
+    handleActivityChange(index, 'title', assuntoNome);
+    toggleAssuntosDropdown(index);
+  };
+
   useEffect(() => {
     if (id) {
       loadSprint();
@@ -70,10 +215,21 @@ const RegisterSprint = () => {
   const loadSprint = async () => {
     try {
       const sprint = await sprintService.buscarSprintPorId(id);
+      console.log('Sprint carregada:', sprint);
+      
+      // Primeiro, definimos o planoId para que as disciplinas sejam carregadas
+      const planoId = sprint.PlanoId;
+      setLastLoadedPlanoId(planoId); // Importante: registrar qual plano foi carregado
+      
+      // Carregar as disciplinas do plano
+      await carregarDisciplinasDoPlanoDisciplinas(planoId);
+      
+      // Depois, atualizamos os dados completos do formulário
       setFormData({
         title: sprint.nome,
         startDate: sprint.dataInicio,
         endDate: sprint.dataFim,
+        planoId: planoId,
         activities: sprint.metas.map(meta => ({
           discipline: meta.disciplina,
           customDiscipline: '',
@@ -95,11 +251,17 @@ const RegisterSprint = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (!formData.planoId) {
+      alert('Selecione um plano de estudo para a sprint.');
+      return;
+    }
+    
     try {
       const sprintData = {
         nome: formData.title,
         dataInicio: formData.startDate,
         dataFim: formData.endDate,
+        planoId: formData.planoId,
         metas: formData.activities.map(activity => ({
           disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
           tipo: activity.type,
@@ -121,7 +283,7 @@ const RegisterSprint = () => {
       navigate('/sprints');
     } catch (error) {
       console.error('Erro:', error);
-      alert(id ? 'Erro ao atualizar sprint. Tente novamente.' : 'Erro ao cadastrar sprint. Tente novamente.');
+      alert(error.message || (id ? 'Erro ao atualizar sprint. Tente novamente.' : 'Erro ao cadastrar sprint. Tente novamente.'));
     }
   };
 
@@ -140,6 +302,19 @@ const RegisterSprint = () => {
         i === index ? { ...activity, [field]: value } : activity
       )
     }));
+
+    // Se a disciplina foi alterada, fechar o dropdown de assuntos
+    if (field === 'discipline') {
+      setShowAssuntosDropdown(prev => ({
+        ...prev,
+        [index]: false
+      }));
+      
+      // E buscar assuntos para a nova disciplina se necessário
+      if (value && value !== 'custom' && !assuntosDaDisciplina[value]) {
+        buscarAssuntosDaDisciplina(value);
+      }
+    }
   };
 
   const addActivity = () => {
@@ -155,6 +330,12 @@ const RegisterSprint = () => {
         link: ''
       }]
     }));
+    
+    // Adicionar o estado do dropdown para a nova atividade
+    setShowAssuntosDropdown(prev => ({
+      ...prev,
+      [formData.activities.length]: false
+    }));
   };
 
   const removeActivity = (index) => {
@@ -162,6 +343,23 @@ const RegisterSprint = () => {
       ...prev,
       activities: prev.activities.filter((_, i) => i !== index)
     }));
+    
+    // Remover o estado do dropdown para a atividade removida
+    const newShowAssuntosDropdown = { ...showAssuntosDropdown };
+    delete newShowAssuntosDropdown[index];
+    
+    // Reorganizar os índices para os dropdowns restantes
+    const updatedDropdownState = {};
+    Object.keys(newShowAssuntosDropdown).forEach((key, i) => {
+      const keyNum = Number(key);
+      if (keyNum > index) {
+        updatedDropdownState[keyNum - 1] = newShowAssuntosDropdown[keyNum];
+      } else {
+        updatedDropdownState[keyNum] = newShowAssuntosDropdown[keyNum];
+      }
+    });
+    
+    setShowAssuntosDropdown(updatedDropdownState);
   };
 
   const openTextEditor = (index, initialContent) => {
@@ -187,8 +385,34 @@ const RegisterSprint = () => {
     setShowTextEditor(false);
   };
 
-  if (loading) {
-    return <div className={styles.loading}>Carregando sprint...</div>;
+  // Obtém as disciplinas disponíveis para seleção
+  const getDisciplinasDisponiveis = () => {
+    // Se temos disciplinas do plano, usamos elas
+    if (disciplinasDoPlanoDisciplinas.length > 0) {
+      return disciplinasDoPlanoDisciplinas.map(d => d.nome);
+    }
+    
+    // Caso contrário, usamos as disciplinas predefinidas como fallback
+    return PREDEFINED_DISCIPLINES;
+  };
+  
+  // Verificar se uma disciplina tem assuntos disponíveis
+  const temAssuntosDisponiveis = (disciplinaNome) => {
+    return disciplinaNome && 
+           disciplinaNome !== 'custom' && 
+           assuntosDaDisciplina[disciplinaNome] && 
+           assuntosDaDisciplina[disciplinaNome].length > 0;
+  };
+
+  // Depuração: mostrar estados atuais
+  console.log('Estado atual:');
+  console.log('- Plano ID:', formData.planoId);
+  console.log('- Último plano carregado:', lastLoadedPlanoId);
+  console.log('- Disciplinas carregadas:', disciplinasDoPlanoDisciplinas.map(d => d.nome));
+  console.log('- Assuntos carregados para disciplinas:', Object.keys(assuntosDaDisciplina));
+
+  if (loading || loadingPlanos) {
+    return <div className={styles.loading}>Carregando...</div>;
   }
 
   return (
@@ -236,6 +460,29 @@ const RegisterSprint = () => {
       <h1>{id ? 'Editar Sprint' : 'Nova Sprint'}</h1>
       
       <form onSubmit={handleSubmit} className={styles.form}>
+        {/* Seletor de plano de estudo */}
+        <div className={styles.formGroup}>
+          <label htmlFor="planoId">Plano de Estudo</label>
+          <select
+            id="planoId"
+            name="planoId"
+            value={formData.planoId}
+            onChange={handleChange}
+            required
+            className={styles.selectField}
+          >
+            <option value="">Selecione um plano de estudo</option>
+            {planos.map(plano => (
+              <option key={plano.id} value={plano.id}>
+                {plano.nome} - {plano.cargo}
+              </option>
+            ))}
+          </select>
+          <p className={styles.fieldHelp}>
+            * Selecione o plano de estudo que esta sprint irá seguir
+          </p>
+        </div>
+
         <div className={styles.formGroup}>
           <label htmlFor="title">Nome da Sprint</label>
           <input
@@ -302,15 +549,31 @@ const RegisterSprint = () => {
                       value={activity.discipline}
                       onChange={(e) => handleActivityChange(index, 'discipline', e.target.value)}
                       required
+                      disabled={loadingDisciplinas || !formData.planoId}
                     >
                       <option value="">Selecione uma disciplina</option>
-                      {PREDEFINED_DISCIPLINES.map(discipline => (
+                      {getDisciplinasDisponiveis().map(discipline => (
                         <option key={discipline} value={discipline}>
                           {discipline}
                         </option>
                       ))}
                       <option value="custom">Outra</option>
                     </select>
+                    {!formData.planoId ? (
+                      <p className={styles.fieldHelp}>
+                        Selecione um plano de estudo primeiro
+                      </p>
+                    ) : loadingDisciplinas ? (
+                      <p className={styles.fieldHelp}>Carregando disciplinas do plano...</p>
+                    ) : disciplinasDoPlanoDisciplinas.length > 0 ? (
+                      <p className={styles.fieldHelp}>
+                        {disciplinasDoPlanoDisciplinas.length} disciplina(s) disponíveis neste plano
+                      </p>
+                    ) : (
+                      <p className={styles.fieldHelp}>
+                        Nenhuma disciplina encontrada para este plano
+                      </p>
+                    )}
                   </div>
 
                   {activity.discipline === 'custom' && (
@@ -328,12 +591,53 @@ const RegisterSprint = () => {
 
                   <div className={styles.formGroup}>
                     <label>Título da Meta</label>
-                    <input
-                      type="text"
-                      value={activity.title}
-                      onChange={(e) => handleActivityChange(index, 'title', e.target.value)}
-                      required
-                    />
+                    <div className={styles.inputWithDropdown}>
+                      <input
+                        type="text"
+                        value={activity.title}
+                        onChange={(e) => handleActivityChange(index, 'title', e.target.value)}
+                        required
+                      />
+                      {temAssuntosDisponiveis(activity.discipline) && (
+                        <button
+                          type="button"
+                          className={styles.assuntosButton}
+                          onClick={() => toggleAssuntosDropdown(index)}
+                          title="Selecionar um assunto como título"
+                        >
+                          <span>▼</span>
+                        </button>
+                      )}
+                      {showAssuntosDropdown[index] && temAssuntosDisponiveis(activity.discipline) && (
+                        <div className={styles.assuntosDropdown}>
+                          <div className={styles.assuntosHeader}>
+                            <span>Selecione um assunto:</span>
+                            <button 
+                              type="button" 
+                              onClick={() => toggleAssuntosDropdown(index)}
+                              className={styles.closeDropdownButton}
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <ul>
+                            {assuntosDaDisciplina[activity.discipline].map((assunto, assuntoIndex) => (
+                              <li 
+                                key={assuntoIndex} 
+                                onClick={() => selecionarAssuntoComoTitulo(index, assunto.nome)}
+                              >
+                                {assunto.nome}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                    {temAssuntosDisponiveis(activity.discipline) && (
+                      <p className={styles.fieldHelp}>
+                        Clique na seta para selecionar um assunto como título
+                      </p>
+                    )}
                   </div>
 
                   <div className={styles.formGroup}>
@@ -406,9 +710,15 @@ const RegisterSprint = () => {
             type="button"
             onClick={addActivity}
             className={styles.addButton}
+            disabled={!formData.planoId}
           >
             + Adicionar Meta
           </button>
+          {!formData.planoId && (
+            <p className={styles.fieldHelp}>
+              Selecione um plano de estudo para adicionar metas
+            </p>
+          )}
         </div>
 
         <div className={styles.buttonGroup}>

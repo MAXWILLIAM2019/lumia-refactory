@@ -385,11 +385,42 @@ const testarRota = (req, res) => {
   res.json({ message: 'Rota de planos funcionando!' });
 };
 
+// Buscar disciplinas de um plano específico
+const buscarDisciplinasPorPlano = async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`Buscando disciplinas do plano ${id}`);
+
+    // Verifica se o plano existe
+    const plano = await Plano.findByPk(id);
+    if (!plano) {
+      return res.status(404).json({ error: 'Plano não encontrado' });
+    }
+
+    // Busca as disciplinas associadas ao plano
+    const disciplinas = await plano.getDisciplinas({
+      include: [
+        {
+          model: Assunto,
+          as: 'assuntos'
+        }
+      ]
+    });
+
+    console.log(`Encontradas ${disciplinas.length} disciplinas para o plano ${id}`);
+    res.json(disciplinas);
+  } catch (error) {
+    console.error('Erro ao buscar disciplinas do plano:', error);
+    res.status(500).json({ error: 'Erro ao buscar disciplinas do plano', details: error.message });
+  }
+};
+
 module.exports = {
   listarPlanos,
   buscarPlanoPorId,
   criarPlano,
   atualizarPlano,
   excluirPlano,
-  testarRota
+  testarRota,
+  buscarDisciplinasPorPlano
 }; 

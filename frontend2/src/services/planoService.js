@@ -111,5 +111,24 @@ export const planoService = {
       console.error('Erro ao excluir plano:', error);
       throw error;
     }
+  },
+  
+  async buscarDisciplinasPorPlano(planoId) {
+    try {
+      if (!planoId) {
+        console.log('ID do plano não fornecido, retornando array vazio');
+        return [];
+      }
+      
+      console.log('Buscando disciplinas do plano ID:', planoId);
+      const response = await api.get(`/planos/${planoId}/disciplinas`);
+      console.log('Disciplinas encontradas:', response.data);
+      return response.data || [];
+    } catch (error) {
+      console.error('Erro ao buscar disciplinas do plano:', error);
+      // Retornamos um array vazio em caso de erro em vez de lançar exceção
+      // para não interromper o fluxo da aplicação
+      return [];
+    }
   }
 }; 

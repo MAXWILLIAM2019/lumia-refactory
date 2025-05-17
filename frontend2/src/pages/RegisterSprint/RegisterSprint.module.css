@@ -891,4 +891,161 @@
   .textEditorContent :global(.ql-editor) {
     min-height: 450px;
   }
+}
+
+/* Adicionando os estilos para o seletor de planos */
+
+.selectField {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #3b82f6;
+  background-color: #1e293b;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.selectField:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+}
+
+.fieldHelp {
+  font-size: 0.8rem;
+  color: #a1a1aa;
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+/* Adicionando os estilos para o dropdown de assuntos */
+
+.inputWithDropdown {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.inputWithDropdown input {
+  flex: 1;
+  width: calc(100% - 40px);
+}
+
+.assuntosButton {
+  width: 40px;
+  height: 100%;
+  background-color: #3b82f6;
+  border: none;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.assuntosButton:hover {
+  background-color: #2563eb;
+}
+
+.assuntosButton span {
+  font-size: 12px;
+}
+
+.assuntosDropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 200px;
+  background-color: #1e293b;
+  border: 1px solid #3b82f6;
+  border-radius: 8px;
+  z-index: 10;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+}
+
+.assuntosHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid #3b82f6;
+  background-color: #2a3a56;
+  color: white;
+  font-weight: 500;
+}
+
+.closeDropdownButton {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.closeDropdownButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.assuntosDropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.assuntosDropdown li {
+  padding: 8px 12px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.assuntosDropdown li:hover {
+  background-color: #2a3a56;
+}
+
+/* Estilos para modo de edição */
+.container.editMode .assuntosButton {
+  background-color: #3b82f6;
+}
+
+.container.editMode .assuntosButton:hover {
+  background-color: #2563eb;
+}
+
+.container.editMode .assuntosDropdown {
+  background-color: white;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.container.editMode .assuntosHeader {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.container.editMode .closeDropdownButton {
+  color: #374151;
+}
+
+.container.editMode .assuntosDropdown li {
+  color: #374151;
+}
+
+.container.editMode .assuntosDropdown li:hover {
+  background-color: #f3f4f6;
 } 

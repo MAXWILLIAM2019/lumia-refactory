@@ -90,6 +90,11 @@ export default function Sprints() {
                 <span className={styles.date}>
                   {new Date(sprint.dataInicio).toLocaleDateString()} - {new Date(sprint.dataFim).toLocaleDateString()}
                 </span>
+                {sprint.Plano && (
+                  <span className={styles.planBadge}>
+                    Plano: {sprint.Plano.nome}
+                  </span>
+                )}
               </div>
               <button 
                 className={styles.editButton}
