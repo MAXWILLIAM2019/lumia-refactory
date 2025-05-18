@@ -15,6 +15,7 @@ Este é o frontend do Sistema de Mentoria, desenvolvido com React + Vite.
 - [Flowbite](https://flowbite.com/) - Componentes UI baseados em Tailwind
 - [React Icons](https://react-icons.github.io/react-icons/) - Biblioteca de ícones
 - [React Quill](https://github.com/zenoamaro/react-quill) - Editor de texto rico
+- [React Paginate](https://github.com/AdeleD/react-paginate) - Componente de paginação
 
 ### Estado e Gerenciamento
 - [React Context](https://reactjs.org/docs/context.html) - Gerenciamento de estado global
@@ -423,6 +424,180 @@ Para uma experiência visual consistente, adicione os seguintes estilos:
 
 .dragHandle:active {
   cursor: grabbing;
+}
+```
+
+## Sistema de Paginação
+
+O sistema utiliza a biblioteca React Paginate para implementar paginação eficiente e amigável ao usuário em listagens com grande volume de dados.
+
+### Instalação
+
+```bash
+npm install react-paginate --save
+```
+
+### Implementação
+
+A paginação foi inicialmente implementada na tela de listagem de alunos (RegisterStudent.jsx) e pode ser facilmente estendida para outras listagens no sistema.
+
+#### Configuração Básica
+
+```jsx
+import ReactPaginate from 'react-paginate';
+
+// Estados para controlar a paginação
+const [currentPage, setCurrentPage] = useState(0);
+const itemsPerPage = 50; // Número de itens por página
+
+// Função para mudar de página
+const handlePageChange = (selectedItem) => {
+  setCurrentPage(selectedItem.selected);
+  // Rolar de volta ao topo da lista
+  if (document.querySelector(`.${styles.tableContainer}`)) {
+    document.querySelector(`.${styles.tableContainer}`).scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
+// Calcular os dados a exibir na página atual
+const pageCount = Math.ceil(filteredItems.length / itemsPerPage);
+const displayedItems = filteredItems.slice(
+  currentPage * itemsPerPage,
+  (currentPage + 1) * itemsPerPage
+);
+```
+
+#### Renderização do Componente
+
+```jsx
+{pageCount > 1 && (
+  <div className={styles.paginationContainer}>
+    <ReactPaginate
+      previousLabel={"← Anterior"}
+      nextLabel={"Próximo →"}
+      pageCount={pageCount}
+      onPageChange={handlePageChange}
+      containerClassName={styles.pagination}
+      previousLinkClassName={styles.paginationLink}
+      nextLinkClassName={styles.paginationLink}
+      disabledClassName={styles.paginationDisabled}
+      activeClassName={styles.paginationActive}
+      pageRangeDisplayed={3}
+      marginPagesDisplayed={1}
+      breakLabel={"..."}
+      breakClassName={styles.paginationBreak}
+      forcePage={currentPage}
+    />
+    <div className={styles.paginationInfo}>
+      Mostrando {filteredItems.length > 0 ? currentPage * itemsPerPage + 1 : 0} a {Math.min((currentPage + 1) * itemsPerPage, filteredItems.length)} de {filteredItems.length} itens
+    </div>
+  </div>
+)}
+```
+
+#### Estilos CSS
+
+```css
+.paginationContainer {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.pagination {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.pagination li {
+  display: inline-flex;
+}
+
+.pagination li a {
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #23283a;
+  border: 1px solid #3b82f6;
+  text-decoration: none;
+  user-select: none;
+}
+
+.pagination li a:hover {
+  background: #3b82f6;
+}
+
+.paginationActive a {
+  background: #3b82f6 !important;
+  border-color: #1d4ed8 !important;
+  font-weight: 600;
+}
+
+.paginationDisabled a {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+
+.paginationBreak a {
+  background: transparent !important;
+  border: none !important;
+  color: #9ca3af !important;
+  font-weight: bold;
+}
+```
+
+### Integração com Busca
+
+A paginação funciona perfeitamente com recursos de busca e filtro:
+
+```jsx
+// Reset da página quando o termo de busca muda
+useEffect(() => {
+  setCurrentPage(0);
+}, [searchTerm]);
+
+// Filtragem dos dados
+const filteredItems = items.filter(item => {
+  const termLower = searchTerm.toLowerCase();
+  return item.name.toLowerCase().includes(termLower);
+});
+```
+
+### Considerações de Desempenho
+
+- Esta implementação realiza paginação no frontend, o que é ideal para conjuntos de dados menores.
+- Para conjuntos muito grandes de dados, considere implementar paginação no backend, onde apenas os dados da página atual são carregados por vez.
+
+### Acessibilidade
+
+O componente React Paginate oferece suporte a recursos de acessibilidade, incluindo:
+- Navegação por teclado
+- ARIA labels
+- Contraste de cores adequado (com nosso tema personalizado)
+
+### Responsividade
+
+Os estilos CSS implementados garantem que a paginação funcione bem em dispositivos móveis:
+
+```css
+@media (max-width: 768px) {
+  .pagination {
+    gap: 4px;
+  }
+  
+  .pagination li a {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+  }
 }
 ```
 

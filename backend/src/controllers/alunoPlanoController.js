@@ -3,6 +3,9 @@
  * 
  * Este módulo gerencia todas as operações relacionadas às associações entre alunos e planos,
  * incluindo atribuição de planos a alunos, atualização de progresso e consultas.
+ * 
+ * NOTA: Implementa relacionamento 1:1 (um aluno tem um plano) com possibilidade
+ * de expansão futura para relacionamento N:N.
  */
 const AlunoPlano = require('../models/AlunoPlano');
 const Aluno = require('../models/Aluno');
@@ -43,11 +46,10 @@ exports.atribuirPlanoAluno = async (req, res) => {
       return res.status(404).json({ message: 'Plano não encontrado' });
     }
     
-    // Verificar se já existe uma associação ativa
-    const associacaoExistente = await AlunoPlano.findOne({
+    // Verificar se o aluno já tem algum plano ativo (para relação 1:1)
+    const planoExistente = await AlunoPlano.findOne({
       where: {
-        alunoId,
-        planoId,
+        AlunoId: alunoId,
         [Op.or]: [
           { status: 'não iniciado' },
           { status: 'em andamento' }
@@ -56,11 +58,15 @@ exports.atribuirPlanoAluno = async (req, res) => {
       transaction
     });
     
-    if (associacaoExistente) {
-      await transaction.rollback();
-      return res.status(400).json({ 
-        message: 'Este aluno já está associado a este plano e ainda não concluiu' 
-      });
+    if (planoExistente) {
+      // Para relação 1:1, inativar o plano existente antes de criar o novo
+      await planoExistente.update({ 
+        status: 'cancelado',
+        observacoes: (planoExistente.observacoes || '') + 
+                    '\nPlano substituído por um novo em ' + new Date().toISOString().split('T')[0]
+      }, { transaction });
+      
+      console.log(`Aluno ${alunoId} já tinha um plano ativo que foi cancelado.`);
     }
     
     // Calcular a data prevista de término se não for fornecida
@@ -73,8 +79,8 @@ exports.atribuirPlanoAluno = async (req, res) => {
     
     // Criar a associação
     const alunoPlano = await AlunoPlano.create({
-      alunoId,
-      planoId,
+      AlunoId: alunoId,
+      PlanoId: planoId,
       dataInicio: dataInicio || new Date(),
       dataPrevisaoTermino: dataFinal,
       status: status || 'não iniciado',
@@ -218,15 +224,40 @@ exports.removerAssociacao = async (req, res) => {
  */
 exports.listarAssociacoes = async (req, res) => {
   try {
+    console.log('Buscando associações aluno-plano...');
     const associacoes = await AlunoPlano.findAll({
       include: [
-        { model: Aluno, as: 'Aluno' },
-        { model: Plano, as: 'Plano' }
+        { 
+          model: Aluno,
+          as: 'Aluno',
+          attributes: ['id', 'nome', 'email', 'cpf']
+        },
+        { 
+          model: Plano,
+          as: 'Plano',
+          attributes: ['id', 'nome', 'cargo', 'duracao']
+        }
       ],
       order: [['createdAt', 'DESC']]
     });
     
-    res.status(200).json(associacoes);
+    // Formatar a resposta para ser mais fácil de usar no frontend
+    const associacoesFormatadas = associacoes.map(assoc => ({
+      id: assoc.id,
+      alunoId: assoc.AlunoId,
+      planoId: assoc.PlanoId,
+      dataInicio: assoc.dataInicio,
+      dataPrevisaoTermino: assoc.dataPrevisaoTermino,
+      dataConclusao: assoc.dataConclusao,
+      progresso: assoc.progresso,
+      status: assoc.status,
+      observacoes: assoc.observacoes,
+      aluno: assoc.Aluno,
+      plano: assoc.Plano
+    }));
+    
+    console.log(`${associacoesFormatadas.length} associações encontradas.`);
+    res.status(200).json(associacoesFormatadas);
   } catch (error) {
     console.error('Erro ao listar associações aluno-plano:', error);
     res.status(500).json({ 
@@ -248,6 +279,7 @@ exports.listarAssociacoes = async (req, res) => {
 exports.buscarPlanosPorAluno = async (req, res) => {
   try {
     const { alunoId } = req.params;
+    console.log(`Buscando planos para o aluno ID: ${alunoId}`);
     
     // Verificar se o aluno existe
     const aluno = await Aluno.findByPk(alunoId);
@@ -257,12 +289,31 @@ exports.buscarPlanosPorAluno = async (req, res) => {
     
     // Buscar as associações do aluno
     const associacoes = await AlunoPlano.findAll({
-      where: { alunoId },
-      include: [{ model: Plano, as: 'Plano' }],
+      where: { AlunoId: alunoId },
+      include: [{ 
+        model: Plano, 
+        as: 'Plano',
+        attributes: ['id', 'nome', 'cargo', 'duracao', 'descricao']
+      }],
       order: [['createdAt', 'DESC']]
     });
     
-    res.status(200).json(associacoes);
+    // Formatar a resposta
+    const planosFormatados = associacoes.map(assoc => ({
+      id: assoc.id,
+      alunoId: assoc.AlunoId,
+      planoId: assoc.PlanoId,
+      dataInicio: assoc.dataInicio,
+      dataPrevisaoTermino: assoc.dataPrevisaoTermino,
+      dataConclusao: assoc.dataConclusao,
+      progresso: assoc.progresso,
+      status: assoc.status,
+      observacoes: assoc.observacoes,
+      plano: assoc.Plano
+    }));
+    
+    console.log(`Encontradas ${planosFormatados.length} associações para o aluno ${alunoId}`);
+    res.status(200).json(planosFormatados);
   } catch (error) {
     console.error('Erro ao buscar planos do aluno:', error);
     res.status(500).json({ 
@@ -284,6 +335,7 @@ exports.buscarPlanosPorAluno = async (req, res) => {
 exports.buscarAlunosPorPlano = async (req, res) => {
   try {
     const { planoId } = req.params;
+    console.log(`Buscando alunos para o plano ID: ${planoId}`);
     
     // Verificar se o plano existe
     const plano = await Plano.findByPk(planoId);
@@ -291,13 +343,14 @@ exports.buscarAlunosPorPlano = async (req, res) => {
       return res.status(404).json({ message: 'Plano não encontrado' });
     }
     
-    // Buscar as associações do plano
+    // Buscar as associações do plano - Use PlanoId em vez de planoId
     const associacoes = await AlunoPlano.findAll({
-      where: { planoId },
+      where: { PlanoId: planoId },
       include: [{ model: Aluno, as: 'Aluno' }],
       order: [['progresso', 'DESC']]
     });
     
+    console.log(`Encontrados ${associacoes.length} alunos para o plano ${planoId}`);
     res.status(200).json(associacoes);
   } catch (error) {
     console.error('Erro ao buscar alunos do plano:', error);

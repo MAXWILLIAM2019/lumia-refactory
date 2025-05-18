@@ -3,6 +3,9 @@
  * 
  * Responsável por todas as operações relacionadas às associações,
  * como atribuir planos a alunos, atualizar progresso, etc.
+ * 
+ * NOTA: Atualmente implementado como relacionamento 1:1 simplificado
+ * (um aluno tem um plano), mas preparado para expansão futura para N:N.
  */
 import api from './api';
 
@@ -18,9 +21,11 @@ import api from './api';
  */
 const atribuirPlano = async (dados) => {
   try {
+    console.log('Atribuindo plano ao aluno:', dados);
     const response = await api.post('/aluno-plano', dados);
     return response.data;
   } catch (error) {
+    console.error('Erro ao atribuir plano:', error);
     throw new Error(error.response?.data?.message || 'Erro ao atribuir plano ao aluno');
   }
 };
@@ -60,10 +65,52 @@ const removerAssociacao = async (id) => {
  */
 const listarAssociacoes = async () => {
   try {
+    console.log('Chamando API para listar associações...');
     const response = await api.get('/aluno-plano');
+    console.log('Resposta da API para associações:', response);
+    
+    // Verifica e formata os dados recebidos para garantir consistência
+    if (Array.isArray(response.data)) {
+      return response.data.map(assoc => {
+        // Garante que os campos importantes estejam acessíveis de forma consistente
+        return {
+          id: assoc.id,
+          alunoId: assoc.AlunoId || assoc.alunoId,
+          planoId: assoc.PlanoId || assoc.planoId,
+          status: assoc.status || 'não definido',
+          progresso: assoc.progresso || 0,
+          dataInicio: assoc.dataInicio,
+          // Formata os dados do plano de forma consistente
+          plano: assoc.Plano || assoc.plano || {}
+        };
+      });
+    }
+    
     return response.data;
   } catch (error) {
+    console.error('Erro no serviço alunoPlanoService.listarAssociacoes:', error);
     throw new Error(error.response?.data?.message || 'Erro ao listar associações');
+  }
+};
+
+/**
+ * Busca o plano associado a um aluno (relação 1:1 simplificada)
+ * @param {number} alunoId - ID do aluno
+ * @returns {Promise} Promessa com o plano do aluno (primeiro/único plano)
+ */
+const buscarPlanoPorAluno = async (alunoId) => {
+  try {
+    const response = await api.get(`/aluno-plano/aluno/${alunoId}`);
+    
+    // Para relação 1:1, retorna apenas o primeiro plano encontrado
+    if (Array.isArray(response.data) && response.data.length > 0) {
+      return response.data[0];
+    }
+    
+    return null; // Retorna null se não houver plano
+  } catch (error) {
+    console.error('Erro ao buscar plano do aluno:', error);
+    throw new Error(error.response?.data?.message || 'Erro ao buscar plano do aluno');
   }
 };
 
@@ -71,9 +118,11 @@ const listarAssociacoes = async () => {
  * Busca os planos associados a um aluno
  * @param {number} alunoId - ID do aluno
  * @returns {Promise} Promessa com a lista de planos do aluno
+ * @deprecated Use buscarPlanoPorAluno() para relação 1:1
  */
 const buscarPlanosPorAluno = async (alunoId) => {
   try {
+    console.log(`Buscando planos para o aluno ID: ${alunoId}`);
     const response = await api.get(`/aluno-plano/aluno/${alunoId}`);
     return response.data;
   } catch (error) {
@@ -100,6 +149,7 @@ export const alunoPlanoService = {
   atualizarProgresso,
   removerAssociacao,
   listarAssociacoes,
-  buscarPlanosPorAluno,
+  buscarPlanoPorAluno,   // Nova função para relação 1:1
+  buscarPlanosPorAluno,  // Mantida para compatibilidade
   buscarAlunosPorPlano
 }; 

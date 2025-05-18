@@ -139,6 +139,131 @@ Esta funcionalidade pode ser estendida para outras áreas do sistema:
 - Flexibilidade para adaptar a ordem conforme necessário
 - Feedback visual imediato das alterações
 
+## Sistema de Paginação
+
+O sistema implementa paginação em listagens com grande volume de dados, utilizando a biblioteca react-paginate.
+
+### Finalidade
+
+A paginação melhora significativamente a experiência do usuário e o desempenho da aplicação ao dividir grandes conjuntos de dados em páginas menores e mais gerenciáveis. Isso é especialmente importante em telas de listagem que podem conter centenas ou milhares de registros.
+
+### Funcionalidades Implementadas
+
+- Divisão de dados em páginas de tamanho configurável
+- Navegação intuitiva entre páginas
+- Indicação visual da página atual
+- Compatibilidade com recursos de busca e filtragem
+- Interface responsiva adaptável a diferentes tamanhos de tela
+
+### Biblioteca Utilizada
+
+```bash
+npm install react-paginate --save
+```
+
+### Implementação Técnica
+
+A paginação foi implementada inicialmente na tela de listagem de alunos e pode ser facilmente estendida para outras telas.
+
+- **Componente**: Utiliza o `ReactPaginate` para renderizar os controles de navegação
+- **Estado**: Gerencia a página atual e calcula os itens a serem exibidos
+- **Integração**: Funciona tanto com dados carregados diretamente do backend quanto com dados filtrados no frontend
+
+### Como Utilizar em Novos Componentes
+
+1. **Importar a biblioteca:**
+   ```jsx
+   import ReactPaginate from 'react-paginate';
+   ```
+
+2. **Configurar os estados necessários:**
+   ```jsx
+   const [currentPage, setCurrentPage] = useState(0);
+   const itemsPerPage = 50; // Ajuste conforme necessário
+   ```
+
+3. **Implementar a função de mudança de página:**
+   ```jsx
+   const handlePageChange = (selectedItem) => {
+     setCurrentPage(selectedItem.selected);
+     // Opcionalmente, role para o topo da lista
+     if (document.querySelector('.listContainer')) {
+       document.querySelector('.listContainer').scrollIntoView({ behavior: 'smooth' });
+     }
+   };
+   ```
+
+4. **Calcular os dados a serem exibidos:**
+   ```jsx
+   const pageCount = Math.ceil(totalItems.length / itemsPerPage);
+   const displayedItems = totalItems.slice(
+     currentPage * itemsPerPage,
+     (currentPage + 1) * itemsPerPage
+   );
+   ```
+
+5. **Renderizar o componente de paginação:**
+   ```jsx
+   <ReactPaginate
+     previousLabel={"← Anterior"}
+     nextLabel={"Próximo →"}
+     pageCount={pageCount}
+     onPageChange={handlePageChange}
+     containerClassName={styles.pagination}
+     previousLinkClassName={styles.paginationLink}
+     nextLinkClassName={styles.paginationLink}
+     disabledClassName={styles.paginationDisabled}
+     activeClassName={styles.paginationActive}
+     pageRangeDisplayed={3}
+     marginPagesDisplayed={1}
+     breakLabel={"..."}
+     forcePage={currentPage}
+   />
+   ```
+
+6. **Adicionar estilos CSS:**
+   ```css
+   .pagination {
+     display: flex;
+     list-style: none;
+     padding: 0;
+     margin: 20px 0;
+     justify-content: center;
+     gap: 8px;
+   }
+   
+   .pagination li a {
+     padding: 8px 12px;
+     border-radius: 6px;
+     cursor: pointer;
+     background: #23283a;
+     border: 1px solid #3b82f6;
+     color: white;
+     transition: all 0.2s;
+   }
+   
+   .paginationActive a {
+     background: #3b82f6;
+     border-color: #1d4ed8;
+     font-weight: 600;
+   }
+   ```
+
+### Benefícios
+
+- Melhora o desempenho ao renderizar apenas uma parte dos dados
+- Reduz o tempo de carregamento inicial
+- Proporciona uma interface mais limpa e organizada
+- Facilita a navegação em grandes conjuntos de dados
+- Compatível com funcionalidades de busca e filtragem
+
+### Possíveis Melhorias Futuras
+
+- Implementação de paginação no backend para conjuntos de dados muito grandes
+- Opção para o usuário escolher o número de itens por página
+- Navegação direta para uma página específica
+- Persistência da página atual durante a navegação
+
 ## Documentação Adicional
 
 Para mais detalhes sobre cada parte do sistema, consulte:

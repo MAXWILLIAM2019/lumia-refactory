@@ -3,6 +3,15 @@
  * 
  * Representa a associação entre um aluno e um plano de estudos.
  * Armazena informações sobre o progresso do aluno no plano.
+ * 
+ * NOTA DE IMPLEMENTAÇÃO:
+ * Embora este modelo use uma estrutura many-to-many (belongsToMany), 
+ * a lógica de negócio atual implementa uma relação 1:1, onde:
+ * - Um aluno tem no máximo um plano ativo
+ * - Um plano pode estar associado a vários alunos
+ * 
+ * Para expansão futura para N:N completo, basta remover as validações
+ * que limitam um aluno a ter apenas um plano ativo no controlador.
  */
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
@@ -68,5 +77,9 @@ const AlunoPlano = sequelize.define('AlunoPlano', {
 // Estabelecer as relações
 Aluno.belongsToMany(Plano, { through: AlunoPlano, as: 'planos' });
 Plano.belongsToMany(Aluno, { through: AlunoPlano, as: 'alunos' });
+
+// Adicionar relações diretas para facilitar queries
+AlunoPlano.belongsTo(Aluno);
+AlunoPlano.belongsTo(Plano);
 
 module.exports = AlunoPlano; 

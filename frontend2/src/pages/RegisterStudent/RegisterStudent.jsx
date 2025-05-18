@@ -3,12 +3,13 @@
  * 
  * Este componente implementa:
  * - Formulário para cadastro de novos alunos
- * - Associação do aluno a um plano
+ * - Associação do aluno a um plano (relacionamento 1:1 simplificado)
  * - Interface para visualização da lista de alunos cadastrados
  * - Tratamento de erros e feedback ao usuário
  */
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ReactPaginate from 'react-paginate';
 import { alunoService } from '../../services/alunoService';
 import { alunoPlanoService } from '../../services/alunoPlanoService';
 import api from '../../services/api';
@@ -37,11 +38,16 @@ export default function RegisterStudent() {
   // Estados de controle da UI
   const [loading, setLoading] = useState(false);
   const [loadingPlanos, setLoadingPlanos] = useState(false);
+  const [loadingAlunos, setLoadingAlunos] = useState(false);
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
   const toastTimeout = useRef(null);
   const [alunos, setAlunos] = useState([]);
+  const [associacoesAlunos, setAssociacoesAlunos] = useState({});
   const [showList, setShowList] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 3;
 
   /**
    * Efeito que carrega os alunos quando a lista é exibida
@@ -78,12 +84,53 @@ export default function RegisterStudent() {
    */
   const carregarAlunos = async () => {
     try {
-      console.log('Tentando carregar lista de alunos...');
+      setLoadingAlunos(true);
+      console.log('Carregando lista de alunos...');
       const data = await alunoService.listarAlunos();
-      console.log('Dados recebidos:', data);
+      console.log('Dados de alunos recebidos:', data);
       
       // Garante que data é sempre um array, mesmo se a API retornar null/undefined
-      setAlunos(Array.isArray(data) ? data : []);
+      const alunosList = Array.isArray(data) ? data : [];
+      setAlunos(alunosList);
+      
+      // Mapear os IDs dos alunos para depois buscar os planos
+      const idsAlunos = alunosList.map(a => a.id);
+      
+      if (idsAlunos.length > 0) {
+        // Abordagem simplificada: buscar todas as associações de uma vez
+        try {
+          console.log('Buscando associações para os alunos...');
+          const todasAssociacoes = await alunoPlanoService.listarAssociacoes();
+          console.log('Associações obtidas:', todasAssociacoes);
+          
+          // Criar um objeto com alunoId como chave
+          const associacoesPorAluno = {};
+          
+          if (Array.isArray(todasAssociacoes)) {
+            todasAssociacoes.forEach(assoc => {
+              // Identificar o ID do aluno (pode estar em diferentes formatos)
+              const alunoId = assoc.alunoId || assoc.AlunoId;
+              
+              if (alunoId) {
+                // Relacionamento 1:1 simplificado - mantemos apenas a associação mais recente
+                // Comentário: No futuro, para suportar N:N, remover esta restrição e usar um array
+                associacoesPorAluno[alunoId] = [{
+                  id: assoc.id,
+                  planoNome: assoc.plano?.nome || 'Sem nome',
+                  planoCargo: assoc.plano?.cargo || '',
+                  status: assoc.status || 'não definido',
+                  progresso: assoc.progresso || 0
+                }];
+              }
+            });
+          }
+          
+          console.log('Associações organizadas por aluno:', associacoesPorAluno);
+          setAssociacoesAlunos(associacoesPorAluno);
+        } catch (assocError) {
+          console.error('Erro ao carregar associações:', assocError);
+        }
+      }
       
       // Limpa qualquer erro anterior se a requisição for bem-sucedida
       if (error) setError('');
@@ -92,6 +139,8 @@ export default function RegisterStudent() {
       setError(error.message || 'Erro ao carregar lista de alunos');
       // Inicializa alunos como array vazio em caso de erro
       setAlunos([]);
+    } finally {
+      setLoadingAlunos(false);
     }
   };
 
@@ -112,15 +161,74 @@ export default function RegisterStudent() {
   };
 
   /**
+   * Aplica máscara para o CPF (formato 123.456.789-00)
+   * @param {string} value - CPF sem formatação
+   * @returns {string} CPF formatado
+   */
+  const formatCPF = (value) => {
+    // Remove qualquer caractere não numérico
+    const cpfNumbers = value.replace(/\D/g, '');
+    
+    // Limita a 11 dígitos
+    const cpfLimited = cpfNumbers.substring(0, 11);
+    
+    // Aplica a máscara
+    let formattedCPF = cpfLimited;
+    
+    if (cpfLimited.length > 3) {
+      formattedCPF = cpfLimited.replace(/^(\d{3})(\d)/, '$1.$2');
+    }
+    if (cpfLimited.length > 6) {
+      formattedCPF = formattedCPF.replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3');
+    }
+    if (cpfLimited.length > 9) {
+      formattedCPF = formattedCPF.replace(/^(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+    }
+    
+    return formattedCPF;
+  };
+
+  /**
+   * Remove formatação do CPF, mantendo apenas números
+   * @param {string} cpf - CPF formatado
+   * @returns {string} Apenas números do CPF
+   */
+  const stripCPF = (cpf) => {
+    return cpf.replace(/\D/g, '');
+  };
+
+  /**
+   * Manipula a entrada de dados no campo CPF
+   * Aceita apenas números e aplica a formatação
+   * @param {Event} e - Evento de mudança do input
+   */
+  const handleCPFChange = (e) => {
+    // Pega apenas os números do que foi digitado e aplica a máscara
+    const formattedValue = formatCPF(e.target.value);
+    
+    // Atualiza o estado
+    setFormData(prev => ({
+      ...prev,
+      cpf: formattedValue
+    }));
+  };
+
+  /**
    * Atualiza o estado do formulário quando o usuário digita
    * @param {Event} e - Evento de mudança do input
    */
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Campo CPF tem tratamento especial
+    if (name === 'cpf') {
+      handleCPFChange(e);
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   /**
@@ -136,6 +244,14 @@ export default function RegisterStudent() {
   };
 
   /**
+   * Atualiza o termo de busca quando o usuário digita
+   * @param {Event} e - Evento de mudança do input
+   */
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+  };
+
+  /**
    * Submete o formulário para cadastrar um novo aluno
    * @param {Event} e - Evento de submit do formulário
    */
@@ -145,8 +261,14 @@ export default function RegisterStudent() {
     setError('');
     
     try {
-      console.log('Enviando dados:', formData);
-      const alunoResponse = await alunoService.cadastrarAluno(formData);
+      // Prepara os dados para envio, removendo formatação do CPF
+      const dadosEnvio = {
+        ...formData,
+        cpf: stripCPF(formData.cpf)
+      };
+      
+      console.log('Enviando dados:', dadosEnvio);
+      const alunoResponse = await alunoService.cadastrarAluno(dadosEnvio);
       console.log('Resposta do servidor (aluno):', alunoResponse);
       
       // Se for para associar a um plano, faz isso após cadastrar o aluno
@@ -191,6 +313,71 @@ export default function RegisterStudent() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Manipula a mudança de página
+   * @param {Object} selectedItem - Item selecionado na paginação
+   */
+  const handlePageChange = (selectedItem) => {
+    setCurrentPage(selectedItem.selected);
+    // Rolar para o topo da tabela quando mudar de página
+    if (document.querySelector(`.${styles.tableContainer}`)) {
+      document.querySelector(`.${styles.tableContainer}`).scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Filtra os alunos de acordo com o termo de busca
+  const filteredAlunos = alunos.filter(aluno => {
+    const termLower = searchTerm.toLowerCase();
+    
+    // Busca por nome, email ou CPF do aluno
+    const matchesAluno = 
+      aluno.nome.toLowerCase().includes(termLower) ||
+      aluno.email.toLowerCase().includes(termLower) ||
+      aluno.cpf.toLowerCase().includes(termLower);
+    
+    // Se já encontrou no aluno, retorna verdadeiro
+    if (matchesAluno) return true;
+    
+    // Busca pelo nome do plano
+    const temPlanos = associacoesAlunos[aluno.id] && associacoesAlunos[aluno.id].length > 0;
+    if (temPlanos) {
+      // Verifica se algum plano do aluno contém o termo de busca no nome
+      return associacoesAlunos[aluno.id].some(assoc => 
+        assoc.planoNome.toLowerCase().includes(termLower)
+      );
+    }
+    
+    // Se não encontrou em nenhum lugar, retorna falso
+    return false;
+  });
+
+  // Calcula a quantidade de páginas
+  const pageCount = Math.ceil(filteredAlunos.length / itemsPerPage);
+  
+  // Obtém apenas os itens da página atual
+  const displayedAlunos = filteredAlunos.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+
+  // Resetar para a primeira página quando o termo de busca mudar
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm]);
+
+  /**
+   * Destaca o termo de busca no texto
+   * @param {string} text - Texto onde buscar
+   * @param {string} term - Termo a ser destacado
+   * @returns {string} Texto com o termo destacado com HTML
+   */
+  const highlightMatch = (text, term) => {
+    if (!term.trim() || !text) return text;
+    
+    const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+    return text.replace(regex, '<mark class="' + styles.highlight + '">$1</mark>');
   };
 
   return (
@@ -404,25 +591,122 @@ export default function RegisterStudent() {
       {/* Tabela de listagem de alunos */}
       {showList && (
         <div className={styles.tableContainer}>
-          <h2>Lista de Alunos</h2>
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>E-mail</th>
-                <th>CPF</th>
-              </tr>
-            </thead>
-            <tbody>
-              {alunos.map((aluno) => (
-                <tr key={aluno.id}>
-                  <td>{aluno.nome}</td>
-                  <td>{aluno.email}</td>
-                  <td>{aluno.cpf}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className={styles.tableHeader}>
+            <h2>Lista de Alunos</h2>
+            
+            <div className={styles.searchContainer}>
+              <input
+                type="text"
+                placeholder="Buscar por nome, email, CPF ou plano..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className={styles.searchInput}
+              />
+              {searchTerm && (
+                <button 
+                  className={styles.clearSearch}
+                  onClick={() => setSearchTerm('')}
+                  title="Limpar busca"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {/* Lista de alunos com paginação */}
+          {loadingAlunos ? (
+            <div className={styles.loading}>Carregando alunos...</div>
+          ) : filteredAlunos.length === 0 ? (
+            <div className={styles.emptyState}>
+              <p>
+                {searchTerm
+                  ? `Nenhum aluno encontrado para "${searchTerm}".`
+                  : 'Nenhum aluno cadastrado.'
+                }
+              </p>
+              {searchTerm && (
+                <button 
+                  className={styles.clearFilterButton}
+                  onClick={() => setSearchTerm('')}
+                >
+                  Limpar busca
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Nome</th>
+                    <th>E-mail</th>
+                    <th>CPF</th>
+                    <th>Plano</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {displayedAlunos.map((aluno) => (
+                    <tr key={aluno.id}>
+                      <td dangerouslySetInnerHTML={{ 
+                        __html: highlightMatch(aluno.nome, searchTerm) 
+                      }} />
+                      <td dangerouslySetInnerHTML={{ 
+                        __html: highlightMatch(aluno.email, searchTerm) 
+                      }} />
+                      <td dangerouslySetInnerHTML={{ 
+                        __html: highlightMatch(aluno.cpf, searchTerm) 
+                      }} />
+                      <td>
+                        {associacoesAlunos[aluno.id] && associacoesAlunos[aluno.id].length > 0 ? (
+                          <div className={styles.planosAluno}>
+                            {associacoesAlunos[aluno.id].map((assoc, index) => (
+                              <div key={index} className={styles.planoItem}>
+                                <span className={styles.planoNome} dangerouslySetInnerHTML={{ 
+                                  __html: highlightMatch(assoc.planoNome, searchTerm) 
+                                }} />
+                                <span 
+                                  className={`${styles.statusIndicator} ${styles[`status${assoc.status.replace(/\s+/g, '')}`]}`} 
+                                  title={assoc.status}
+                                ></span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className={styles.semPlano}>Sem plano</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {/* Componente de paginação */}
+              {pageCount > 1 && (
+                <div className={styles.paginationContainer}>
+                  <ReactPaginate
+                    previousLabel={"← Anterior"}
+                    nextLabel={"Próximo →"}
+                    pageCount={pageCount}
+                    onPageChange={handlePageChange}
+                    containerClassName={styles.pagination}
+                    previousLinkClassName={styles.paginationLink}
+                    nextLinkClassName={styles.paginationLink}
+                    disabledClassName={styles.paginationDisabled}
+                    activeClassName={styles.paginationActive}
+                    forcePage={currentPage}
+                    pageRangeDisplayed={3}
+                    marginPagesDisplayed={1}
+                    breakLabel={"..."}
+                    breakClassName={styles.paginationBreak}
+                  />
+                  <div className={styles.paginationInfo}>
+                    Mostrando {filteredAlunos.length > 0 ? currentPage * itemsPerPage + 1 : 0} a {Math.min((currentPage + 1) * itemsPerPage, filteredAlunos.length)} de {filteredAlunos.length} alunos
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
