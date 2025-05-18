@@ -53,5 +53,18 @@ export const sprintService = {
       console.error('Erro ao excluir sprint:', error);
       throw new Error(error.response?.data?.message || 'Erro ao excluir sprint');
     }
+  },
+  
+  async reordenarSprints(planoId, ordemSprints) {
+    try {
+      const response = await api.post('/sprints/reordenar', {
+        planoId,
+        ordemSprints
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao reordenar sprints:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao reordenar sprints');
+    }
   }
 }; 

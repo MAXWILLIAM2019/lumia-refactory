@@ -40,18 +40,95 @@
   margin-bottom: 3rem;
 }
 
+.planoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
 .planoTitle {
   color: #111827;
   font-size: 1.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e5e7eb;
+  margin-right: 1rem;
+}
+
+.reordenarButton {
+  background: #e5e7eb;
+  color: #4b5563;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reordenarButton:hover {
+  background: #d1d5db;
+  color: #1f2937;
+}
+
+.reordenarControles {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.salvarReordenacaoButton {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.salvarReordenacaoButton:hover {
+  background: #059669;
+}
+
+.salvarReordenacaoButton:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.cancelarReordenacaoButton {
+  background: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancelarReordenacaoButton:hover {
+  background: #e5e7eb;
+}
+
+.cancelarReordenacaoButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .sprintsList {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
   gap: 2rem;
+}
+
+.sprintsListDraggable {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 2rem;
+  position: relative;
+  min-height: 200px;
 }
 
 .sprintCard {
@@ -67,6 +144,40 @@
 .sprintCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+}
+
+.dragHandle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  border-radius: 4px;
+  user-select: none;
+  z-index: 10;
+}
+
+.dragHandle:hover {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.dragging {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2) !important;
+  opacity: 0.9;
+  transform: scale(1.02) !important;
+  z-index: 999;
 }
 
 .sequenceIndicator {
@@ -278,17 +389,26 @@
     padding: 1rem;
   }
   
-  .sprintsList {
+  .sprintsList,
+  .sprintsListDraggable {
     grid-template-columns: 1fr;
   }
   
-  .header {
+  .header,
+  .planoHeader {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
   }
   
-  .registerButton {
+  .planoTitle {
+    width: 100%;
+  }
+  
+  .registerButton,
+  .reordenarButton,
+  .salvarReordenacaoButton,
+  .cancelarReordenacaoButton {
     width: 100%;
   }
 }
@@ -350,4 +470,97 @@
   color: #a1a1aa;
   margin-top: 4px;
   margin-bottom: 0;
+}
+
+.reordenacaoContainer {
+  margin-bottom: 2rem;
+}
+
+.reordenacaoList {
+  padding: 1rem 0;
+  min-height: 100px;
+}
+
+.sprintCardDraggable {
+  background: #ffffff;
+  margin-bottom: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+  position: relative;
+  cursor: grab;
+  transition: all 0.2s;
+}
+
+.sprintCardDraggable:hover {
+  background: #f9fafb;
+}
+
+.sprintDragContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 40px;
+  position: relative;
+}
+
+.sprintDragContent h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.sprintDragContent .date {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.dragHandle {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  font-size: 1.5rem;
+  color: #9ca3af;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  border-radius: 4px;
+  user-select: none;
+  z-index: 10;
+}
+
+.dragHandle:hover {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+.dragging {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15) !important;
+  background: #f9fafb !important;
+  border: 1px solid #60a5fa !important;
+  z-index: 999;
+}
+
+.droppableArea {
+  min-height: 100px;
+  padding: 8px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.sortableList {
+  padding: 1rem 0;
+  margin-bottom: 1rem;
 } 

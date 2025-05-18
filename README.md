@@ -17,6 +17,7 @@ O projeto é dividido em duas partes principais:
 - React Router
 - Axios
 - React Quill (Editor de texto rico)
+- @dnd-kit (Biblioteca para funcionalidade de arrastar e soltar)
 
 ### Backend
 - Node.js
@@ -70,6 +71,7 @@ Após esses passos, o frontend estará disponível em `http://localhost:5173` e 
 - Criação e edição de sprints
 - Registro de atividades dentro das sprints
 - Editor de texto avançado para conteúdo formatado
+- Reordenação de sprints via arrastar e soltar (drag and drop)
 
 ## Uso do Editor de Texto Rich Text
 
@@ -92,6 +94,50 @@ O sistema conta com um editor de texto avançado (React Quill) para o campo "Com
 1. Após editar seu conteúdo, clique em "Salvar" para aplicar as alterações
 2. Uma prévia do conteúdo formatado será exibida no campo "Comandos"
 3. O conteúdo formatado será armazenado e exibido corretamente nas visualizações da sprint
+
+## Funcionalidade de Reordenação de Sprints
+
+O sistema permite reordenar as sprints dentro de cada plano de estudo usando a técnica de arrastar e soltar (drag and drop).
+
+### Finalidade
+
+A reordenação de sprints serve para definir a sequência em que as sprints devem ser executadas pelo aluno dentro de um plano de estudo. Isso permite que o administrador organize o fluxo de aprendizado de forma lógica e pedagógica, independentemente da ordem em que as sprints foram criadas.
+
+### Como Utilizar
+
+1. Na página de listagem de sprints, para cada plano com mais de uma sprint, um botão "Reordenar sprints" é exibido
+2. Ao clicar neste botão, o modo de reordenação é ativado para aquele plano específico
+3. Arraste as sprints pelo ícone "⠿" para reorganizá-las na ordem desejada
+4. Após a reorganização, clique em "Salvar ordem" para persistir as alterações ou "Cancelar" para descartar
+
+### Implementação Técnica
+
+- **Frontend**: Utiliza a biblioteca @dnd-kit para implementar a funcionalidade de arrastar e soltar
+- **Backend**: Armazena a posição de cada sprint em um campo `posicao` no banco de dados
+- **API**: Endpoint `/api/sprints/reordenar` recebe um array com a nova ordem dos IDs das sprints
+
+### Instalação das Dependências
+
+Para projetos que desejam utilizar esta funcionalidade, instale as bibliotecas necessárias:
+
+```bash
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+```
+
+### Possíveis Novos Locais de Utilização
+
+Esta funcionalidade pode ser estendida para outras áreas do sistema:
+
+1. **Reordenação de Metas dentro de uma Sprint**: Permitir reordenar as metas/atividades dentro de uma sprint para definir uma sequência pedagógica
+2. **Reordenação de Planos de Estudo**: Permitir reordenar planos de estudo para alunos que seguem múltiplos planos
+3. **Reordenação de Disciplinas**: Em módulos futuros que trabalhem com disciplinas, permitir reordenar disciplinas dentro de um curso
+
+### Benefícios
+
+- Interface intuitiva para organização de conteúdo
+- Definição clara da sequência de aprendizado
+- Flexibilidade para adaptar a ordem conforme necessário
+- Feedback visual imediato das alterações
 
 ## Documentação Adicional
 

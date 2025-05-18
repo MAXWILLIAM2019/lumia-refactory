@@ -205,136 +205,228 @@ O sistema implementa um editor de texto avançado baseado em React Quill para ca
 - Os estilos são definidos em CSS Modules, permitindo personalização completa
 - O conteúdo HTML é armazenado no banco de dados e renderizado de forma segura na interface
 
+## Funcionalidade de Drag and Drop (Arrastar e Soltar)
+
+O sistema implementa uma funcionalidade de arrastar e soltar (drag and drop) para permitir a reordenação visual de sprints dentro de cada plano de estudo. Esta implementação usa a biblioteca @dnd-kit, que oferece uma API moderna e flexível para interações de arrastar e soltar.
+
+### Funcionalidades Implementadas
+
+- Reordenação de sprints dentro de cada plano por arrastar e soltar
+- Indicador visual da ordem atual (números sequenciais)
+- Feedback visual durante o arrasto
+- Persistência da ordem no backend
+- Controles para salvar ou cancelar as alterações
+
+### Bibliotecas Utilizadas
+
+```bash
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+```
+
+- **@dnd-kit/core**: Funcionalidades básicas de drag and drop
+- **@dnd-kit/sortable**: Utilitários específicos para listas ordenáveis
+- **@dnd-kit/utilities**: Funções auxiliares para transformações CSS
+
+### Principais Componentes
+
+#### 1. SortableItem
+Componente que renderiza um item arrastável individual (uma sprint):
+
+```jsx
+function SortableItem({ sprint, index }) {
+  const {
+    attributes,  // Atributos para o elemento arrastável
+    listeners,   // Listeners para eventos de arrastar/soltar
+    setNodeRef,  // Função para definir a referência DOM
+    transform,   // Transformação durante arrasto
+    transition,  // Transição de animação
+  } = useSortable({ id: sprint.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    // outros estilos...
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        {/* Alça de arrasto */}
+        <div {...listeners}>⠿</div>
+        
+        {/* Número indicador e conteúdo */}
+        <div>{index + 1}</div>
+        <div>{sprint.nome}</div>
+        {/* ... */}
+      </div>
+    </div>
+  );
+}
+```
+
+#### 2. Contexto DND
+
+```jsx
+<DndContext 
+  sensors={sensors} 
+  collisionDetection={closestCenter}
+  onDragEnd={handleDragEnd}
+>
+  <SortableContext 
+    items={sprints.map(sprint => sprint.id)} 
+    strategy={verticalListSortingStrategy}
+  >
+    <div className={styles.sortableList}>
+      {sprints.map((sprint, index) => (
+        <SortableItem key={sprint.id} sprint={sprint} index={index} />
+      ))}
+    </div>
+  </SortableContext>
+</DndContext>
+```
+
+### Manipulação de Eventos
+
+```jsx
+// Handler para quando um item é arrastado e solto
+const handleDragEnd = (event, planoId, sprints) => {
+  const { active, over } = event;
+  
+  if (!over || active.id === over.id) return;
+  
+  // Encontrar índices no array
+  const oldIndex = sprints.findIndex(sprint => sprint.id === active.id);
+  const newIndex = sprints.findIndex(sprint => sprint.id === over.id);
+  
+  // Reordenar o array usando a função arrayMove do @dnd-kit
+  const newSprints = arrayMove(sprints, oldIndex, newIndex);
+  
+  // Atualizar posições
+  newSprints.forEach((sprint, index) => {
+    sprint.posicao = index + 1;
+  });
+  
+  // Atualizar o estado
+  setSprints(/* ... */);
+};
+```
+
+### Persistência no Backend
+
+A funcionalidade de reordenação utiliza um endpoint específico para salvar a nova ordem:
+
+```jsx
+// No frontend (service)
+async reordenarSprints(planoId, ordemSprints) {
+  const response = await api.post('/sprints/reordenar', {
+    planoId,
+    ordemSprints
+  });
+  return response.data;
+}
+
+// No componente
+const handleSalvarReordenacao = async () => {
+  const ordemSprints = sprints.map(sprint => sprint.id);
+  await sprintService.reordenarSprints(planoId, ordemSprints);
+};
+```
+
+### Integrando a Funcionalidade em Novos Componentes
+
+Para implementar a funcionalidade de arrastar e soltar em novos contextos:
+
+1. **Instalar as dependências**:
+   ```bash
+   npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+   ```
+
+2. **Importar bibliotecas necessárias**:
+   ```jsx
+   import {
+     DndContext, closestCenter, KeyboardSensor, PointerSensor,
+     useSensor, useSensors
+   } from '@dnd-kit/core';
+   import {
+     arrayMove, SortableContext, sortableKeyboardCoordinates,
+     useSortable, verticalListSortingStrategy
+   } from '@dnd-kit/sortable';
+   import { CSS } from '@dnd-kit/utilities';
+   ```
+
+3. **Criar um componente SortableItem**:
+   ```jsx
+   function SortableItem({ item, index }) {
+     const { attributes, listeners, setNodeRef, transform, transition } = 
+       useSortable({ id: item.id });
+       
+     // Implementar o JSX para renderizar o item arrastável
+   }
+   ```
+
+4. **Configurar o contexto DND**:
+   ```jsx
+   const sensors = useSensors(
+     useSensor(PointerSensor),
+     useSensor(KeyboardSensor, {
+       coordinateGetter: sortableKeyboardCoordinates,
+     })
+   );
+   
+   // No JSX do componente
+   <DndContext 
+     sensors={sensors}
+     collisionDetection={closestCenter}
+     onDragEnd={handleDragEnd}
+   >
+     <SortableContext 
+       items={itens.map(item => item.id)}
+       strategy={verticalListSortingStrategy}
+     >
+       {/* Renderizar itens arrastáveis */}
+     </SortableContext>
+   </DndContext>
+   ```
+
+5. **Implementar a função handleDragEnd**:
+   ```jsx
+   const handleDragEnd = (event) => {
+     const { active, over } = event;
+     
+     if (!over || active.id === over.id) return;
+     
+     // Lógica para reordenar os itens
+   };
+   ```
+
+### Estilos Recomendados
+
+Para uma experiência visual consistente, adicione os seguintes estilos:
+
+```css
+.sortableList {
+  padding: 1rem 0;
+  margin-bottom: 1rem;
+}
+
+.dragging {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  background: #f9fafb;
+  border: 1px solid #60a5fa;
+  z-index: 999;
+}
+
+.dragHandle {
+  cursor: grab;
+  /* outros estilos */
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+```
+
 ## Endpoints da API
 
 ### Sprints
-- `GET /api/sprints` - Listar todas as sprints
-- `POST /api/sprints` - Criar nova sprint
-- `GET /api/sprints/:id` - Buscar sprint por ID
-- `PUT /api/sprints/:id` - Atualizar sprint
-- `DELETE /api/sprints/:id` - Deletar sprint
-
-### Alunos
-- `GET /api/alunos` - Listar todos os alunos
-- `POST /api/alunos` - Criar novo aluno
-- `GET /api/alunos/:id` - Buscar aluno por ID
-- `PUT /api/alunos/:id` - Atualizar aluno
-- `DELETE /api/alunos/:id` - Deletar aluno
-
-## Fluxo de Cadastro e Listagem de Alunos
-
-### Visão Geral
-
-O módulo de cadastro e listagem de alunos permite aos administradores gerenciar os participantes do sistema de mentoria. O fluxo implementa as operações CRUD completas, com foco em uma interface unificada que permite tanto o cadastro de novos alunos quanto a visualização dos registros existentes.
-
-### Arquivos Principais
-
-#### Frontend
-- **Página**: `src/pages/RegisterStudent/RegisterStudent.jsx`
-- **Estilos**: `src/pages/RegisterStudent/RegisterStudent.module.css`
-- **Serviço**: `src/services/alunoService.js`
-- **Config API**: `src/services/api.js`
-
-#### Backend
-- **Rotas**: `backend/src/routes/alunoRoutes.js`
-- **Controlador**: `backend/src/controllers/alunoController.js`
-- **Modelo**: `backend/src/models/Aluno.js`
-
-### Funcionalidades
-
-1. **Cadastro de Alunos**
-   - Formulário com validação de campos obrigatórios
-   - Verificação de dados únicos (email e CPF)
-   - Feedback visual em caso de erros
-   - Limpeza automática do formulário após cadastro bem-sucedido
-
-2. **Listagem de Alunos**
-   - Visualização em tabela com informações principais
-   - Toggle para mostrar/ocultar a lista
-   - Atualização automática após novo cadastro
-
-### Fluxo de Dados
-
-1. **Cadastro**:
-   - Usuário preenche o formulário e submete
-   - Frontend valida campos básicos (formato, obrigatoriedade)
-   - `alunoService.cadastrarAluno()` envia dados para API
-   - Backend valida regras de negócio (unicidade de email/CPF)
-   - Retorna sucesso (aluno criado) ou erro (campo duplicado)
-   - Frontend exibe feedback apropriado
-
-2. **Listagem**:
-   - Usuário clica no botão "Listar Alunos"
-   - `alunoService.listarAlunos()` solicita dados
-   - Backend consulta banco e retorna todos os registros
-   - Frontend renderiza dados na tabela
-
-### Diagrama de Sequência Simplificado
-
-```
-┌─────────┐          ┌───────────────┐          ┌────────────┐          ┌────────┐
-│ Usuário │          │ Frontend (UI) │          │ API/Backend│          │ Banco  │
-└────┬────┘          └───────┬───────┘          └─────┬──────┘          └───┬────┘
-     │                       │                        │                     │
-     │ Preenche formulário   │                        │                     │
-     │─────────────────────>│                        │                     │
-     │                       │                        │                     │
-     │                       │ POST /api/alunos       │                     │
-     │                       │───────────────────────>│                     │
-     │                       │                        │ Valida e insere     │
-     │                       │                        │────────────────────>│
-     │                       │                        │                     │
-     │                       │                        │ Resultado           │
-     │                       │                        │<────────────────────│
-     │                       │ Resposta               │                     │
-     │                       │<───────────────────────│                     │
-     │ Feedback              │                        │                     │
-     │<───────────────────────                        │                     │
-     │                       │                        │                     │
-```
-
-## Scripts Disponíveis
-
-- `npm run dev` - Inicia o servidor de desenvolvimento
-- `npm run build` - Gera build de produção
-- `npm run preview` - Visualiza build de produção localmente
-
-## Configuração do Ambiente
-
-1. Instale as dependências:
-```bash
-npm install
-```
-
-2. Configure as variáveis de ambiente:
-```bash
-cp .env.example .env
-```
-
-3. Inicie o servidor de desenvolvimento:
-```bash
-npm run dev
-```
-
-## Convenções de Código
-
-- Componentes: PascalCase (ex: `Sidebar.jsx`)
-- Funções: camelCase (ex: `handleSubmit`)
-- Variáveis: camelCase (ex: `userData`)
-- Constantes: UPPER_SNAKE_CASE (ex: `API_URL`)
-
-## Troubleshooting
-
-### Problemas Comuns
-
-1. **Erro de CORS**
-   - Verifique se o backend está rodando
-   - Confirme se as URLs da API estão corretas no `.env`
-
-2. **Erro de Build**
-   - Limpe o cache: `npm run clean`
-   - Reinstale as dependências: `npm install`
-
-3. **Erro de Dependências**
-   - Delete `node_modules` e `package-lock.json`
-   - Execute `npm install` novamente
+- `

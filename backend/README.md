@@ -1,6 +1,6 @@
 # Microserviço Mentor
 
-Este serviço é responsável pelo cadastro de sprints e atividades dos mentorados.
+Este serviço é responsável pelo cadastro de sprints e metas dos mentorados.
 
 ## Como rodar
 
@@ -24,7 +24,7 @@ O backend foi adaptado para armazenar e processar conteúdo HTML gerado pelo edi
 
 ### Campos com Suporte a HTML
 
-Atualmente, o campo `comandos` do modelo `Atividade` suporta conteúdo formatado em HTML, permitindo:
+Atualmente, o campo `comandos` do modelo `Meta` suporta conteúdo formatado em HTML, permitindo:
 - Formatação de texto (negrito, itálico, etc.)
 - Listas ordenadas e não ordenadas
 - Links
@@ -41,6 +41,28 @@ Atualmente, o campo `comandos` do modelo `Atividade` suporta conteúdo formatado
 - Não há limite de tamanho para o campo, mas recomenda-se manter o conteúdo conciso
 - O banco de dados SQLite suporta armazenamento eficiente de strings de qualquer tamanho
 - Embora o campo aceite qualquer HTML, recomenda-se limitar às funcionalidades disponíveis no editor React Quill
+
+## Estrutura de Modelos do Sistema
+
+### Visão Geral dos Modelos
+
+O sistema utiliza os seguintes modelos principais:
+
+1. **Aluno** - Dados dos alunos mentorados
+2. **Plano** - Planos de estudo disponíveis
+3. **Sprint** - Ciclos de estudo dentro de um plano
+4. **Meta** - Atividades a serem realizadas dentro de uma sprint
+5. **Disciplina** - Áreas de conhecimento
+6. **Assunto** - Tópicos específicos dentro de uma disciplina
+7. **Administrador** - Usuários com acesso administrativo ao sistema
+
+### Relacionamentos Principais
+
+- Um **Plano** possui várias **Disciplinas**
+- Uma **Disciplina** possui vários **Assuntos**
+- Um **Plano** possui várias **Sprints**
+- Uma **Sprint** possui várias **Metas**
+- Um **Aluno** pode estar associado a vários **Planos**
 
 ## Módulo de Alunos
 
@@ -91,4 +113,6 @@ O módulo de alunos implementa as operações CRUD para gerenciar os registros d
 - **Erro interno**: Status 500 com detalhes do erro (em desenvolvimento)
 
 ## Próximos passos
-- Implementar rotas para cadastro de sprint e atividades. 
+- Implementar sistema de autenticação mais robusto
+- Adicionar relatórios de progresso dos alunos
+- Desenvolver integração com calendário para agendamento de mentorias 

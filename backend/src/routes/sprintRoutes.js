@@ -17,6 +17,9 @@ router.get('/', sprintController.getAllSprints);
 // Criar uma nova sprint
 router.post('/', sprintController.createSprint);
 
+// Reordenar sprints de um plano
+router.post('/reordenar', sprintController.reordenarSprints);
+
 // Buscar uma sprint específica
 router.get('/:id', sprintController.getSprintById);
 

@@ -1,6 +1,7 @@
 const Sprint = require('../models/Sprint');
 const Meta = require('../models/Meta');
 const Plano = require('../models/Plano');
+const sequelize = require('../db');
 
 /**
  * Controller de Sprint
@@ -217,6 +218,85 @@ exports.deleteSprint = async (req, res) => {
     res.json({ message: 'Sprint deletada com sucesso' });
   }
   catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Reordena as sprints de um plano
+ * @param {Object} req - Requisição HTTP
+ * @param {Object} req.body - Corpo da requisição
+ * @param {number} req.body.planoId - ID do plano
+ * @param {Array<number>} req.body.ordemSprints - Array com IDs das sprints na nova ordem
+ * @param {Object} res - Resposta HTTP
+ */
+exports.reordenarSprints = async (req, res) => {
+  const { planoId, ordemSprints } = req.body;
+  
+  if (!planoId || !ordemSprints || !Array.isArray(ordemSprints) || ordemSprints.length === 0) {
+    return res.status(400).json({ message: 'Dados inválidos. planoId e ordemSprints (array) são necessários' });
+  }
+  
+  try {
+    const plano = await Plano.findByPk(planoId);
+    if (!plano) {
+      return res.status(404).json({ message: 'Plano não encontrado' });
+    }
+    
+    // Verificar se todas as sprints pertencem ao plano
+    const sprints = await Sprint.findAll({
+      where: { PlanoId: planoId }
+    });
+    
+    const sprintIds = sprints.map(s => s.id);
+    
+    for (const id of ordemSprints) {
+      if (!sprintIds.includes(id)) {
+        return res.status(400).json({ 
+          message: `Sprint com ID ${id} não pertence ao plano ${planoId}` 
+        });
+      }
+    }
+    
+    // Verificar se todos os IDs de sprints do plano estão na ordemSprints
+    if (new Set([...sprintIds]).size !== new Set([...ordemSprints]).size) {
+      return res.status(400).json({ 
+        message: 'A lista de sprints fornecida não contém todas as sprints do plano'
+      });
+    }
+    
+    // Atualizar posições em uma transação para garantir consistência
+    await sequelize.transaction(async (t) => {
+      for (let i = 0; i < ordemSprints.length; i++) {
+        await Sprint.update(
+          { posicao: i + 1 },
+          { 
+            where: { id: ordemSprints[i] },
+            transaction: t
+          }
+        );
+      }
+    });
+    
+    // Retornar as sprints reordenadas
+    const sprintsAtualizadas = await Sprint.findAll({
+      where: { PlanoId: planoId },
+      order: [['posicao', 'ASC']],
+      include: [
+        {
+          model: Meta,
+          as: 'metas'
+        },
+        {
+          model: Plano,
+          attributes: ['id', 'nome', 'cargo', 'duracao']
+        }
+      ]
+    });
+    
+    res.json(sprintsAtualizadas);
+  } catch (error) {
+    console.error('Erro ao reordenar sprints:', error);
     res.status(500).json({ message: error.message });
   }
 }; 
