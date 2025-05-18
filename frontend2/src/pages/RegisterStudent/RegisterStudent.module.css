@@ -30,6 +30,23 @@
   box-sizing: border-box;
 }
 
+.formSection {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #2d3748;
+}
+
+.formSection h2 {
+  color: #3b82f6;
+  font-size: 1.5rem;
+  margin-bottom: 24px;
+}
+
+.formSection:last-child {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
 .formGroup {
   margin-bottom: 24px;
   width: 100%;
@@ -43,7 +60,9 @@
   width: 100%;
 }
 
-.formGroup input {
+.formGroup input,
+.formGroup select,
+.formGroup textarea {
   width: 100%;
   padding: 14px 16px;
   border: 1px solid #2d3748;
@@ -56,14 +75,50 @@
   box-sizing: border-box;
 }
 
-.formGroup input:focus {
+.formGroup textarea {
+  min-height: 100px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.formGroup input:focus,
+.formGroup select:focus,
+.formGroup textarea:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px #3b82f633;
 }
 
-.formGroup input::placeholder {
+.formGroup input::placeholder,
+.formGroup textarea::placeholder {
   color: #6b7280;
+}
+
+.planoCheck {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.planoCheck input[type="checkbox"] {
+  margin-right: 10px;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.planoCheck label {
+  font-weight: 600;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.planoForm {
+  background: #23283a;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 16px;
+  border-left: 4px solid #3b82f6;
 }
 
 .buttonGroup {

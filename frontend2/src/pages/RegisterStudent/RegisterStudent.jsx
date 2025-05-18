@@ -3,12 +3,15 @@
  * 
  * Este componente implementa:
  * - Formulário para cadastro de novos alunos
+ * - Associação do aluno a um plano
  * - Interface para visualização da lista de alunos cadastrados
  * - Tratamento de erros e feedback ao usuário
  */
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { alunoService } from '../../services/alunoService';
+import { alunoPlanoService } from '../../services/alunoPlanoService';
+import api from '../../services/api';
 import styles from './RegisterStudent.module.css';
 
 export default function RegisterStudent() {
@@ -21,8 +24,19 @@ export default function RegisterStudent() {
     cpf: ''
   });
   
+  // Estado da associação com plano
+  const [associarPlano, setAssociarPlano] = useState(false);
+  const [planoData, setPlanoData] = useState({
+    planoId: '',
+    dataInicio: new Date().toISOString().split('T')[0],
+    status: 'não iniciado',
+    observacoes: ''
+  });
+  const [planos, setPlanos] = useState([]);
+  
   // Estados de controle da UI
   const [loading, setLoading] = useState(false);
+  const [loadingPlanos, setLoadingPlanos] = useState(false);
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
   const toastTimeout = useRef(null);
@@ -37,6 +51,15 @@ export default function RegisterStudent() {
       carregarAlunos();
     }
   }, [showList]);
+
+  /**
+   * Efeito que carrega os planos quando a opção de associar é ativada
+   */
+  useEffect(() => {
+    if (associarPlano) {
+      carregarPlanos();
+    }
+  }, [associarPlano]);
 
   /**
    * Efeito que controla a exibição do toast de erro
@@ -73,12 +96,40 @@ export default function RegisterStudent() {
   };
 
   /**
+   * Carrega a lista de planos disponíveis
+   */
+  const carregarPlanos = async () => {
+    try {
+      setLoadingPlanos(true);
+      const response = await api.get('/planos');
+      setPlanos(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Erro ao carregar planos:', error);
+      setError('Erro ao carregar planos. Tente novamente.');
+    } finally {
+      setLoadingPlanos(false);
+    }
+  };
+
+  /**
    * Atualiza o estado do formulário quando o usuário digita
    * @param {Event} e - Evento de mudança do input
    */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  /**
+   * Atualiza o estado do plano quando o usuário digita
+   * @param {Event} e - Evento de mudança do input
+   */
+  const handlePlanoChange = (e) => {
+    const { name, value } = e.target;
+    setPlanoData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -95,10 +146,42 @@ export default function RegisterStudent() {
     
     try {
       console.log('Enviando dados:', formData);
-      const response = await alunoService.cadastrarAluno(formData);
-      console.log('Resposta do servidor:', response);
-      alert('Aluno cadastrado com sucesso!');
+      const alunoResponse = await alunoService.cadastrarAluno(formData);
+      console.log('Resposta do servidor (aluno):', alunoResponse);
+      
+      // Se for para associar a um plano, faz isso após cadastrar o aluno
+      if (associarPlano && planoData.planoId) {
+        console.log('Associando aluno ao plano:', {
+          alunoId: alunoResponse.id,
+          ...planoData
+        });
+        
+        try {
+          const associacaoResponse = await alunoPlanoService.atribuirPlano({
+            alunoId: alunoResponse.id,
+            ...planoData
+          });
+          console.log('Resposta do servidor (associação):', associacaoResponse);
+          alert('Aluno cadastrado e associado ao plano com sucesso!');
+        } catch (associacaoError) {
+          console.error('Erro ao associar aluno ao plano:', associacaoError);
+          alert(`Aluno cadastrado com sucesso, mas não foi possível associá-lo ao plano. Motivo: ${associacaoError.message}`);
+        }
+      } else {
+        alert('Aluno cadastrado com sucesso!');
+      }
+      
+      // Limpa o formulário
       setFormData({ nome: '', email: '', cpf: '' });
+      setPlanoData({
+        planoId: '',
+        dataInicio: new Date().toISOString().split('T')[0],
+        status: 'não iniciado',
+        observacoes: ''
+      });
+      setAssociarPlano(false);
+      
+      // Atualiza a lista de alunos se estiver visível
       if (showList) {
         carregarAlunos();
       }
@@ -163,47 +246,132 @@ export default function RegisterStudent() {
       
       {/* Formulário de cadastro de aluno */}
       <form onSubmit={handleSubmit} className={styles.form}>
-        <div className={styles.formGroup}>
-          <label htmlFor="nome">Nome Completo</label>
-          <input
-            type="text"
-            id="nome"
-            name="nome"
-            value={formData.nome}
-            onChange={handleChange}
-            required
-            placeholder="Digite o nome completo"
-            disabled={loading}
-          />
-        </div>
+        <div className={styles.formSection}>
+          <h2>Dados do Aluno</h2>
+          <div className={styles.formGroup}>
+            <label htmlFor="nome">Nome Completo</label>
+            <input
+              type="text"
+              id="nome"
+              name="nome"
+              value={formData.nome}
+              onChange={handleChange}
+              required
+              placeholder="Digite o nome completo"
+              disabled={loading}
+            />
+          </div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="email">E-mail</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-            placeholder="Digite o e-mail"
-            disabled={loading}
-          />
-        </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="email">E-mail</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              placeholder="Digite o e-mail"
+              disabled={loading}
+            />
+          </div>
 
-        <div className={styles.formGroup}>
-          <label htmlFor="cpf">CPF</label>
-          <input
-            type="text"
-            id="cpf"
-            name="cpf"
-            value={formData.cpf}
-            onChange={handleChange}
-            required
-            placeholder="Digite o CPF"
-            maxLength="14"
-            disabled={loading}
-          />
+          <div className={styles.formGroup}>
+            <label htmlFor="cpf">CPF</label>
+            <input
+              type="text"
+              id="cpf"
+              name="cpf"
+              value={formData.cpf}
+              onChange={handleChange}
+              required
+              placeholder="Digite o CPF"
+              maxLength="14"
+              disabled={loading}
+            />
+          </div>
+        </div>
+        
+        {/* Seção de associação com plano */}
+        <div className={styles.formSection}>
+          <div className={styles.planoCheck}>
+            <input
+              type="checkbox"
+              id="associarPlano"
+              checked={associarPlano}
+              onChange={() => setAssociarPlano(!associarPlano)}
+              disabled={loading}
+            />
+            <label htmlFor="associarPlano">Associar aluno a um plano</label>
+          </div>
+          
+          {associarPlano && (
+            <div className={styles.planoForm}>
+              <div className={styles.formGroup}>
+                <label htmlFor="planoId">Plano</label>
+                {loadingPlanos ? (
+                  <div>Carregando planos...</div>
+                ) : (
+                  <select
+                    id="planoId"
+                    name="planoId"
+                    value={planoData.planoId}
+                    onChange={handlePlanoChange}
+                    required={associarPlano}
+                    disabled={loading}
+                  >
+                    <option value="">Selecione um plano</option>
+                    {planos.map(plano => (
+                      <option key={plano.id} value={plano.id}>
+                        {plano.nome} - {plano.cargo} ({plano.duracao} meses)
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="dataInicio">Data de Início</label>
+                <input
+                  type="date"
+                  id="dataInicio"
+                  name="dataInicio"
+                  value={planoData.dataInicio}
+                  onChange={handlePlanoChange}
+                  required={associarPlano}
+                  disabled={loading}
+                />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="status">Status</label>
+                <select
+                  id="status"
+                  name="status"
+                  value={planoData.status}
+                  onChange={handlePlanoChange}
+                  required={associarPlano}
+                  disabled={loading}
+                >
+                  <option value="não iniciado">Não iniciado</option>
+                  <option value="em andamento">Em andamento</option>
+                </select>
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="observacoes">Observações</label>
+                <textarea
+                  id="observacoes"
+                  name="observacoes"
+                  value={planoData.observacoes}
+                  onChange={handlePlanoChange}
+                  placeholder="Observações sobre o aluno ou o plano (opcional)"
+                  disabled={loading}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={styles.buttonGroup}>

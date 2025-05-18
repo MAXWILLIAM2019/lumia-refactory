@@ -2,6 +2,7 @@
  * Rotas para gerenciamento de disciplinas
  * 
  * Este arquivo define os endpoints da API relacionados às disciplinas.
+ * Inclui rotas para o sistema de versionamento de disciplinas.
  */
 const express = require('express');
 const router = express.Router();
@@ -54,5 +55,27 @@ router.put('/:id', disciplinaController.atualizarDisciplina);
  * @access  Privado (requer token)
  */
 router.delete('/:id', disciplinaController.removerDisciplina);
+
+/**
+ * @route   POST /api/disciplinas/:id/versoes
+ * @desc    Cria uma nova versão de uma disciplina existente
+ * @access  Privado (requer token)
+ * @body    {nome, descricao, assuntos[], ativa, copiarAssuntos}
+ */
+router.post('/:id/versoes', disciplinaController.criarVersaoDisciplina);
+
+/**
+ * @route   GET /api/disciplinas/:id/versoes
+ * @desc    Lista todas as versões de uma disciplina
+ * @access  Privado (requer token)
+ */
+router.get('/:id/versoes', disciplinaController.listarVersoesDisciplina);
+
+/**
+ * @route   GET /api/disciplinas/comparar/:id1/:id2
+ * @desc    Compara duas versões de uma disciplina
+ * @access  Privado (requer token)
+ */
+router.get('/comparar/:id1/:id2', disciplinaController.compararVersoesDisciplina);
 
 module.exports = router; 

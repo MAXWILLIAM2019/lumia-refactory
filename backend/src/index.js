@@ -7,6 +7,7 @@ const alunoRoutes = require('./routes/alunoRoutes');
 const planoRoutes = require('./routes/planoRoutes');
 const authRoutes = require('./routes/authRoutes');
 const disciplinaRoutes = require('./routes/disciplinaRoutes');
+const alunoPlanoRoutes = require('./routes/alunoPlanoRoutes');
 
 // Importa os modelos
 require('./models/Plano');
@@ -15,6 +16,7 @@ require('./models/Assunto');
 require('./models/Administrador');
 require('./models/Aluno');
 require('./models/Meta'); // Importa o modelo Meta (antigo Atividade)
+require('./models/AlunoPlano'); // Importa o modelo AlunoPlano
 
 const app = express();
 
@@ -31,6 +33,7 @@ app.use('/api/alunos', alunoRoutes);
 app.use('/api/planos', planoRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/disciplinas', disciplinaRoutes);
+app.use('/api/aluno-plano', alunoPlanoRoutes);
 
 // Rota para atualizar uma meta
 app.put('/api/metas/:id', async (req, res) => {

@@ -87,5 +87,70 @@ export const disciplinaService = {
         'Erro ao listar disciplinas ativas'
       );
     }
+  },
+
+  // Métodos para gerenciar versionamento de disciplinas
+  
+  async listarVersoesDisciplina(id) {
+    try {
+      console.log(`Iniciando listagem de versões da disciplina ${id}`);
+      const response = await api.get(`/disciplinas/${id}/versoes`);
+      
+      if (!response.data) {
+        return [];
+      }
+      
+      if (!Array.isArray(response.data)) {
+        if (response.data && typeof response.data === 'object') {
+          return [response.data];
+        }
+        return [];
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao listar versões da disciplina:', error);
+      
+      throw new Error(
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.message || 
+        'Erro ao listar versões da disciplina'
+      );
+    }
+  },
+  
+  async criarVersaoDisciplina(id, dados) {
+    try {
+      console.log(`Criando nova versão da disciplina ${id}`);
+      const response = await api.post(`/disciplinas/${id}/versoes`, dados);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao criar versão da disciplina:', error);
+      
+      throw new Error(
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.message || 
+        'Erro ao criar versão da disciplina'
+      );
+    }
+  },
+  
+  async compararVersoesDisciplina(id1, id2) {
+    try {
+      console.log(`Comparando versões ${id1} e ${id2}`);
+      const response = await api.get(`/disciplinas/comparar/${id1}/${id2}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao comparar versões da disciplina:', error);
+      
+      throw new Error(
+        error.response?.data?.error || 
+        error.response?.data?.message || 
+        error.message || 
+        'Erro ao comparar versões da disciplina'
+      );
+    }
   }
 }; 

@@ -74,8 +74,15 @@ export default function CadastrarDisciplina() {
       };
       
       if (id) {
-        await api.put(`/disciplinas/${id}`, disciplinaData);
-        alert('Disciplina atualizada com sucesso!');
+        const response = await api.put(`/disciplinas/${id}`, disciplinaData);
+        
+        if (response.data.versionada) {
+          // Uma nova versão foi criada
+          alert(`Uma nova versão (v${response.data.versao}) da disciplina foi criada automaticamente porque esta disciplina já está sendo utilizada em planos existentes.`);
+        } else {
+          // Atualização direta
+          alert('Disciplina atualizada com sucesso!');
+        }
       } else {
         await api.post('/disciplinas', disciplinaData);
         alert('Disciplina cadastrada com sucesso!');

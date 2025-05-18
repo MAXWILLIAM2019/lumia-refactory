@@ -10,6 +10,7 @@ const Assunto = require('./Assunto');
 const Aluno = require('./Aluno');
 const Sprint = require('./Sprint');
 const Meta = require('./Meta');
+const AlunoPlano = require('./AlunoPlano');
 
 // Garante que os relacionamentos são estabelecidos
 console.log('Configurando relacionamentos entre modelos...');
@@ -57,6 +58,10 @@ Sprint.hasMany(Meta, {
 });
 Meta.belongsTo(Sprint);
 
+// Relacionamento Aluno -> Plano (via AlunoPlano)
+console.log('Configurando relacionamento Aluno -> Plano (via AlunoPlano)');
+// Nota: As relações estão definidas no arquivo AlunoPlano.js
+
 console.log('Relacionamentos configurados com sucesso!');
 
 // Exporte os modelos
@@ -66,5 +71,6 @@ module.exports = {
   Assunto,
   Aluno,
   Sprint,
-  Meta
+  Meta,
+  AlunoPlano
 }; 
