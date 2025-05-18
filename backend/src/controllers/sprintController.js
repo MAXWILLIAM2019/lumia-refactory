@@ -35,12 +35,21 @@ exports.createSprint = async (req, res) => {
       return res.status(404).json({ message: 'Plano de estudo não encontrado' });
     }
 
+    // Determinar a próxima posição disponível para este plano
+    const ultimaSprint = await Sprint.findOne({
+      where: { PlanoId: planoId },
+      order: [['posicao', 'DESC']]
+    });
+    
+    const proximaPosicao = ultimaSprint ? ultimaSprint.posicao + 1 : 1;
+
     // Criar a sprint
     const sprint = await Sprint.create({
       nome,
       dataInicio,
       dataFim,
-      PlanoId: planoId
+      PlanoId: planoId,
+      posicao: proximaPosicao
     });
 
     // Criar as metas associadas à sprint
@@ -81,7 +90,10 @@ exports.getAllSprints = async (req, res) => {
           attributes: ['id', 'nome', 'cargo', 'duracao']
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [
+        ['PlanoId', 'ASC'],
+        ['posicao', 'ASC']
+      ]
     });
     res.json(sprints);
   } catch (error) {

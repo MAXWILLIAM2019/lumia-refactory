@@ -38,6 +38,30 @@ export default function Sprints() {
   };
 
   /**
+   * Agrupa sprints por plano e preserva a ordem
+   */
+  const getSprintsByPlano = () => {
+    const planos = {};
+    
+    sprints.forEach(sprint => {
+      const planoId = sprint.PlanoId;
+      const planoNome = sprint.Plano?.nome || 'Sem Plano';
+      
+      if (!planos[planoId]) {
+        planos[planoId] = {
+          id: planoId,
+          nome: planoNome,
+          sprints: []
+        };
+      }
+      
+      planos[planoId].sprints.push(sprint);
+    });
+    
+    return Object.values(planos);
+  };
+
+  /**
    * Navega para a página de cadastro de sprint
    */
   const handleRegisterClick = () => {
@@ -55,6 +79,8 @@ export default function Sprints() {
   if (loading) {
     return <div className={styles.loading}>Carregando sprints...</div>;
   }
+
+  const planosList = getSprintsByPlano();
 
   return (
     <div className={styles.container}>
@@ -81,56 +107,61 @@ export default function Sprints() {
         </div>
       )}
 
-      <div className={styles.sprintsList}>
-        {sprints.map((sprint) => (
-          <div key={sprint.id} className={styles.sprintCard}>
-            <div className={styles.sprintHeader}>
-              <div className={styles.sprintTitleContainer}>
-                <h2>{sprint.nome}</h2>
-                <span className={styles.date}>
-                  {new Date(sprint.dataInicio).toLocaleDateString()} - {new Date(sprint.dataFim).toLocaleDateString()}
-                </span>
-                {sprint.Plano && (
-                  <span className={styles.planBadge}>
-                    Plano: {sprint.Plano.nome}
-                  </span>
-                )}
+      {planosList.map(plano => (
+        <div key={plano.id} className={styles.planoSection}>
+          <h2 className={styles.planoTitle}>
+            {plano.nome}
+          </h2>
+          <div className={styles.sprintsList}>
+            {plano.sprints.map((sprint, index) => (
+              <div key={sprint.id} className={styles.sprintCard}>
+                <div className={styles.sequenceIndicator}>
+                  {index + 1}
+                </div>
+                <div className={styles.sprintHeader}>
+                  <div className={styles.sprintTitleContainer}>
+                    <h2>{sprint.nome}</h2>
+                    <span className={styles.date}>
+                      {new Date(sprint.dataInicio).toLocaleDateString()} - {new Date(sprint.dataFim).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <button 
+                    className={styles.editButton}
+                    onClick={() => handleEditClick(sprint.id)}
+                    title="Editar sprint"
+                  >
+                    ✏️
+                  </button>
+                </div>
+                
+                <div className={styles.activities}>
+                  <h3>Metas</h3>
+                  {sprint.metas && sprint.metas.length > 0 ? (
+                    <ul>
+                      {sprint.metas.map((meta) => (
+                        <li key={meta.id} className={styles.activityItem}>
+                          <div className={styles.activityInfo}>
+                            <span className={styles.discipline}>{meta.disciplina}</span>
+                            <span className={styles.title}>{meta.titulo}</span>
+                          </div>
+                          <div className={styles.activityDetails}>
+                            <span className={styles.type}>{meta.tipo}</span>
+                            <span className={styles.relevance}>
+                              {'★'.repeat(meta.relevancia || 0)}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className={styles.noActivities}>Nenhuma meta cadastrada para esta sprint.</p>
+                  )}
+                </div>
               </div>
-              <button 
-                className={styles.editButton}
-                onClick={() => handleEditClick(sprint.id)}
-                title="Editar sprint"
-              >
-                ✏️
-              </button>
-            </div>
-            
-            <div className={styles.activities}>
-              <h3>Metas</h3>
-              {sprint.metas && sprint.metas.length > 0 ? (
-                <ul>
-                  {sprint.metas.map((meta) => (
-                    <li key={meta.id} className={styles.activityItem}>
-                      <div className={styles.activityInfo}>
-                        <span className={styles.discipline}>{meta.disciplina}</span>
-                        <span className={styles.title}>{meta.titulo}</span>
-                      </div>
-                      <div className={styles.activityDetails}>
-                        <span className={styles.type}>{meta.tipo}</span>
-                        <span className={styles.relevance}>
-                          {'★'.repeat(meta.relevancia || 0)}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={styles.noActivities}>Nenhuma meta cadastrada para esta sprint.</p>
-              )}
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </div>
   );
 } 

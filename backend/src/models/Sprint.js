@@ -10,6 +10,8 @@ const sequelize = require('../db');
  * - dataInicio: Data de início da sprint
  * - dataFim: Data de término da sprint
  * - PlanoId: ID do plano associado a esta sprint
+ * - status: Status atual da sprint (Pendente, Em Andamento, Concluída)
+ * - posicao: Posição da sprint na sequência do plano (para ordenação)
  * 
  * Relacionamentos:
  * - hasMany Meta: Uma sprint pode ter várias metas
@@ -31,6 +33,16 @@ const Sprint = sequelize.define('Sprint', {
   dataFim: {
     type: DataTypes.DATEONLY,
     allowNull: false
+  },
+  status: {
+    type: DataTypes.ENUM('Pendente', 'Em Andamento', 'Concluída'),
+    defaultValue: 'Pendente',
+    allowNull: false
+  },
+  posicao: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
   }
 });
 

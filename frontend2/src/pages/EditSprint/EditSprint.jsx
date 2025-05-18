@@ -24,6 +24,7 @@ export default function EditSprint() {
     title: '',
     startDate: '',
     endDate: '',
+    planId: '',
     activities: [{ 
       discipline: '', 
       customDiscipline: '', 
@@ -39,23 +40,26 @@ export default function EditSprint() {
 
   const fetchSprint = async () => {
     try {
+      setLoading(true);
       const response = await api.get(`/sprints/${id}`);
       const sprint = response.data;
+      
       setFormData({
         title: sprint.nome,
         startDate: sprint.dataInicio,
         endDate: sprint.dataFim,
-        activities: sprint.metas.map(meta => ({
+        planId: sprint.PlanoId,
+        activities: sprint.metas?.map(meta => ({
+          id: meta.id,
           discipline: PREDEFINED_DISCIPLINES.includes(meta.disciplina) ? meta.disciplina : 'custom',
           customDiscipline: !PREDEFINED_DISCIPLINES.includes(meta.disciplina) ? meta.disciplina : '',
           title: meta.titulo,
           type: meta.tipo,
           relevance: meta.relevancia
-        }))
+        })) || []
       });
-    } catch (error) {
-      console.error('Erro:', error);
-      alert('Erro ao carregar sprint. Tente novamente.');
+    } catch (err) {
+      console.error('Erro ao buscar sprint:', err);
       navigate('/sprints');
     } finally {
       setLoading(false);
@@ -65,23 +69,22 @@ export default function EditSprint() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await api.put(`/sprints/${id}`,
-        {
-          nome: formData.title,
-          dataInicio: formData.startDate,
-          dataFim: formData.endDate,
-          metas: formData.activities.map(activity => ({
-            disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
-            tipo: activity.type,
-            titulo: activity.title,
-            relevancia: activity.relevance
-          }))
-        }
-      );
-      alert('Sprint atualizada com sucesso!');
+      const sprintData = {
+        nome: formData.title,
+        dataInicio: formData.startDate,
+        dataFim: formData.endDate,
+        metas: formData.activities.map(activity => ({
+          disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
+          titulo: activity.title,
+          tipo: activity.type,
+          relevancia: activity.relevance
+        }))
+      };
+
+      await api.put(`/sprints/${id}`, sprintData);
       navigate('/sprints');
-    } catch (error) {
-      console.error('Erro:', error);
+    } catch (err) {
+      console.error('Erro ao atualizar sprint:', err);
       alert('Erro ao atualizar sprint. Tente novamente.');
     }
   };

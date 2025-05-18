@@ -82,6 +82,7 @@ app.get('/api/test', (req, res) => {
 // Sincronização do banco de dados e inicialização do servidor
 // IMPORTANTE: 'force: true' recria todas as tabelas e deve ser removido após a primeira execução
 // isso é necessário para atualizar o modelo Meta com os novos campos: comandos, link, totalQuestoes e questoesCorretas
+// Também é necessário para adicionar o campo status (ENUM) na model Sprint
 sequelize.sync({ force: true }).then(() => {
   console.log('Banco de dados sincronizado (tabelas recriadas)');
   console.log('Modelos disponíveis:', Object.keys(sequelize.models));
