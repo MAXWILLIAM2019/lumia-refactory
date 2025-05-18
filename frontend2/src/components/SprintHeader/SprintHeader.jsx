@@ -23,10 +23,36 @@ export default function SprintHeader({
   const [sprints, setSprints] = useState([]);
   const [selectedSprintId, setSelectedSprintId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [sprintData, setSprintData] = useState(null);
+  // Estado local para armazenar o contador de atividades concluídas
+  const [completedActivities, setCompletedActivities] = useState(0);
+  const [totalActivities, setTotalActivities] = useState(0);
+  const [uniqueDisciplines, setUniqueDisciplines] = useState(0);
 
   useEffect(() => {
     fetchSprints();
   }, []);
+
+  // Efeito para atualizar os contadores quando o progresso muda
+  useEffect(() => {
+    // Se a sprint foi buscada, atualizar os contadores
+    if (sprintData?.metas) {
+      const completed = sprintData.metas.filter(m => m.status === 'Concluída').length;
+      const total = sprintData.metas.length;
+      const disciplines = [...new Set(sprintData.metas.map(m => m.disciplina))].length;
+      
+      setCompletedActivities(completed);
+      setTotalActivities(total);
+      setUniqueDisciplines(disciplines);
+    }
+  }, [sprintData]);
+
+  // Efeito para recalcular sprintData quando o progresso muda
+  useEffect(() => {
+    if (selectedSprintId) {
+      fetchSprintData(selectedSprintId);
+    }
+  }, [progress, selectedSprintId]);
 
   const fetchSprints = async () => {
     try {
@@ -37,6 +63,15 @@ export default function SprintHeader({
       console.error('Erro ao buscar sprints:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSprintData = async (id) => {
+    try {
+      const response = await api.get(`/sprints/${id}`);
+      setSprintData(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar dados da sprint:', error);
     }
   };
 
@@ -81,18 +116,32 @@ export default function SprintHeader({
       <div className={styles.sprintInfo}>
         <div className={styles.sprintProgressBlock}>
           {/* Bloco de progresso com barra e informações */}
-          <div className={styles.sprintProgress}>
-            <span className={styles.sprintTitle}>{sprintTitle}</span>
-            <div className={styles.progressBarWrapper}>
-              <div className={styles.progressBarBg}>
-                <div 
-                  className={styles.progressBarFill} 
-                  style={{width: `${progress}%`}}
-                />
+          <div className={styles.metaAtual}>
+            <div className={styles.metaHeader}>
+              <span className={styles.metaHeaderTitle}>Sprint Atual</span>
+            </div>
+            <div className={styles.sprintMetaContainer}>
+              <div className={styles.metaTitle}>{sprintTitle}</div>
+              <div className={styles.progressCounter}>
+                <span className={styles.completedCount}>✔️ {completedActivities} Metas Concluídas</span>
+                <span className={styles.totalIndicator}>{totalActivities > 0 ? Math.round(progress) : 0}%</span>
+              </div>
+              <div className={styles.progressBarWrapper}>
+                <div className={styles.progressBarBg}>
+                  <div 
+                    className={styles.progressBarFill} 
+                    style={{width: `${progress}%`}}
+                  />
+                </div>
+              </div>
+              <div className={styles.metaFooter}>
+                <div className={styles.sprintDetails}>
+                  <span>{uniqueDisciplines} Disciplinas</span>
+                  <span>{totalActivities} Atividades</span>
+                </div>
+                <div className={styles.sprintStart}>Iniciada: {formatDate(startDate)}</div>
               </div>
             </div>
-            <span className={styles.sprintNumbers}>{Math.round(progress)}%</span>
-            <span className={styles.sprintStart}>Iniciada: {formatDate(startDate)}</span>
           </div>
           {/* Componentes filhos (ex: estatísticas) */}
           {children}

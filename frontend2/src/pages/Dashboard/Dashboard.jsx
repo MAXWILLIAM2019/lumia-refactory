@@ -95,11 +95,30 @@ export default function Dashboard() {
 
     const totalMetas = currentSprint.metas.length;
     const completedMetas = currentSprint.metas.filter(m => m.status === 'Concluída').length;
+    
+    // Calcular horas totais
     const totalHours = currentSprint.metas.reduce((acc, curr) => {
       const [hours, minutes] = (curr.tempoEstudado || '00:00').split(':').map(Number);
       return acc + hours + (minutes / 60);
     }, 0);
-    const questionsSolved = currentSprint.metas.filter(m => m.tipo === 'questoes' && m.status === 'Concluída').length;
+    
+    // Calcular desempenho como média dos desempenhos das metas
+    const metasComDesempenho = currentSprint.metas.filter(m => 
+      m.desempenho !== undefined && m.desempenho !== null && !isNaN(parseFloat(m.desempenho))
+    );
+    
+    let desempenhoMedio = 0;
+    if (metasComDesempenho.length > 0) {
+      const somaDesempenhos = metasComDesempenho.reduce((acc, meta) => 
+        acc + parseFloat(meta.desempenho), 0
+      );
+      desempenhoMedio = somaDesempenhos / metasComDesempenho.length;
+    }
+    
+    // Calcular total de questões resolvidas (soma de totalQuestoes de todas as metas)
+    const questionsSolved = currentSprint.metas.reduce((acc, meta) => 
+      acc + (meta.totalQuestoes || 0), 0
+    );
     
     // Calcular média diária
     const startDate = new Date(currentSprint.dataInicio);
@@ -107,11 +126,8 @@ export default function Dashboard() {
     const daysDiff = Math.max(1, Math.ceil((today - startDate) / (1000 * 60 * 60 * 24)));
     const dailyAvg = totalHours / daysDiff;
 
-    // Calcular performance com duas casas decimais
-    let performanceFormatada = "0,00%";
-    if (totalMetas > 0) {
-      performanceFormatada = `${((completedMetas / totalMetas) * 100).toFixed(2).replace('.', ',')}%`;
-    }
+    // Formatar desempenho com duas casas decimais
+    const performanceFormatada = `${desempenhoMedio.toFixed(2).replace('.', ',')}%`;
 
     setStats({
       performance: performanceFormatada,
