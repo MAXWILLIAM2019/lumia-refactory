@@ -13,7 +13,6 @@ import api from '../../services/api';
 export default function Dashboard() {
   const [sprint, setSprint] = useState(null);
   const [sprints, setSprints] = useState([]);
-  const [nextSprint, setNextSprint] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAuthDebug, setShowAuthDebug] = useState(false);
@@ -48,10 +47,6 @@ export default function Dashboard() {
       if (sortedSprints.length > 0) {
         // Buscar a sprint mais recente com suas metas detalhadas
         fetchSprintById(sortedSprints[0].id);
-        
-        if (sortedSprints.length > 1) {
-          setNextSprint(sortedSprints[1]);
-        }
       }
     } catch (error) {
       console.error('Erro ao carregar sprints:', error);
@@ -203,16 +198,6 @@ export default function Dashboard() {
             <SprintStats stats={stats} />
           </SprintHeader>
         </div>
-        {nextSprint && (
-          <div className={styles.nextSprintContainer}>
-            <span className="nextLabel">Próxima Sprint</span>
-            <strong className="nextTitle">{nextSprint.nome}</strong>
-            <span className="nextDate">
-              Próxima em: {new Date(nextSprint.dataInicio).toLocaleDateString('pt-BR')}
-            </span>
-            <button className="addButton">Adicionar sprint</button>
-          </div>
-        )}
       </div>
       <div className={styles.metasContainer}>
         {sprint && (
