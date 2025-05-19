@@ -4,11 +4,13 @@ import Login from '../pages/Login';
 import LoginAluno from '../pages/LoginAluno';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard/Dashboard';
+import AlunoDashboard from '../pages/Aluno/Dashboard';
 import RegisterPlan from '../pages/RegisterPlan/RegisterPlan';
 import ListPlans from '../pages/ListPlans/ListPlans';
 import EditPlan from '../pages/EditPlan/EditPlan';
 import RegisterSprint from '../pages/RegisterSprint/RegisterSprint';
 import Layout from '../components/Layout/Layout';
+import AlunoLayout from '../components/Layout/AlunoLayout';
 import authService from '../services/authService';
 import RegisterStudent from '../pages/RegisterStudent/RegisterStudent';
 import Sprints from '../pages/Sprints/Sprints';
@@ -40,7 +42,7 @@ const AlunoRoute = ({ children }) => {
   }
 
   console.log('Aluno autenticado, renderizando rota protegida');
-  return <Layout>{children}</Layout>;
+  return <AlunoLayout>{children}</AlunoLayout>;
 };
 
 const AppRoutes = () => {
@@ -171,7 +173,7 @@ const AppRoutes = () => {
           path="/aluno/dashboard"
           element={
             <AlunoRoute>
-              <div>Dashboard do Aluno (em desenvolvimento)</div>
+              <AlunoDashboard />
             </AlunoRoute>
           }
         />

@@ -9,6 +9,7 @@
 const express = require('express');
 const router = express.Router();
 const alunoController = require('../controllers/alunoController');
+const authController = require('../controllers/authController');
 const { 
   auth, 
   adminOnly, 
@@ -25,6 +26,13 @@ const {
 router.get('/test', (req, res) => {
   res.json({ message: 'Rota de alunos funcionando!' });
 });
+
+/**
+ * @route   POST /api/alunos/login
+ * @desc    Login de aluno
+ * @access  Público
+ */
+router.post('/login', authController.loginAluno);
 
 /**
  * Rotas Públicas (não necessitam de autenticação)
@@ -48,6 +56,20 @@ router.post('/', alunoController.createAluno);
 /**
  * Rotas Protegidas (necessitam de autenticação)
  */
+
+/**
+ * @route   GET /api/alunos/planos
+ * @desc    Busca os planos do aluno logado
+ * @access  Privado (apenas para o próprio aluno)
+ */
+router.get('/planos', auth, alunoOnly, alunoController.getAlunoPlanos);
+
+/**
+ * @route   GET /api/alunos/sprints
+ * @desc    Busca as sprints do aluno logado
+ * @access  Privado (apenas para o próprio aluno)
+ */
+router.get('/sprints', auth, alunoOnly, alunoController.getAlunoSprints);
 
 /**
  * @route   GET /api/alunos/:id

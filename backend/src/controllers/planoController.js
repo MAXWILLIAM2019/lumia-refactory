@@ -1,4 +1,4 @@
-const { Plano, Disciplina, Assunto } = require('../models');
+const { Plano, Disciplina, Assunto, Sprint } = require('../models');
 const sequelize = require('../db');
 const { Op } = require('sequelize');
 
@@ -415,6 +415,41 @@ const buscarDisciplinasPorPlano = async (req, res) => {
   }
 };
 
+// Buscar sprints de um plano específico
+const buscarSprintsPorPlano = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log(`Buscando sprints do plano ID ${id}`);
+    
+    // Verificar se o plano existe
+    const plano = await Plano.findByPk(id);
+    if (!plano) {
+      return res.status(404).json({ error: 'Plano não encontrado' });
+    }
+    
+    // Buscar sprints do plano
+    const sprints = await Sprint.findAll({
+      where: { PlanoId: id },
+      order: [
+        ['posicao', 'ASC'],
+        ['dataInicio', 'ASC']
+      ]
+    });
+    
+    console.log(`${sprints.length} sprints encontradas para o plano ID ${id}`);
+    
+    res.json(sprints);
+  } catch (error) {
+    console.error('Erro ao buscar sprints do plano:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      error: 'Erro ao buscar sprints do plano', 
+      details: error.message 
+    });
+  }
+};
+
 module.exports = {
   listarPlanos,
   buscarPlanoPorId,
@@ -422,5 +457,6 @@ module.exports = {
   atualizarPlano,
   excluirPlano,
   testarRota,
-  buscarDisciplinasPorPlano
+  buscarDisciplinasPorPlano,
+  buscarSprintsPorPlano
 }; 

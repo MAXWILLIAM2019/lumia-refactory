@@ -272,4 +272,141 @@ exports.gerarSenha = async (req, res) => {
     console.error('Erro ao gerar senha:', error);
     res.status(500).json({ message: 'Erro ao gerar senha', error: error.message });
   }
+};
+
+/**
+ * Busca os planos associados ao aluno autenticado
+ * 
+ * @param {Object} req - Requisição HTTP
+ * @param {Object} res - Resposta HTTP
+ * @returns {Array} Lista de planos associados ao aluno
+ */
+exports.getAlunoPlanos = async (req, res) => {
+  try {
+    // O middleware de autenticação já adicionou req.aluno e req.user
+    const alunoId = req.user.id;
+    
+    // Importa os modelos necessários
+    const AlunoPlano = require('../models/AlunoPlano');
+    const Plano = require('../models/Plano');
+    
+    console.log(`Buscando planos para o aluno ID ${alunoId}`);
+    
+    // Busca as associações aluno-plano
+    const associacoes = await AlunoPlano.findAll({
+      where: { alunoId },
+      include: [{
+        model: Plano,
+        as: 'plano'
+      }]
+    });
+    
+    if (!associacoes || associacoes.length === 0) {
+      console.log(`Nenhum plano encontrado para o aluno ID ${alunoId}`);
+      return res.json([]);
+    }
+    
+    // Formata o resultado
+    const planos = associacoes.map(associacao => ({
+      id: associacao.id,
+      alunoId: associacao.alunoId,
+      planoId: associacao.planoId,
+      dataInicio: associacao.dataInicio,
+      dataPrevisaoTermino: associacao.dataPrevisaoTermino,
+      dataConclusao: associacao.dataConclusao,
+      status: associacao.status,
+      progresso: associacao.progresso,
+      observacoes: associacao.observacoes,
+      plano: associacao.plano
+    }));
+    
+    console.log(`${planos.length} planos encontrados para o aluno ID ${alunoId}`);
+    res.json(planos);
+  } catch (error) {
+    console.error('Erro ao buscar planos do aluno:', error);
+    res.status(500).json({ 
+      message: 'Erro ao buscar planos do aluno',
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Busca as sprints associadas ao aluno logado através de seu plano
+ * 
+ * @param {Object} req - Requisição HTTP
+ * @param {Object} res - Resposta HTTP
+ * @returns {Array} Lista de sprints associadas ao aluno
+ */
+exports.getAlunoSprints = async (req, res) => {
+  try {
+    // O middleware de autenticação já adicionou req.user com id e role
+    const alunoId = req.user.id;
+    
+    console.log(`Buscando sprints para o aluno ID ${alunoId}`);
+    
+    // Importa os modelos necessários
+    const { AlunoPlano, Plano, Sprint, Meta } = require('../models');
+    
+    // Busca as associações aluno-plano
+    const associacoes = await AlunoPlano.findAll({
+      where: { alunoId },
+      include: [{
+        model: Plano
+      }]
+    });
+    
+    if (!associacoes || associacoes.length === 0) {
+      console.log(`Nenhum plano encontrado para o aluno ID ${alunoId}`);
+      return res.status(404).json({ 
+        message: 'Aluno não possui planos de estudo atribuídos' 
+      });
+    }
+    
+    // Pega o primeiro plano (geralmente será apenas um)
+    const planoId = associacoes[0].planoId;
+    console.log(`Usando plano ID ${planoId} para buscar sprints`);
+    
+    // Busca as sprints associadas ao plano
+    const sprints = await Sprint.findAll({
+      where: { PlanoId: planoId },
+      include: [{
+        model: Meta,
+        as: 'metas'
+      }],
+      order: [
+        ['posicao', 'ASC'],
+        ['dataInicio', 'ASC']
+      ]
+    });
+    
+    if (!sprints || sprints.length === 0) {
+      console.log(`Nenhuma sprint encontrada para o plano ID ${planoId}`);
+      return res.status(404).json({ 
+        message: 'Não há sprints cadastradas no plano de estudo' 
+      });
+    }
+    
+    console.log(`${sprints.length} sprints encontradas para o aluno ID ${alunoId}`);
+    res.json(sprints);
+  } catch (error) {
+    console.error('Erro ao buscar sprints do aluno:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      message: 'Erro ao buscar sprints do aluno',
+      error: error.message 
+    });
+  }
+};
+
+module.exports = {
+  createAluno: exports.createAluno,
+  getAllAlunos: exports.getAllAlunos,
+  getAlunoById: exports.getAlunoById,
+  updateAluno: exports.updateAluno,
+  deleteAluno: exports.deleteAluno,
+  definirSenha: exports.definirSenha,
+  gerarSenha: exports.gerarSenha,
+  getAlunoPlanos: exports.getAlunoPlanos,
+  getAlunoSprints: exports.getAlunoSprints
 }; 

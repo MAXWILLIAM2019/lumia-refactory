@@ -12,13 +12,15 @@ import api from '../../services/api';
  * @param {number} props.progress - Progresso da sprint (ex: 75)
  * @param {string} props.startDate - Data de início da sprint (ex: "2023-05-01")
  * @param {Function} props.onSprintChange - Função chamada quando uma sprint é selecionada
+ * @param {boolean} props.disableSprintChange - Se verdadeiro, desabilita a seleção de sprint
  */
 export default function SprintHeader({ 
   children, 
   sprintTitle = 'Sprint 19', 
   progress = 0, 
   startDate,
-  onSprintChange 
+  onSprintChange,
+  disableSprintChange = false
 }) {
   const [sprints, setSprints] = useState([]);
   const [selectedSprintId, setSelectedSprintId] = useState(null);
@@ -96,20 +98,22 @@ export default function SprintHeader({
           Acompanhe seu progresso e veja o que falta para atingir sua sprint
         </h2>
         
-        <div className={styles.sprintSelector}>
-          <select 
-            onChange={handleSprintChange}
-            disabled={loading}
-            className={styles.sprintSelect}
-          >
-            <option value="">Selecione uma sprint</option>
-            {sprints.map((sprint) => (
-              <option key={sprint.id} value={sprint.id}>
-                {sprint.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        {!disableSprintChange && (
+          <div className={styles.sprintSelector}>
+            <select 
+              onChange={handleSprintChange}
+              disabled={loading}
+              className={styles.sprintSelect}
+            >
+              <option value="">Selecione uma sprint</option>
+              {sprints.map((sprint) => (
+                <option key={sprint.id} value={sprint.id}>
+                  {sprint.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Container de informações da sprint */}

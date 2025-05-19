@@ -8,6 +8,7 @@ const planoRoutes = require('./routes/planoRoutes');
 const authRoutes = require('./routes/authRoutes');
 const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const alunoPlanoRoutes = require('./routes/alunoPlanoRoutes');
+const seed = require('./seeds/seed'); // Importa o script de seed
 
 // Importa os modelos
 require('./models/Plano');
@@ -86,9 +87,18 @@ app.get('/api/test', (req, res) => {
 // IMPORTANTE: 'force: true' recria todas as tabelas e deve ser removido após a primeira execução
 // isso é necessário para atualizar o modelo Meta com os novos campos: comandos, link, totalQuestoes e questoesCorretas
 // Também é necessário para adicionar o campo status (ENUM) na model Sprint
-sequelize.sync({ force: true }).then(() => {
+sequelize.sync({ force: true }).then(async () => {
   console.log('Banco de dados sincronizado (tabelas recriadas)');
   console.log('Modelos disponíveis:', Object.keys(sequelize.models));
+  
+  // Executa o seed após a sincronização do banco de dados
+  try {
+    await seed();
+    console.log('Dados iniciais criados com sucesso');
+  } catch (seedError) {
+    console.error('Erro ao criar dados iniciais:', seedError);
+  }
+  
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
     console.log(`Servidor rodando na porta ${PORT}`);
