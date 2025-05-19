@@ -359,4 +359,42 @@ exports.buscarAlunosPorPlano = async (req, res) => {
       error: error.message 
     });
   }
+};
+
+/**
+ * Retorna o plano associado ao aluno logado
+ * @param {Object} req - Requisição HTTP
+ * @param {Object} res - Resposta HTTP
+ * @returns {Object} Associação aluno-plano do aluno autenticado
+ */
+exports.getPlanoDoAlunoLogado = async (req, res) => {
+  try {
+    const alunoId = req.user.id;
+    const associacao = await AlunoPlano.findOne({
+      where: { AlunoId: alunoId },
+      include: [
+        { model: Aluno, as: 'Aluno', attributes: ['id', 'nome', 'email', 'cpf'] },
+        { model: Plano, as: 'Plano', attributes: ['id', 'nome', 'cargo', 'duracao', 'descricao'] }
+      ]
+    });
+    if (!associacao) {
+      return res.status(404).json({ message: 'Nenhum plano associado a este aluno.' });
+    }
+    res.status(200).json({
+      id: associacao.id,
+      alunoId: associacao.AlunoId,
+      planoId: associacao.PlanoId,
+      dataInicio: associacao.dataInicio,
+      dataPrevisaoTermino: associacao.dataPrevisaoTermino,
+      dataConclusao: associacao.dataConclusao,
+      progresso: associacao.progresso,
+      status: associacao.status,
+      observacoes: associacao.observacoes,
+      aluno: associacao.Aluno,
+      plano: associacao.Plano
+    });
+  } catch (error) {
+    console.error('Erro ao buscar plano do aluno logado:', error);
+    res.status(500).json({ message: 'Erro ao buscar plano do aluno logado', error: error.message });
+  }
 }; 

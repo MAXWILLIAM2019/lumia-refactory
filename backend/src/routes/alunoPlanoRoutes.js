@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const alunoPlanoController = require('../controllers/alunoPlanoController');
+const auth = require('../middleware/auth');
 
 /**
  * @route   POST /api/aluno-plano
@@ -55,5 +56,12 @@ router.get('/aluno/:alunoId', alunoPlanoController.buscarPlanosPorAluno);
  * @param   {planoId} ID do plano
  */
 router.get('/plano/:planoId', alunoPlanoController.buscarAlunosPorPlano);
+
+/**
+ * @route   GET /api/aluno-plano/meu-plano
+ * @desc    Retorna o plano associado ao aluno logado
+ * @access  Privado (aluno autenticado)
+ */
+router.get('/meu-plano', auth, alunoPlanoController.getPlanoDoAlunoLogado);
 
 module.exports = router; 

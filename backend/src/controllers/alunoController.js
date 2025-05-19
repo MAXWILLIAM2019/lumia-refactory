@@ -343,18 +343,27 @@ exports.getAlunoSprints = async (req, res) => {
     // O middleware de autenticação já adicionou req.user com id e role
     const alunoId = req.user.id;
     
-    console.log(`Buscando sprints para o aluno ID ${alunoId}`);
+    console.log(`===== INICIANDO BUSCA DE SPRINTS PARA ALUNO =====`);
+    console.log(`ID do aluno autenticado: ${alunoId}`);
+    console.log(`Dados do token:`, req.user);
     
     // Importa os modelos necessários
     const { AlunoPlano, Plano, Sprint, Meta } = require('../models');
+    console.log(`Modelos importados com sucesso`);
     
     // Busca as associações aluno-plano
+    console.log(`Buscando associações do aluno ID ${alunoId} com planos...`);
     const associacoes = await AlunoPlano.findAll({
       where: { alunoId },
       include: [{
         model: Plano
       }]
     });
+    
+    console.log(`Número de associações encontradas: ${associacoes?.length || 0}`);
+    if (associacoes && associacoes.length > 0) {
+      console.log(`Primeira associação:`, JSON.stringify(associacoes[0].toJSON(), null, 2));
+    }
     
     if (!associacoes || associacoes.length === 0) {
       console.log(`Nenhum plano encontrado para o aluno ID ${alunoId}`);
@@ -367,7 +376,16 @@ exports.getAlunoSprints = async (req, res) => {
     const planoId = associacoes[0].planoId;
     console.log(`Usando plano ID ${planoId} para buscar sprints`);
     
+    if (!planoId) {
+      console.log(`ERRO: ID do plano não encontrado na associação`);
+      return res.status(500).json({ 
+        message: 'Erro ao identificar plano do aluno',
+        details: 'PlanoId ausente na associação' 
+      });
+    }
+    
     // Busca as sprints associadas ao plano
+    console.log(`Buscando sprints do plano ID ${planoId}...`);
     const sprints = await Sprint.findAll({
       where: { PlanoId: planoId },
       include: [{
@@ -380,6 +398,12 @@ exports.getAlunoSprints = async (req, res) => {
       ]
     });
     
+    console.log(`Número de sprints encontradas: ${sprints?.length || 0}`);
+    if (sprints && sprints.length > 0) {
+      console.log(`Primeira sprint ID: ${sprints[0].id}, Nome: ${sprints[0].nome}`);
+      console.log(`Número de metas na primeira sprint: ${sprints[0].metas?.length || 0}`);
+    }
+    
     if (!sprints || sprints.length === 0) {
       console.log(`Nenhuma sprint encontrada para o plano ID ${planoId}`);
       return res.status(404).json({ 
@@ -388,8 +412,10 @@ exports.getAlunoSprints = async (req, res) => {
     }
     
     console.log(`${sprints.length} sprints encontradas para o aluno ID ${alunoId}`);
+    console.log(`===== FINALIZANDO BUSCA DE SPRINTS PARA ALUNO =====`);
     res.json(sprints);
   } catch (error) {
+    console.error('===== ERRO AO BUSCAR SPRINTS DO ALUNO =====');
     console.error('Erro ao buscar sprints do aluno:', error);
     console.error('Stack trace:', error.stack);
     res.status(500).json({ 
