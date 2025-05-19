@@ -7,6 +7,7 @@
 import api from './api';
 
 const AUTH_TOKEN_KEY = 'token';
+const USER_ROLE_KEY = 'userRole';
 
 const authService = {
   /**
@@ -20,10 +21,12 @@ const authService = {
   /**
    * Armazena o token de autenticação
    * @param {string} token - Token JWT recebido do servidor
+   * @param {string} role - Tipo de usuário (admin, aluno)
    */
-  setToken: (token) => {
-    console.log('Armazenando token no localStorage');
+  setToken: (token, role) => {
+    console.log(`Armazenando token no localStorage para ${role}`);
     localStorage.setItem(AUTH_TOKEN_KEY, token);
+    localStorage.setItem(USER_ROLE_KEY, role);
   },
 
   /**
@@ -32,6 +35,15 @@ const authService = {
   removeToken: () => {
     console.log('Removendo token do localStorage');
     localStorage.removeItem(AUTH_TOKEN_KEY);
+    localStorage.removeItem(USER_ROLE_KEY);
+  },
+
+  /**
+   * Obtém o tipo de usuário logado
+   * @returns {string|null} Tipo de usuário ou null se não estiver logado
+   */
+  getUserRole: () => {
+    return localStorage.getItem(USER_ROLE_KEY);
   },
 
   /**
@@ -103,25 +115,49 @@ const authService = {
   },
   
   /**
-   * Realiza login no sistema
+   * Realiza login de administrador no sistema
    * @param {Object} credentials - Credenciais de login
-   * @param {string} credentials.email - Email do usuário
-   * @param {string} credentials.senha - Senha do usuário
+   * @param {string} credentials.email - Email do administrador
+   * @param {string} credentials.senha - Senha do administrador
    * @returns {Promise<Object>} Dados do usuário logado
    */
   login: async (credentials) => {
     try {
-      console.log('Tentando fazer login com:', credentials.email);
+      console.log('Tentando fazer login de administrador com:', credentials.email);
       const response = await api.post('/auth/login', credentials);
       
       if (response.data.success && response.data.token) {
-        authService.setToken(response.data.token);
+        authService.setToken(response.data.token, 'admin');
         return response.data;
       } else {
         throw new Error('Resposta inválida do servidor');
       }
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('Erro no login de administrador:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Realiza login de aluno no sistema
+   * @param {Object} credentials - Credenciais de login
+   * @param {string} credentials.email - Email do aluno
+   * @param {string} credentials.senha - Senha do aluno
+   * @returns {Promise<Object>} Dados do usuário logado
+   */
+  loginAluno: async (credentials) => {
+    try {
+      console.log('Tentando fazer login de aluno com:', credentials.email);
+      const response = await api.post('/auth/aluno/login', credentials);
+      
+      if (response.data.success && response.data.token) {
+        authService.setToken(response.data.token, 'aluno');
+        return response.data;
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
+    } catch (error) {
+      console.error('Erro no login de aluno:', error);
       throw error;
     }
   }

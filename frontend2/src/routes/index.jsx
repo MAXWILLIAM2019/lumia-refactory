@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from '../pages/Login';
+import LoginAluno from '../pages/LoginAluno';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard/Dashboard';
 import RegisterPlan from '../pages/RegisterPlan/RegisterPlan';
@@ -14,19 +15,31 @@ import Sprints from '../pages/Sprints/Sprints';
 import Disciplinas from '../pages/Disciplinas/Disciplinas';
 import CadastrarDisciplina from '../pages/CadastrarDisciplina/CadastrarDisciplina';
 
-// Componente para rotas protegidas
-const PrivateRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
+// Componente para rotas protegidas de administrador
+const AdminRoute = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
-  console.log('PrivateRoute - Token:', token);
-  console.log('PrivateRoute - isAuthenticated:', isAuthenticated);
+  const userRole = authService.getUserRole();
   
-  if (!isAuthenticated) {
-    console.log('Usuário não autenticado, redirecionando para login');
-    return <Navigate to="/login" replace />;
+  if (!isAuthenticated || userRole !== 'admin') {
+    console.log('Usuário não autenticado como admin, redirecionando para login de admin');
+    return <Navigate to="/admin/login" replace />;
   }
 
-  console.log('Usuário autenticado, renderizando rota protegida');
+  console.log('Administrador autenticado, renderizando rota protegida');
+  return <Layout>{children}</Layout>;
+};
+
+// Componente para rotas protegidas de aluno
+const AlunoRoute = ({ children }) => {
+  const isAuthenticated = authService.isAuthenticated();
+  const userRole = authService.getUserRole();
+  
+  if (!isAuthenticated || userRole !== 'aluno') {
+    console.log('Usuário não autenticado como aluno, redirecionando para login de aluno');
+    return <Navigate to="/aluno/login" replace />;
+  }
+
+  console.log('Aluno autenticado, renderizando rota protegida');
   return <Layout>{children}</Layout>;
 };
 
@@ -35,16 +48,17 @@ const AppRoutes = () => {
     <BrowserRouter>
       <Routes>
         {/* Rotas públicas */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/aluno/login" element={<LoginAluno />} />
 
-        {/* Rotas protegidas */}
+        {/* Rotas protegidas de administrador */}
         <Route
           path="/dashboard"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <Dashboard />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
 
@@ -52,25 +66,25 @@ const AppRoutes = () => {
         <Route
           path="/planos"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <ListPlans />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
         <Route
           path="/planos/cadastrar"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <RegisterPlan />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
         <Route
           path="/planos/editar/:id"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <EditPlan />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
 
@@ -78,25 +92,25 @@ const AppRoutes = () => {
         <Route
           path="/sprints/cadastrar"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <RegisterSprint />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
         <Route
           path="/sprints"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <Sprints />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
         <Route
           path="/sprints/editar/:id"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <RegisterSprint />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
 
@@ -104,25 +118,25 @@ const AppRoutes = () => {
         <Route
           path="/alunos/cadastrar"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <RegisterStudent />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
         <Route
           path="/alunos"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <div>Listar Alunos (em desenvolvimento)</div>
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
         <Route
           path="/alunos/editar/:id"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <div>Editar Aluno (em desenvolvimento)</div>
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
 
@@ -130,36 +144,62 @@ const AppRoutes = () => {
         <Route
           path="/disciplinas"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <Disciplinas />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
         <Route
           path="/disciplinas/cadastrar"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <CadastrarDisciplina />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
         <Route
           path="/disciplinas/editar/:id"
           element={
-            <PrivateRoute>
+            <AdminRoute>
               <CadastrarDisciplina />
-            </PrivateRoute>
+            </AdminRoute>
           }
         />
 
-        {/* Redireciona a raiz para a página de login */}
+        {/* Rotas de Aluno (área do aluno) */}
         <Route
-          path="/"
-          element={<Navigate to="/login" replace />}
+          path="/aluno/dashboard"
+          element={
+            <AlunoRoute>
+              <div>Dashboard do Aluno (em desenvolvimento)</div>
+            </AlunoRoute>
+          }
+        />
+        <Route
+          path="/aluno/sprints"
+          element={
+            <AlunoRoute>
+              <div>Minhas Sprints (em desenvolvimento)</div>
+            </AlunoRoute>
+          }
+        />
+        <Route
+          path="/aluno/perfil"
+          element={
+            <AlunoRoute>
+              <div>Meu Perfil (em desenvolvimento)</div>
+            </AlunoRoute>
+          }
         />
 
-        {/* Redireciona qualquer rota não definida para o login */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* Redireciona a raiz para o login do aluno */}
+        <Route
+          path="/"
+          element={<Navigate to="/aluno/login" replace />}
+        />
+
+        {/* Redireciona qualquer rota não definida para o login do aluno */}
+        <Route path="*" element={<Navigate to="/aluno/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

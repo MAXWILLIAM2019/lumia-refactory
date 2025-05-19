@@ -4,7 +4,7 @@ import BackgroundConnections from '../components/BackgroundConnections';
 import styles from './Login.module.css';
 import authService from '../services/authService';
 
-const Login = () => {
+const LoginAluno = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
@@ -27,22 +27,26 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log('Iniciando processo de login...');
+      console.log('Iniciando processo de login de aluno...');
       
-      // Usa o método login do authService
-      const response = await authService.login({
+      // Usa o método loginAluno do authService
+      const response = await authService.loginAluno({
         email: formData.email,
         senha: formData.senha
       });
 
-      console.log('Login bem-sucedido:', response);
+      console.log('Login de aluno bem-sucedido:', response);
       
-      // Redireciona para o dashboard após login
-      navigate('/dashboard');
+      // Redireciona para o dashboard de aluno após login
+      navigate('/aluno/dashboard');
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('Erro no login de aluno:', error);
       if (error.response?.status === 401) {
-        setError('Email ou senha incorretos');
+        if (error.response?.data?.message === 'Senha não definida para este aluno') {
+          setError('Sua senha ainda não foi definida. Entre em contato com o administrador.');
+        } else {
+          setError('Email ou senha incorretos');
+        }
       } else if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
@@ -57,7 +61,7 @@ const Login = () => {
     <div className={styles.container}>
       <BackgroundConnections />
       <div className={styles.loginBox}>
-        <h1 className={styles.title}>Área do Administrador</h1>
+        <h1 className={styles.title}>Área do Aluno</h1>
         
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
@@ -102,15 +106,9 @@ const Login = () => {
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-
-        <div className={styles.registerLink}>
-          Não tem uma conta? <Link to="/register">Registre-se</Link>
-          <br/>
-          <Link to="/aluno/login">Acessar área do aluno</Link>
-        </div>
       </div>
     </div>
   );
 };
 
-export default Login; 
+export default LoginAluno; 

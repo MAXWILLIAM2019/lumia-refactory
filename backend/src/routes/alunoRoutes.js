@@ -3,10 +3,19 @@
  * 
  * Este módulo define todas as rotas relacionadas às operações de alunos,
  * seguindo padrões RESTful para as operações CRUD.
+ * 
+ * Inclui controle de permissões para proteção de recursos.
  */
 const express = require('express');
 const router = express.Router();
 const alunoController = require('../controllers/alunoController');
+const { 
+  auth, 
+  adminOnly, 
+  alunoOnly, 
+  ownProfileOnly, 
+  checkPermission 
+} = require('../middleware');
 
 /**
  * @route   GET /api/alunos/test
@@ -18,6 +27,10 @@ router.get('/test', (req, res) => {
 });
 
 /**
+ * Rotas Públicas (não necessitam de autenticação)
+ */
+
+/**
  * @route   GET /api/alunos
  * @desc    Lista todos os alunos cadastrados
  * @access  Público
@@ -27,34 +40,55 @@ router.get('/', alunoController.getAllAlunos);
 /**
  * @route   POST /api/alunos
  * @desc    Cadastra um novo aluno
- * @access  Público
+ * @access  Público/Admin
  * @body    {nome, email, cpf}
  */
 router.post('/', alunoController.createAluno);
 
 /**
+ * Rotas Protegidas (necessitam de autenticação)
+ */
+
+/**
  * @route   GET /api/alunos/:id
- * @desc    Busca um aluno pelo ID
- * @access  Público
+ * @desc    Busca um aluno pelo ID (apenas admin ou o próprio aluno)
+ * @access  Privado
  * @param   {id} ID do aluno
  */
-router.get('/:id', alunoController.getAlunoById);
+router.get('/:id', auth, ownProfileOnly('id'), alunoController.getAlunoById);
 
 /**
  * @route   PUT /api/alunos/:id
- * @desc    Atualiza os dados de um aluno existente
- * @access  Público
+ * @desc    Atualiza os dados de um aluno (apenas admin ou o próprio aluno)
+ * @access  Privado
  * @param   {id} ID do aluno
  * @body    {nome, email, cpf}
  */
-router.put('/:id', alunoController.updateAluno);
+router.put('/:id', auth, ownProfileOnly('id'), alunoController.updateAluno);
 
 /**
  * @route   DELETE /api/alunos/:id
- * @desc    Remove um aluno do sistema
- * @access  Público
+ * @desc    Remove um aluno do sistema (apenas admin)
+ * @access  Privado/Admin
  * @param   {id} ID do aluno
  */
-router.delete('/:id', alunoController.deleteAluno);
+router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
+
+/**
+ * @route   POST /api/alunos/:id/definir-senha
+ * @desc    Define uma senha para um aluno (apenas admin ou o próprio aluno)
+ * @access  Privado
+ * @param   {id} ID do aluno
+ * @body    {senha} Nova senha do aluno
+ */
+router.post('/:id/definir-senha', auth, ownProfileOnly('id'), alunoController.definirSenha);
+
+/**
+ * @route   POST /api/alunos/:id/gerar-senha
+ * @desc    Gera uma senha aleatória para um aluno (apenas admin ou o próprio aluno)
+ * @access  Privado
+ * @param   {id} ID do aluno
+ */
+router.post('/:id/gerar-senha', auth, ownProfileOnly('id'), alunoController.gerarSenha);
 
 module.exports = router; 

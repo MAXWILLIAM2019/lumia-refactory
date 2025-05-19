@@ -271,6 +271,38 @@ Para mais detalhes sobre cada parte do sistema, consulte:
 - [Documentação do Frontend](./frontend2/README.md)
 - [Documentação do Backend](./backend/README.md)
 
+## Perfis de Usuários do Sistema
+
+O sistema de mentoria suporta diferentes perfis de usuários, cada um com funcionalidades e permissões específicas. Esta seção será atualizada à medida que novos perfis forem implementados.
+
+### Perfis Atuais
+
+#### 1. Administrador
+- Acesso completo a todas as funcionalidades do sistema
+- Gerenciamento de usuários (criar, editar, excluir)
+- Criação e gerenciamento de planos de estudo
+- Visualização de estatísticas e relatórios gerais
+- Configuração das opções do sistema
+
+#### 2. Mentor
+- Criação e gerenciamento de sprints
+- Acompanhamento dos alunos designados
+- Avaliação de atividades realizadas
+- Comunicação direta com alunos
+
+#### 3. Aluno
+- Visualização dos planos de estudo e sprints atribuídos
+- Submissão de atividades para avaliação
+- Acompanhamento do próprio progresso
+- Comunicação com mentores
+
+### Observações sobre os Perfis
+
+- **Hierarquia de Permissões**: Cada perfil possui um conjunto específico de permissões, com o Administrador tendo o nível mais alto de acesso.
+- **Personalização de Dashboards**: Cada perfil tem uma visualização personalizada do dashboard de acordo com suas necessidades e permissões.
+- **Funcionalidades Específicas**: Certas funcionalidades são exclusivas para determinados perfis de usuário.
+- **Extensibilidade**: O sistema foi projetado para acomodar facilmente novos perfis de usuários conforme a necessidade.
+
 ## Contribuição
 
 1. Fork o projeto

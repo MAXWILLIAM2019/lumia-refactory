@@ -61,5 +61,40 @@ export const alunoService = {
       console.error('Erro ao buscar aluno:', error);
       throw new Error(error.response?.data?.message || 'Erro ao buscar aluno');
     }
+  },
+
+  /**
+   * Define uma senha para um aluno
+   * 
+   * @param {number|string} id - ID do aluno
+   * @param {string} senha - Senha a ser definida
+   * @returns {Promise<Object>} Mensagem de confirmação
+   * @throws {Error} Erro se a definição de senha falhar
+   */
+  async definirSenha(id, senha) {
+    try {
+      const response = await api.post(`/alunos/${id}/definir-senha`, { senha });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao definir senha:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao definir senha para o aluno');
+    }
+  },
+
+  /**
+   * Gera uma senha aleatória para um aluno
+   * 
+   * @param {number|string} id - ID do aluno
+   * @returns {Promise<Object>} Objeto contendo a senha gerada e mensagem de confirmação
+   * @throws {Error} Erro se a geração de senha falhar
+   */
+  async gerarSenha(id) {
+    try {
+      const response = await api.post(`/alunos/${id}/gerar-senha`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao gerar senha:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao gerar senha para o aluno');
+    }
   }
 }; 

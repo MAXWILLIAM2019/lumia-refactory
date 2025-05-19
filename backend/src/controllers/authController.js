@@ -1,6 +1,6 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
+const authService = require('../services/authService');
 const Administrador = require('../models/Administrador');
+const Aluno = require('../models/Aluno');
 
 /**
  * @desc Login do administrador
@@ -9,51 +9,55 @@ const Administrador = require('../models/Administrador');
  */
 const login = async (req, res) => {
   try {
-    const { email, senha } = req.body;
-
-    // Verifica se o administrador existe
-    const admin = await Administrador.findOne({
-      where: { email }
-    });
-
-    if (!admin) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email ou senha inválidos'
-      });
-    }
-
-    // Verifica a senha
-    const senhaValida = await bcrypt.compare(senha, admin.senha);
-    if (!senhaValida) {
-      return res.status(401).json({
-        success: false,
-        message: 'Email ou senha inválidos'
-      });
-    }
-
-    // Gera o token JWT
-    const token = jwt.sign(
-      { id: admin.id, email: admin.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
+    console.log('Iniciando login de administrador');
+    const resultado = await authService.realizarLogin(req.body, 'admin');
+    
     res.json({
       success: true,
-      token,
-      admin: {
-        id: admin.id,
-        nome: admin.nome,
-        email: admin.email,
-        cargo: admin.cargo
-      }
+      token: resultado.token,
+      admin: resultado.usuario
     });
   } catch (error) {
-    console.error('Erro no login:', error);
-    res.status(500).json({
+    console.error('Erro no login de administrador:', error);
+    res.status(401).json({
       success: false,
-      message: 'Erro ao realizar login'
+      message: 'Email ou senha inválidos'
+    });
+  }
+};
+
+/**
+ * @desc Login do aluno
+ * @route POST /api/auth/aluno/login
+ * @access Public
+ */
+const loginAluno = async (req, res) => {
+  try {
+    console.log('Iniciando login de aluno');
+    const resultado = await authService.realizarLogin(req.body, 'aluno');
+    
+    res.json({
+      success: true,
+      token: resultado.token,
+      aluno: resultado.usuario
+    });
+  } catch (error) {
+    console.error('Erro no login de aluno:', error);
+    
+    // Mensagem específica para alunos sem senha definida
+    if (error.message === 'Credenciais inválidas' && req.body.email) {
+      const aluno = await Aluno.findOne({ where: { email: req.body.email } });
+      if (aluno && !aluno.senha) {
+        return res.status(401).json({
+          success: false,
+          message: 'Senha não definida para este aluno'
+        });
+      }
+    }
+    
+    res.status(401).json({
+      success: false,
+      message: 'Email ou senha inválidos'
     });
   }
 };
@@ -80,6 +84,7 @@ const registrar = async (req, res) => {
     }
 
     // Criptografa a senha
+    const bcrypt = require('bcryptjs');
     const senhaCriptografada = await bcrypt.hash(senha, 10);
 
     // Cria o administrador
@@ -91,11 +96,7 @@ const registrar = async (req, res) => {
     });
 
     // Gera o token JWT
-    const token = jwt.sign(
-      { id: admin.id, email: admin.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+    const token = authService.gerarToken(admin, 'admin');
 
     res.status(201).json({
       success: true,
@@ -117,41 +118,68 @@ const registrar = async (req, res) => {
 };
 
 /**
- * @desc Obtém dados do administrador logado
+ * @desc Obtém dados do usuário logado
  * @route GET /api/auth/me
  * @access Private
  */
 const me = async (req, res) => {
   try {
-    const admin = await Administrador.findByPk(req.admin.id);
+    // Verifica o perfil (role) através do token decodificado
+    if (req.user.role === 'admin') {
+      const admin = await Administrador.findByPk(req.user.id);
 
-    if (!admin) {
-      return res.status(404).json({
-        success: false,
-        message: 'Administrador não encontrado'
+      if (!admin) {
+        return res.status(404).json({
+          success: false,
+          message: 'Administrador não encontrado'
+        });
+      }
+
+      return res.json({
+        success: true,
+        role: 'admin',
+        admin: {
+          id: admin.id,
+          nome: admin.nome,
+          email: admin.email,
+          cargo: admin.cargo
+        }
+      });
+    } else if (req.user.role === 'aluno') {
+      const aluno = await Aluno.findByPk(req.user.id, {
+        attributes: { exclude: ['senha'] }
+      });
+
+      if (!aluno) {
+        return res.status(404).json({
+          success: false,
+          message: 'Aluno não encontrado'
+        });
+      }
+
+      return res.json({
+        success: true,
+        role: 'aluno',
+        aluno
       });
     }
 
-    res.json({
-      success: true,
-      admin: {
-        id: admin.id,
-        nome: admin.nome,
-        email: admin.email,
-        cargo: admin.cargo
-      }
+    return res.status(400).json({
+      success: false,
+      message: 'Perfil de usuário não reconhecido'
     });
   } catch (error) {
-    console.error('Erro ao obter dados do administrador:', error);
+    console.error('Erro ao obter dados do usuário:', error);
     res.status(500).json({
       success: false,
-      message: 'Erro ao obter dados do administrador'
+      message: 'Erro ao obter dados do usuário'
     });
   }
 };
 
 module.exports = {
   login,
+  loginAluno,
   registrar,
   me
 }; 

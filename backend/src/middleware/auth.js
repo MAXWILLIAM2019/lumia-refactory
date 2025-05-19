@@ -3,9 +3,13 @@
  * 
  * Verifica se o usuário está autenticado através do token JWT.
  * Este middleware é aplicado às rotas protegidas.
+ * Suporta autenticação de administradores e alunos.
+ * 
+ * Projetado para ser compatível com futura integração SSO (Keycloak).
  */
-const jwt = require('jsonwebtoken');
+const authService = require('../services/authService');
 const Administrador = require('../models/Administrador');
+const Aluno = require('../models/Aluno');
 
 const auth = async (req, res, next) => {
   console.log('🔐 Middleware de autenticação iniciado');
@@ -48,26 +52,63 @@ const auth = async (req, res, next) => {
     }
 
     try {
-      // Verifica o token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      // Verifica o token usando o serviço de autenticação
+      const decoded = authService.verificarToken(token);
       console.log('✅ Token verificado com sucesso:', decoded);
       
-      // Busca o administrador
-      const admin = await Administrador.findByPk(decoded.id);
+      // Armazena o payload decodificado no request
+      req.user = decoded;
       
-      if (!admin) {
-        console.log('❌ Administrador não encontrado para o ID:', decoded.id);
+      // Verifica o tipo de usuário (role) e busca os dados correspondentes
+      if (decoded.role === 'admin') {
+        // Caso seja um administrador
+        const admin = await Administrador.findByPk(decoded.id);
+        
+        if (!admin) {
+          console.log('❌ Administrador não encontrado para o ID:', decoded.id);
+          return res.status(401).json({
+            success: false,
+            message: 'Token inválido - administrador não encontrado'
+          });
+        }
+        
+        console.log('👤 Administrador autenticado:', admin.nome);
+        
+        // Mantém a compatibilidade com código existente que pode estar usando req.admin
+        req.admin = admin;
+      } 
+      else if (decoded.role === 'aluno') {
+        // Caso seja um aluno
+        const aluno = await Aluno.findByPk(decoded.id);
+        
+        if (!aluno) {
+          console.log('❌ Aluno não encontrado para o ID:', decoded.id);
+          return res.status(401).json({
+            success: false,
+            message: 'Token inválido - aluno não encontrado'
+          });
+        }
+        
+        console.log('👤 Aluno autenticado:', aluno.nome);
+        
+        // Adiciona o aluno ao request para uso posterior
+        req.aluno = aluno;
+      }
+      else {
+        // Caso o role não seja reconhecido
+        console.log('❌ Perfil de usuário não reconhecido:', decoded.role);
         return res.status(401).json({
           success: false,
-          message: 'Token inválido - usuário não encontrado'
+          message: 'Token inválido - perfil não reconhecido'
         });
       }
       
-      console.log('👤 Administrador autenticado:', admin.nome);
+      // Para facilitar verificações futuras, adiciona as permissões ao request
+      req.permissions = decoded['sis-mentoria']?.permissions || [];
       
-      // Adiciona o administrador ao request
-      req.admin = admin;
       console.log('✅ Autenticação concluída com sucesso');
+      console.log('🔑 Permissões do usuário:', req.permissions);
+      
       next();
     } catch (jwtError) {
       console.error('❌ Erro na verificação do JWT:', jwtError.message);
@@ -79,7 +120,7 @@ const auth = async (req, res, next) => {
     }
   } catch (error) {
     console.error('❌ Erro geral na autenticação:', error);
-    res.status(401).json({
+    res.status(500).json({
       success: false,
       message: 'Falha na autenticação',
       details: error.message

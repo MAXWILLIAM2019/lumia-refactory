@@ -14,6 +14,7 @@ import { alunoService } from '../../services/alunoService';
 import { alunoPlanoService } from '../../services/alunoPlanoService';
 import api from '../../services/api';
 import styles from './RegisterStudent.module.css';
+import SenhaModal from '../../components/SenhaModal';
 
 export default function RegisterStudent() {
   const navigate = useNavigate();
@@ -48,6 +49,10 @@ export default function RegisterStudent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(0);
   const itemsPerPage = 3;
+  
+  // Estado para modal de senha
+  const [showSenhaModal, setShowSenhaModal] = useState(false);
+  const [alunoParaSenha, setAlunoParaSenha] = useState(null);
 
   /**
    * Efeito que carrega os alunos quando a lista é exibida
@@ -252,6 +257,14 @@ export default function RegisterStudent() {
   };
 
   /**
+   * Fecha o modal de senha
+   */
+  const handleCloseSenhaModal = () => {
+    setShowSenhaModal(false);
+    setAlunoParaSenha(null);
+  };
+
+  /**
    * Submete o formulário para cadastrar um novo aluno
    * @param {Event} e - Evento de submit do formulário
    */
@@ -284,14 +297,15 @@ export default function RegisterStudent() {
             ...planoData
           });
           console.log('Resposta do servidor (associação):', associacaoResponse);
-          alert('Aluno cadastrado e associado ao plano com sucesso!');
         } catch (associacaoError) {
           console.error('Erro ao associar aluno ao plano:', associacaoError);
           alert(`Aluno cadastrado com sucesso, mas não foi possível associá-lo ao plano. Motivo: ${associacaoError.message}`);
         }
-      } else {
-        alert('Aluno cadastrado com sucesso!');
       }
+      
+      // Depois do cadastro, abrir o modal de senha
+      setAlunoParaSenha(alunoResponse);
+      setShowSenhaModal(true);
       
       // Limpa o formulário
       setFormData({ nome: '', email: '', cpf: '' });
@@ -429,6 +443,14 @@ export default function RegisterStudent() {
           <p><strong>Erro:</strong> {error}</p>
           <p>Por favor, verifique os dados e tente novamente.</p>
         </div>
+      )}
+      
+      {/* Modal de senha */}
+      {showSenhaModal && alunoParaSenha && (
+        <SenhaModal 
+          aluno={alunoParaSenha} 
+          onClose={handleCloseSenhaModal} 
+        />
       )}
       
       {/* Formulário de cadastro de aluno */}
