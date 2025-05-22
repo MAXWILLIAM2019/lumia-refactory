@@ -210,6 +210,9 @@ export default function Dashboard() {
             progress={sprint ? (sprint.metas.filter(m => m.status === 'Concluída').length / sprint.metas.length) * 100 : 0}
             startDate={sprint?.dataInicio}
             onSprintChange={handleSprintChange}
+            sprints={sprints}
+            selectedSprintId={sprint?.id}
+            initialSprintId={sprints.length > 0 ? sprints[0].id : null}
           >
             <SprintStats stats={stats} />
           </SprintHeader>

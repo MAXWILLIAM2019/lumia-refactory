@@ -13,6 +13,9 @@ import api from '../../services/api';
  * @param {string} props.startDate - Data de início da sprint (ex: "2023-05-01")
  * @param {Function} props.onSprintChange - Função chamada quando uma sprint é selecionada
  * @param {boolean} props.disableSprintChange - Se verdadeiro, desabilita a seleção de sprint
+ * @param {Array} props.sprints - Lista de sprints disponíveis
+ * @param {string} props.selectedSprintId - ID da sprint selecionada
+ * @param {string} props.initialSprintId - ID da sprint inicial
  */
 export default function SprintHeader({ 
   children, 
@@ -20,24 +23,19 @@ export default function SprintHeader({
   progress = 0, 
   startDate,
   onSprintChange,
-  disableSprintChange = false
+  disableSprintChange = false,
+  sprints = [],
+  selectedSprintId = null,
+  initialSprintId = null
 }) {
-  const [sprints, setSprints] = useState([]);
-  const [selectedSprintId, setSelectedSprintId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sprintData, setSprintData] = useState(null);
-  // Estado local para armazenar o contador de atividades concluídas
   const [completedActivities, setCompletedActivities] = useState(0);
   const [totalActivities, setTotalActivities] = useState(0);
   const [uniqueDisciplines, setUniqueDisciplines] = useState(0);
 
-  useEffect(() => {
-    fetchSprints();
-  }, []);
-
   // Efeito para atualizar os contadores quando o progresso muda
   useEffect(() => {
-    // Se a sprint foi buscada, atualizar os contadores
     if (sprintData?.metas) {
       const completed = sprintData.metas.filter(m => m.status === 'Concluída').length;
       const total = sprintData.metas.length;
@@ -49,24 +47,19 @@ export default function SprintHeader({
     }
   }, [sprintData]);
 
-  // Efeito para recalcular sprintData quando o progresso muda
+  // Efeito para buscar dados da sprint quando o ID muda
   useEffect(() => {
     if (selectedSprintId) {
       fetchSprintData(selectedSprintId);
     }
-  }, [progress, selectedSprintId]);
+  }, [selectedSprintId]);
 
-  const fetchSprints = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get('/sprints');
-      setSprints(response.data);
-    } catch (error) {
-      console.error('Erro ao buscar sprints:', error);
-    } finally {
-      setLoading(false);
+  // Efeito para selecionar a sprint inicial
+  useEffect(() => {
+    if (initialSprintId && onSprintChange) {
+      onSprintChange(initialSprintId);
     }
-  };
+  }, [initialSprintId]);
 
   const fetchSprintData = async (id) => {
     try {
@@ -84,7 +77,6 @@ export default function SprintHeader({
 
   const handleSprintChange = (e) => {
     const sprintId = e.target.value;
-    setSelectedSprintId(sprintId);
     if (onSprintChange) {
       onSprintChange(sprintId);
     }
@@ -104,6 +96,7 @@ export default function SprintHeader({
               onChange={handleSprintChange}
               disabled={loading}
               className={styles.sprintSelect}
+              value={selectedSprintId || ''}
             >
               <option value="">Selecione uma sprint</option>
               {sprints.map((sprint) => (

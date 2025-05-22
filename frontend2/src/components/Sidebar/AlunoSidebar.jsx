@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import sprintIcon from '../../assets/icons/sprint.svg';
+import listSprintIcon from '../../assets/icons/list-sprint.svg';
 import authService from '../../services/authService';
 
 /**
@@ -18,6 +19,10 @@ export default function AlunoSidebar() {
 
   const handleDashboardClick = () => {
     navigate('/aluno/dashboard');
+  };
+
+  const handleTodasSprintsClick = () => {
+    navigate('/aluno/sprints');
   };
 
   const handleLogout = () => {
@@ -41,6 +46,15 @@ export default function AlunoSidebar() {
             <div className={styles.menuItemContent}>
               <img src={sprintIcon} alt="Dashboard" className={styles.icon} />
               <span>Minha Sprint</span>
+            </div>
+          </li>
+          <li 
+            className={`${styles.menuItem} ${location.pathname === '/aluno/todas-sprints' ? styles.active : ''}`}
+            onClick={handleTodasSprintsClick}
+          >
+            <div className={styles.menuItemContent}>
+              <img src={listSprintIcon} alt="Todas as Sprints" className={styles.icon} />
+              <span>Todas as Sprints</span>
             </div>
           </li>
           <li 

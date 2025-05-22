@@ -5,6 +5,7 @@ import LoginAluno from '../pages/LoginAluno';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard/Dashboard';
 import AlunoDashboard from '../pages/Aluno/Dashboard';
+import TodasSprints from '../pages/Aluno/TodasSprints';
 import RegisterPlan from '../pages/RegisterPlan/RegisterPlan';
 import ListPlans from '../pages/ListPlans/ListPlans';
 import EditPlan from '../pages/EditPlan/EditPlan';
@@ -181,7 +182,7 @@ const AppRoutes = () => {
           path="/aluno/sprints"
           element={
             <AlunoRoute>
-              <div>Minhas Sprints (em desenvolvimento)</div>
+              <TodasSprints />
             </AlunoRoute>
           }
         />

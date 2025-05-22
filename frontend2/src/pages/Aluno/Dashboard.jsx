@@ -23,6 +23,8 @@ export default function AlunoDashboard() {
   });
   const [usuario, setUsuario] = useState(null);
   const [planoInfo, setPlanoInfo] = useState(null);
+  const [metasConcluidas, setMetasConcluidas] = useState(0);
+  const [totalMetas, setTotalMetas] = useState(0);
 
   useEffect(() => {
     fetchUsuarioInfo();
@@ -116,29 +118,36 @@ export default function AlunoDashboard() {
     }
   };
 
+  // Função para contar metas concluídas
+  const contarMetasConcluidas = (metas) => {
+    if (!metas) return 0;
+    return metas.filter(meta => meta.status === 'Concluída').length;
+  };
+
   // Função para buscar uma sprint específica pelo ID
   const fetchSprintById = async (sprintId) => {
     try {
-      console.log(`========== BUSCANDO DETALHES DA SPRINT ${sprintId} ==========`);
+      console.log('========== BUSCANDO SPRINT POR ID ==========');
+      console.log('ID da Sprint:', sprintId);
       
       const response = await api.get(`/sprints/${sprintId}`);
-      console.log('Detalhes da sprint recebida:', response.data);
-      console.log('Quantidade de metas na sprint:', response.data.metas?.length || 0);
+      console.log('Resposta da API:', response.data);
       
-      const sprintData = response.data;
-      setSprint(sprintData);
-      calculateStats(sprintData);
-      console.log('Sprint atualizada no estado com sucesso');
-    } catch (error) {
-      console.error(`ERRO ao carregar detalhes da sprint ${sprintId}:`, error);
-      if (error.response) {
-        console.error('Resposta da API:', error.response.data);
-        console.error('Status do erro:', error.response.status);
+      if (response.data) {
+        setSprint(response.data);
+        // Atualizar contagem de metas
+        setTotalMetas(response.data.metas.length);
+        setMetasConcluidas(contarMetasConcluidas(response.data.metas));
+        calculateStats(response.data);
+        console.log('Sprint atualizada no estado com sucesso');
+      } else {
+        setError('Sprint não encontrada');
       }
-      setError(`Erro ao carregar detalhes da sprint: ${error.message || 'Erro desconhecido'}`);
+    } catch (error) {
+      console.error('Erro ao buscar sprint:', error);
+      setError('Erro ao buscar sprint');
     } finally {
       setLoading(false);
-      console.log(`========== FINALIZADA BUSCA DE DETALHES DA SPRINT ${sprintId} ==========`);
     }
   };
 
@@ -270,7 +279,9 @@ export default function AlunoDashboard() {
             sprintTitle={sprint?.nome}
             progress={sprint ? (sprint.metas.filter(m => m.status === 'Concluída').length / sprint.metas.length) * 100 : 0}
             startDate={sprint?.dataInicio}
-            disableSprintChange={true} // Desabilita a troca de sprint para alunos
+            disableSprintChange={true}
+            sprints={[sprint].filter(Boolean)}
+            selectedSprintId={sprint?.id}
           >
             <SprintStats stats={stats} />
           </SprintHeader>
