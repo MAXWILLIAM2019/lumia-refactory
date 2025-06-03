@@ -277,7 +277,6 @@ export default function AlunoDashboard() {
           <h2 className={styles.userPlanoTitle}>
             Olá, {usuario.nome.split(' ')[0]} | {planoInfo.nome} - {planoInfo.cargo}
           </h2>
-          <p className={styles.userPlanoDesc}>{planoInfo.descricao}</p>
         </div>
       )}
       
