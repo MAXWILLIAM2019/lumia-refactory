@@ -159,7 +159,7 @@ export default function AlunoEstatisticas() {
       }
       const acertosTotal = disciplinasTemp.reduce((acc, d) => acc + d.acertos, 0);
       const questoesTotal = disciplinasTemp.reduce((acc, d) => acc + d.questoes, 0);
-      const percentualTotal = questoesTotal > 0 ? ((acertosTotal / questoesTotal) * 100).toFixed(1) : 0;
+      const percentualTotal = questoesTotal > 0 ? ((acertosTotal / questoesTotal) * 100) : 0;
 
       setDadosDisciplinas(disciplinasTemp);
       setTotalAcertos(acertosTotal);
@@ -295,7 +295,7 @@ export default function AlunoEstatisticas() {
                         <td>{disc.nome}</td>
                         <td>{disc.acertos}</td>
                         <td>{disc.questoes}</td>
-                        <td>{disc.percentual.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%</td>
+                        <td>{disc.percentual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -304,7 +304,7 @@ export default function AlunoEstatisticas() {
                       <td>TOTAL</td>
                       <td>{totalAcertos}</td>
                       <td>{totalQuestoes}</td>
-                      <td>{totalPercentual}%</td>
+                      <td>{typeof totalPercentual === 'string' ? Number(totalPercentual).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : totalPercentual.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%</td>
                     </tr>
                   </tfoot>
                 </table>
