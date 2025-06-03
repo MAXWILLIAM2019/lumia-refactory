@@ -8,6 +8,7 @@ const planoRoutes = require('./routes/planoRoutes');
 const authRoutes = require('./routes/authRoutes');
 const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const alunoPlanoRoutes = require('./routes/alunoPlanoRoutes');
+const sprintAtualRoutes = require('./routes/sprintAtual');
 
 // Importa os modelos
 require('./models/Plano');
@@ -17,6 +18,7 @@ require('./models/Administrador');
 require('./models/Aluno');
 require('./models/Meta'); // Importa o modelo Meta (antigo Atividade)
 require('./models/AlunoPlano'); // Importa o modelo AlunoPlano
+require('./models/SprintAtual'); // Importa o modelo SprintAtual
 
 const app = express();
 
@@ -34,6 +36,7 @@ app.use('/api/planos', planoRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/disciplinas', disciplinaRoutes);
 app.use('/api/aluno-plano', alunoPlanoRoutes);
+app.use('/api/sprint-atual', sprintAtualRoutes);
 
 // Rota de teste para verificar se a API está funcionando
 app.get('/', (req, res) => {
@@ -49,6 +52,7 @@ app.get('/api/test', (req, res) => {
 sequelize.sync().then(() => {
   console.log('Banco de dados sincronizado');
   console.log('Modelos disponíveis:', Object.keys(sequelize.models));
+  console.log('Tabelas criadas:', Object.keys(sequelize.models).map(model => sequelize.models[model].tableName));
   
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {

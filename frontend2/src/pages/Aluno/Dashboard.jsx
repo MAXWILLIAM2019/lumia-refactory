@@ -31,7 +31,7 @@ export default function AlunoDashboard() {
 
   useEffect(() => {
     fetchUsuarioInfo();
-    fetchAlunoPrimeiroSprint();
+    fetchSprintAtual();
   }, []);
 
   const fetchUsuarioInfo = async () => {
@@ -81,42 +81,28 @@ export default function AlunoDashboard() {
     }
   };
 
-  const fetchAlunoPrimeiroSprint = async () => {
+  const fetchSprintAtual = async () => {
     try {
       setLoading(true);
       setError('');
-      console.log('========== INICIANDO BUSCA DE SPRINT DO ALUNO ==========');
-      // Buscar o plano do aluno logado
-      const planoId = await fetchAlunoPlano();
-      if (!planoId) return;
-      // Buscar sprints do plano
-      try {
-        const sprintsResponse = await api.get(`/planos/${planoId}/sprints`);
-        console.log('Sprints do plano recebidas:', sprintsResponse.data);
-        if (!sprintsResponse.data || sprintsResponse.data.length === 0) {
-          setError('Não há sprints cadastradas no seu plano de estudo.');
-          setLoading(false);
-          return;
-        }
-        // Ordenar sprints por posição ou data de início
-        const sortedSprints = [...sprintsResponse.data].sort((a, b) => {
-          if (a.posicao !== undefined && b.posicao !== undefined) {
-            return a.posicao - b.posicao;
-          }
-          return new Date(a.dataInicio) - new Date(b.dataInicio);
-        });
-        // Pegar a primeira sprint
-        const primeiraSprintId = sortedSprints[0].id;
-        await fetchSprintById(primeiraSprintId);
-      } catch (sprintsError) {
-        console.error('Erro ao buscar sprints do plano:', sprintsError);
-        setError('Erro ao buscar sprints do plano.');
-        setLoading(false);
+      console.log('========== BUSCANDO SPRINT ATUAL ==========');
+      
+      const response = await api.get('/sprint-atual');
+      console.log('Sprint atual recebida:', response.data);
+      
+      if (response.data) {
+        const sprintData = response.data;
+        setSprint(sprintData);
+        setTotalMetas(sprintData.metas?.length || 0);
+        setMetasConcluidas(contarMetasConcluidas(sprintData.metas || []));
+        calculateStats(sprintData);
+      } else {
+        setError('Não foi possível carregar a sprint atual');
       }
-      console.log('========== FINALIZADO PROCESSO DE BUSCA DE SPRINT ==========');
     } catch (error) {
-      console.error('ERRO CRÍTICO não tratado:', error);
-      setError(`Erro crítico: ${error.message || 'Erro desconhecido'}`);
+      console.error('Erro ao buscar sprint atual:', error);
+      setError('Erro ao carregar sprint atual. Por favor, tente novamente.');
+    } finally {
       setLoading(false);
     }
   };
@@ -125,35 +111,6 @@ export default function AlunoDashboard() {
   const contarMetasConcluidas = (metas) => {
     if (!metas) return 0;
     return metas.filter(meta => meta.status === 'Concluída').length;
-  };
-
-  // Função para buscar uma sprint específica pelo ID
-  const fetchSprintById = async (sprintId) => {
-    try {
-      console.log('========== BUSCANDO SPRINT POR ID ==========');
-      console.log('ID da Sprint:', sprintId);
-      
-      const response = await api.get(`/sprints/${sprintId}`);
-      console.log('Resposta da API:', response.data);
-      
-      if (response.data) {
-        setSprint(response.data);
-        // Atualizar contagem de metas
-        setTotalMetas(response.data.metas.length);
-        setMetasConcluidas(contarMetasConcluidas(response.data.metas));
-        calculateStats(response.data);
-        console.log('Sprint atualizada no estado com sucesso');
-      } else {
-        setError('Sprint não encontrada');
-      }
-    } catch (error) {
-      console.error('Erro ao buscar sprint:', error);
-      setError('Erro ao buscar sprint');
-      // Se houver erro ao buscar a sprint, tentar carregar a primeira sprint
-      fetchAlunoPrimeiroSprint();
-    } finally {
-      setLoading(false);
-    }
   };
 
   const calculateStats = (currentSprint) => {
@@ -276,11 +233,18 @@ export default function AlunoDashboard() {
     if (!proximaSprint) return;
     
     try {
-      await fetchSprintById(proximaSprint.id);
+      setLoading(true);
+      // Atualizar a sprint atual no backend
+      await api.put('/sprint-atual', { sprintId: proximaSprint.id });
+      // Atualizar a sprint atual no frontend
+      await fetchSprintAtual();
+      // Buscar a próxima sprint
       await buscarProximaSprint();
     } catch (error) {
       console.error('Erro ao navegar para próxima sprint:', error);
-      setError('Erro ao navegar para próxima sprint');
+      setError('Erro ao navegar para próxima sprint. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -300,7 +264,7 @@ export default function AlunoDashboard() {
       {error && (
         <div className={styles.error}>
           <p>{error}</p>
-          <button onClick={fetchAlunoPrimeiroSprint} className={styles.retryButton}>
+          <button onClick={fetchSprintAtual} className={styles.retryButton}>
             Tentar novamente
           </button>
         </div>
@@ -363,7 +327,7 @@ export default function AlunoDashboard() {
             }}
             onRefresh={() => {
               if (sprint) {
-                fetchSprintById(sprint.id);
+                fetchSprintAtual();
               }
             }}
           />

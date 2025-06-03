@@ -74,10 +74,6 @@ const AlunoPlano = sequelize.define('AlunoPlano', {
   comment: 'Associação entre alunos e planos com dados de progresso'
 });
 
-// Estabelecer as relações
-Aluno.belongsToMany(Plano, { through: AlunoPlano, as: 'planos' });
-Plano.belongsToMany(Aluno, { through: AlunoPlano, as: 'alunos' });
-
 // Adicionar relações diretas para facilitar queries
 AlunoPlano.belongsTo(Aluno);
 AlunoPlano.belongsTo(Plano);

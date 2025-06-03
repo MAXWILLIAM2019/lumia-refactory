@@ -11,15 +11,13 @@ const Aluno = require('./Aluno');
 const Sprint = require('./Sprint');
 const Meta = require('./Meta');
 const AlunoPlano = require('./AlunoPlano');
+const SprintAtual = require('./SprintAtual');
 
 // Garante que os relacionamentos são estabelecidos
 console.log('Configurando relacionamentos entre modelos...');
 
-// Relacionamento Plano -> Disciplina (antiga implementação onde disciplina pertencia a um plano)
-console.log('Configurando relacionamento Plano -> Disciplina (associação via tabela intermediária)');
-
-// Criamos uma tabela intermediária PlanoDisciplina para permitir
-// que uma disciplina possa ser usada em múltiplos planos
+// Relacionamento Plano -> Disciplina
+console.log('Configurando relacionamento Plano -> Disciplina');
 Plano.belongsToMany(Disciplina, { 
   through: 'PlanoDisciplina',
   as: 'disciplinas'
@@ -59,8 +57,25 @@ Sprint.hasMany(Meta, {
 Meta.belongsTo(Sprint);
 
 // Relacionamento Aluno -> Plano (via AlunoPlano)
-console.log('Configurando relacionamento Aluno -> Plano (via AlunoPlano)');
-// Nota: As relações estão definidas no arquivo AlunoPlano.js
+console.log('Configurando relacionamento Aluno -> Plano');
+Aluno.belongsToMany(Plano, { 
+  through: AlunoPlano, 
+  as: 'planos' 
+});
+Plano.belongsToMany(Aluno, { 
+  through: AlunoPlano, 
+  as: 'alunos' 
+});
+
+// Relacionamento Aluno -> SprintAtual
+console.log('Configurando relacionamento Aluno -> SprintAtual');
+Aluno.hasOne(SprintAtual, { foreignKey: 'AlunoId' });
+SprintAtual.belongsTo(Aluno, { foreignKey: 'AlunoId' });
+
+// Relacionamento Sprint -> SprintAtual
+console.log('Configurando relacionamento Sprint -> SprintAtual');
+Sprint.hasOne(SprintAtual, { foreignKey: 'SprintId' });
+SprintAtual.belongsTo(Sprint, { foreignKey: 'SprintId' });
 
 console.log('Relacionamentos configurados com sucesso!');
 
@@ -72,5 +87,6 @@ module.exports = {
   Aluno,
   Sprint,
   Meta,
-  AlunoPlano
+  AlunoPlano,
+  SprintAtual
 }; 

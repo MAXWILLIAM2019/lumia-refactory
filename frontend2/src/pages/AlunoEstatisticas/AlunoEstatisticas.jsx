@@ -70,9 +70,12 @@ export default function AlunoEstatisticas() {
 
   const carregarEstatisticasSprintAtual = async () => {
     try {
-      // Buscar o plano do aluno logado
-      const planoResp = await api.get('/aluno-plano/meu-plano');
-      if (!planoResp.data || !planoResp.data.planoId) {
+      setLoading(true);
+      setLoadingTabela(true);
+
+      // Buscar a sprint atual do aluno
+      const sprintAtualResp = await api.get('/sprint-atual');
+      if (!sprintAtualResp.data) {
         setQuestoesCorretas(0);
         setQuestoesErradas(0);
         setNomeSprintAtual('');
@@ -84,36 +87,11 @@ export default function AlunoEstatisticas() {
         setLoadingTabela(false);
         return;
       }
-      const planoId = planoResp.data.planoId;
-      // Buscar sprints do plano
-      const sprintsResp = await api.get(`/planos/${planoId}/sprints`);
-      const sprints = sprintsResp.data;
-      if (!sprints || sprints.length === 0) {
-        setQuestoesCorretas(0);
-        setQuestoesErradas(0);
-        setNomeSprintAtual('');
-        setDadosDisciplinas([]);
-        setTotalAcertos(0);
-        setTotalQuestoes(0);
-        setTotalPercentual(0);
-        setLoading(false);
-        setLoadingTabela(false);
-        return;
-      }
-      // Ordenar sprints por posição ou data de início
-      const sortedSprints = [...sprints].sort((a, b) => {
-        if (a.posicao !== undefined && b.posicao !== undefined) {
-          return a.posicao - b.posicao;
-        }
-        return new Date(a.dataInicio) - new Date(b.dataInicio);
-      });
-      // Pegar a primeira sprint (a atual)
-      const sprintAtual = sortedSprints[0];
+
+      const sprintAtual = sprintAtualResp.data;
       setNomeSprintAtual(sprintAtual.nome || '');
-      // Buscar dados completos da sprint
-      const sprintDetalhesResp = await api.get(`/sprints/${sprintAtual.id}`);
-      const sprintDetalhes = sprintDetalhesResp.data;
-      if (!sprintDetalhes || !sprintDetalhes.metas) {
+
+      if (!sprintAtual.metas) {
         setQuestoesCorretas(0);
         setQuestoesErradas(0);
         setDadosDisciplinas([]);
@@ -124,10 +102,11 @@ export default function AlunoEstatisticas() {
         setLoadingTabela(false);
         return;
       }
+
       // Somar questões corretas e erradas das metas da sprint atual
       let corretas = 0;
       let erradas = 0;
-      sprintDetalhes.metas.forEach(meta => {
+      sprintAtual.metas.forEach(meta => {
         corretas += meta.questoesCorretas || 0;
         const total = meta.totalQuestoes || 0;
         erradas += total - (meta.questoesCorretas || 0);
@@ -139,10 +118,10 @@ export default function AlunoEstatisticas() {
 
       // Dados reais para a tabela de desempenho por disciplina
       let disciplinasTemp = [];
-      if (sprintDetalhes && sprintDetalhes.metas) {
+      if (sprintAtual.metas) {
         // Agrupar metas por disciplina
         const agrupado = {};
-        sprintDetalhes.metas.forEach(meta => {
+        sprintAtual.metas.forEach(meta => {
           const disciplina = meta.disciplina || '---';
           if (!agrupado[disciplina]) {
             agrupado[disciplina] = { acertos: 0, questoes: 0 };
@@ -165,9 +144,9 @@ export default function AlunoEstatisticas() {
       setTotalAcertos(acertosTotal);
       setTotalQuestoes(questoesTotal);
       setTotalPercentual(percentualTotal);
-      setLoadingTabela(false); // Desativa o loading da tabela após processar os dados
+      setLoadingTabela(false);
     } catch (error) {
-      console.error('Erro ao carregar estatísticas da sprint atual:', error);
+      console.error('Erro ao carregar estatísticas:', error);
       setQuestoesCorretas(0);
       setQuestoesErradas(0);
       setDadosDisciplinas([]);

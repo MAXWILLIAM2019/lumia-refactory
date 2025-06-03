@@ -1,0 +1,206 @@
+const SprintAtual = require('../models/SprintAtual');
+const Sprint = require('../models/Sprint');
+const Aluno = require('../models/Aluno');
+const Plano = require('../models/Plano');
+const AlunoPlano = require('../models/AlunoPlano');
+const Meta = require('../models/Meta');
+
+/**
+ * Busca a sprint atual do aluno
+ */
+exports.getSprintAtual = async (req, res) => {
+  try {
+    console.log('========== BUSCANDO SPRINT ATUAL ==========');
+    const alunoId = req.aluno.id;
+    console.log('ID do aluno:', alunoId);
+
+    // Primeiro, buscar o plano do aluno
+    const alunoPlano = await AlunoPlano.findOne({
+      where: { AlunoId: alunoId },
+      include: [{
+        model: Plano,
+        include: [{
+          model: Sprint,
+          as: 'sprints',
+          include: [{
+            model: Meta,
+            as: 'metas'
+          }],
+          order: [['posicao', 'ASC']]
+        }]
+      }]
+    });
+
+    if (!alunoPlano || !alunoPlano.Plano || !alunoPlano.Plano.sprints || alunoPlano.Plano.sprints.length === 0) {
+      return res.status(404).json({ message: 'Aluno não possui plano de estudo com sprints' });
+    }
+
+    // Buscar a sprint atual do aluno
+    let sprintAtual = await SprintAtual.findOne({
+      where: { AlunoId: alunoId },
+      include: [{
+        model: Sprint,
+        include: [{
+          model: Meta,
+          as: 'metas'
+        }]
+      }]
+    });
+
+    // Se não existir sprint atual, criar com a primeira sprint do plano
+    if (!sprintAtual) {
+      const primeiraSprint = alunoPlano.Plano.sprints[0];
+      sprintAtual = await SprintAtual.create({
+        AlunoId: alunoId,
+        SprintId: primeiraSprint.id
+      });
+
+      // Buscar a sprint completa com suas metas
+      const sprintCompleta = await Sprint.findByPk(primeiraSprint.id, {
+        include: [{
+          model: Meta,
+          as: 'metas'
+        }]
+      });
+
+      return res.json(sprintCompleta);
+    }
+
+    // Se já existe sprint atual, retornar ela
+    return res.json(sprintAtual.Sprint);
+  } catch (error) {
+    console.error('Erro ao buscar sprint atual:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Atualiza a sprint atual do aluno
+ */
+exports.atualizarSprintAtual = async (req, res) => {
+  try {
+    const alunoId = req.aluno.id;
+    const { sprintId } = req.body;
+
+    if (!sprintId) {
+      return res.status(400).json({ message: 'ID da sprint é obrigatório' });
+    }
+
+    // Verificar se a sprint existe
+    const sprint = await Sprint.findByPk(sprintId);
+    if (!sprint) {
+      return res.status(404).json({ message: 'Sprint não encontrada' });
+    }
+
+    // Verificar se a sprint pertence ao plano do aluno
+    const aluno = await Aluno.findByPk(alunoId, {
+      include: [{
+        model: Plano,
+        as: 'planos',
+        include: [{
+          model: Sprint,
+          as: 'sprints'
+        }]
+      }]
+    });
+
+    const sprintPertenceAoPlano = aluno.planos.some(plano => 
+      plano.sprints.some(s => s.id === sprintId)
+    );
+
+    if (!sprintPertenceAoPlano) {
+      return res.status(403).json({ message: 'Sprint não pertence ao plano do aluno' });
+    }
+
+    // Atualizar ou criar o registro da sprint atual
+    const [sprintAtual, created] = await SprintAtual.findOrCreate({
+      where: { AlunoId: alunoId },
+      defaults: {
+        SprintId: sprintId
+      }
+    });
+
+    if (!created) {
+      await sprintAtual.update({
+        SprintId: sprintId,
+        dataAtualizacao: new Date()
+      });
+    }
+
+    // Buscar a sprint completa com suas metas
+    const sprintCompleta = await Sprint.findByPk(sprintId, {
+      include: [{
+        model: Meta,
+        as: 'metas'
+      }]
+    });
+
+    res.json(sprintCompleta);
+  } catch (error) {
+    console.error('Erro ao atualizar sprint atual:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Inicializa a sprint atual do aluno com a primeira sprint do seu plano
+ */
+exports.inicializarSprintAtual = async (req, res) => {
+  try {
+    console.log('========== INICIALIZANDO SPRINT ATUAL ==========');
+    const alunoId = req.user.aluno.id;
+    console.log('ID do aluno:', alunoId);
+
+    // Verificar se já existe uma sprint atual
+    const sprintAtualExistente = await SprintAtual.findOne({
+      where: { AlunoId: alunoId }
+    });
+
+    if (sprintAtualExistente) {
+      console.log('Aluno já possui sprint atual');
+      return res.status(400).json({ message: 'Aluno já possui sprint atual' });
+    }
+
+    // Buscar o plano do aluno
+    const alunoPlano = await AlunoPlano.findOne({
+      where: { AlunoId: alunoId },
+      include: [{
+        model: Plano,
+        include: [{
+          model: Sprint,
+          as: 'sprints',
+          include: [{
+            model: Meta,
+            as: 'metas'
+          }],
+          order: [['posicao', 'ASC']]
+        }]
+      }]
+    });
+
+    if (!alunoPlano || !alunoPlano.Plano || !alunoPlano.Plano.sprints || alunoPlano.Plano.sprints.length === 0) {
+      return res.status(404).json({ message: 'Aluno não possui plano de estudo com sprints' });
+    }
+
+    const primeiraSprint = alunoPlano.Plano.sprints[0];
+    
+    // Criar o registro da sprint atual
+    const sprintAtual = await SprintAtual.create({
+      AlunoId: alunoId,
+      SprintId: primeiraSprint.id
+    });
+
+    // Buscar a sprint completa com suas metas
+    const sprintCompleta = await Sprint.findByPk(primeiraSprint.id, {
+      include: [{
+        model: Meta,
+        as: 'metas'
+      }]
+    });
+
+    res.json(sprintCompleta);
+  } catch (error) {
+    console.error('Erro ao inicializar sprint atual:', error);
+    res.status(500).json({ message: error.message });
+  }
+}; 
