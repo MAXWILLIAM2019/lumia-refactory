@@ -35,43 +35,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/disciplinas', disciplinaRoutes);
 app.use('/api/aluno-plano', alunoPlanoRoutes);
 
-// Rota para atualizar uma meta
-app.put('/api/metas/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status, tempoEstudado, desempenho, totalQuestoes, questoesCorretas } = req.body;
-    
-    // Busca a meta
-    const meta = await sequelize.models.Meta.findByPk(id);
-    if (!meta) {
-      return res.status(404).json({ message: 'Meta não encontrada' });
-    }
-    
-    // Atualiza a meta
-    const dadosAtualizacao = { 
-      status, 
-      tempoEstudado, 
-      desempenho 
-    };
-    
-    // Adiciona campos opcionais se fornecidos
-    if (totalQuestoes !== undefined) {
-      dadosAtualizacao.totalQuestoes = totalQuestoes;
-    }
-    if (questoesCorretas !== undefined) {
-      dadosAtualizacao.questoesCorretas = questoesCorretas;
-    }
-    
-    await meta.update(dadosAtualizacao);
-    
-    // Retorna a meta atualizada
-    res.json(meta);
-  } catch (error) {
-    console.error('Erro ao atualizar meta:', error);
-    res.status(400).json({ message: error.message });
-  }
-});
-
 // Rota de teste para verificar se a API está funcionando
 app.get('/', (req, res) => {
   res.json({ message: 'API do Mentor está funcionando!' });
@@ -83,11 +46,8 @@ app.get('/api/test', (req, res) => {
 });
 
 // Sincronização do banco de dados e inicialização do servidor
-// IMPORTANTE: 'force: true' recria todas as tabelas e deve ser removido após a primeira execução
-// isso é necessário para atualizar o modelo Meta com os novos campos: comandos, link, totalQuestoes e questoesCorretas
-// Também é necessário para adicionar o campo status (ENUM) na model Sprint
-sequelize.sync({ force: true }).then(() => {
-  console.log('Banco de dados sincronizado (tabelas recriadas)');
+sequelize.sync().then(() => {
+  console.log('Banco de dados sincronizado');
   console.log('Modelos disponíveis:', Object.keys(sequelize.models));
   
   const PORT = process.env.PORT || 3000;

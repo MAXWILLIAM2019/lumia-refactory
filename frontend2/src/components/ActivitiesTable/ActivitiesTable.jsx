@@ -276,7 +276,7 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
       }
       
       // Enviar para o backend
-      await api.put(`/metas/${selectedActivity.codigo}`, updateData);
+      await api.put(`/sprints/metas/${selectedActivity.codigo}`, updateData);
       
       // Fechar o modal e atualizar os dados
       handleModalClose();
