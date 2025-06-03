@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import styles from './AlunoEstatisticas.module.css';
 import api from '../../services/api';
 import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
@@ -29,7 +30,9 @@ function CustomPieTooltip({ active, payload, dataPie, setShowValues }) {
 }
 
 export default function AlunoEstatisticas() {
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
+  const [loadingTabela, setLoadingTabela] = useState(true);
   const [questoesCorretas, setQuestoesCorretas] = useState(0);
   const [questoesErradas, setQuestoesErradas] = useState(0);
   const [showValues, setShowValues] = useState(false);
@@ -40,14 +43,33 @@ export default function AlunoEstatisticas() {
   const [totalAcertos, setTotalAcertos] = useState(0);
   const [totalQuestoes, setTotalQuestoes] = useState(0);
   const [totalPercentual, setTotalPercentual] = useState(0);
+  const [graficoKey, setGraficoKey] = useState(0);
 
   useEffect(() => {
+    setLoading(true);
+    setLoadingTabela(true);
     carregarEstatisticasSprintAtual();
+    
+    // Função de cleanup que será executada quando o componente for desmontado
+    return () => {
+      setLoading(true);
+      setLoadingTabela(true);
+      setQuestoesCorretas(0);
+      setQuestoesErradas(0);
+      setShowValues(false);
+      setActiveIndex(null);
+      setAbaSelecionada(0);
+      setNomeSprintAtual('');
+      setDadosDisciplinas([]);
+      setTotalAcertos(0);
+      setTotalQuestoes(0);
+      setTotalPercentual(0);
+      setGraficoKey(0);
+    };
   }, []);
 
   const carregarEstatisticasSprintAtual = async () => {
     try {
-      setLoading(true);
       // Buscar o plano do aluno logado
       const planoResp = await api.get('/aluno-plano/meu-plano');
       if (!planoResp.data || !planoResp.data.planoId) {
@@ -59,6 +81,7 @@ export default function AlunoEstatisticas() {
         setTotalQuestoes(0);
         setTotalPercentual(0);
         setLoading(false);
+        setLoadingTabela(false);
         return;
       }
       const planoId = planoResp.data.planoId;
@@ -74,6 +97,7 @@ export default function AlunoEstatisticas() {
         setTotalQuestoes(0);
         setTotalPercentual(0);
         setLoading(false);
+        setLoadingTabela(false);
         return;
       }
       // Ordenar sprints por posição ou data de início
@@ -97,6 +121,7 @@ export default function AlunoEstatisticas() {
         setTotalQuestoes(0);
         setTotalPercentual(0);
         setLoading(false);
+        setLoadingTabela(false);
         return;
       }
       // Somar questões corretas e erradas das metas da sprint atual
@@ -109,6 +134,8 @@ export default function AlunoEstatisticas() {
       });
       setQuestoesCorretas(corretas);
       setQuestoesErradas(erradas);
+      setLoading(false); // Desativa o loading geral após carregar os dados do gráfico
+      setGraficoKey(prev => prev + 1); // Força o remount do gráfico
 
       // Dados reais para a tabela de desempenho por disciplina
       let disciplinasTemp = [];
@@ -138,6 +165,7 @@ export default function AlunoEstatisticas() {
       setTotalAcertos(acertosTotal);
       setTotalQuestoes(questoesTotal);
       setTotalPercentual(percentualTotal);
+      setLoadingTabela(false); // Desativa o loading da tabela após processar os dados
     } catch (error) {
       console.error('Erro ao carregar estatísticas da sprint atual:', error);
       setQuestoesCorretas(0);
@@ -146,8 +174,9 @@ export default function AlunoEstatisticas() {
       setTotalAcertos(0);
       setTotalQuestoes(0);
       setTotalPercentual(0);
-    } finally {
       setLoading(false);
+      setLoadingTabela(false);
+      setGraficoKey(prev => prev + 1); // Garante remount mesmo em erro
     }
   };
 
@@ -192,7 +221,7 @@ export default function AlunoEstatisticas() {
                 <div className={styles.graficoComResumo}>
                   <div className={styles.graficoPizzaBox}>
                     <div style={{ width: '100%', maxWidth: 300, height: 300 }}>
-                      <ResponsiveContainer width="100%" height="100%" tabIndex={-1}>
+                      <ResponsiveContainer width="100%" height="100%" tabIndex={-1} key={graficoKey}>
                         <PieChart>
                           <Pie
                             data={dataPie}
