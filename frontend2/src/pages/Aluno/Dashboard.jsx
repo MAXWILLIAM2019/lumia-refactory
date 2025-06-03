@@ -5,6 +5,7 @@ import ActivitiesTable from '../../components/ActivitiesTable/ActivitiesTable';
 import AuthCheck from '../../components/AuthCheck/AuthCheck';
 import styles from '../../pages/Dashboard/Dashboard.module.css';
 import api from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Componente Dashboard do Aluno
@@ -25,10 +26,18 @@ export default function AlunoDashboard() {
   const [planoInfo, setPlanoInfo] = useState(null);
   const [metasConcluidas, setMetasConcluidas] = useState(0);
   const [totalMetas, setTotalMetas] = useState(0);
+  const [proximaSprint, setProximaSprint] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchUsuarioInfo();
-    fetchAlunoPrimeiroSprint();
+    // Tentar carregar a sprint salva primeiro
+    const sprintSalva = localStorage.getItem('sprintAtual');
+    if (sprintSalva) {
+      fetchSprintById(JSON.parse(sprintSalva));
+    } else {
+      fetchAlunoPrimeiroSprint();
+    }
   }, []);
 
   const fetchUsuarioInfo = async () => {
@@ -139,6 +148,8 @@ export default function AlunoDashboard() {
         setTotalMetas(response.data.metas.length);
         setMetasConcluidas(contarMetasConcluidas(response.data.metas));
         calculateStats(response.data);
+        // Salvar a sprint atual no localStorage
+        localStorage.setItem('sprintAtual', sprintId);
         console.log('Sprint atualizada no estado com sucesso');
       } else {
         setError('Sprint não encontrada');
@@ -146,6 +157,11 @@ export default function AlunoDashboard() {
     } catch (error) {
       console.error('Erro ao buscar sprint:', error);
       setError('Erro ao buscar sprint');
+      // Se houver erro ao buscar a sprint salva, tentar carregar a primeira sprint
+      if (localStorage.getItem('sprintAtual')) {
+        localStorage.removeItem('sprintAtual');
+        fetchAlunoPrimeiroSprint();
+      }
     } finally {
       setLoading(false);
     }
@@ -247,6 +263,49 @@ export default function AlunoDashboard() {
     });
   };
 
+  // Função para buscar a próxima sprint
+  const buscarProximaSprint = async () => {
+    if (!sprint || !sprint.PlanoId) return;
+
+    try {
+      const response = await api.get(`/planos/${sprint.PlanoId}/sprints`);
+      const sprints = response.data.sort((a, b) => a.posicao - b.posicao);
+      const indexAtual = sprints.findIndex(s => s.id === sprint.id);
+      
+      if (indexAtual !== -1 && indexAtual < sprints.length - 1) {
+        setProximaSprint(sprints[indexAtual + 1]);
+      } else {
+        setProximaSprint(null);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar próxima sprint:', error);
+    }
+  };
+
+  // Função para ir para a próxima sprint
+  const irParaProximaSprint = async () => {
+    if (proximaSprint) {
+      try {
+        // Atualizar a sprint atual com a próxima sprint
+        await fetchSprintById(proximaSprint.id);
+        // Salvar a nova sprint no localStorage
+        localStorage.setItem('sprintAtual', proximaSprint.id);
+        // Atualizar a próxima sprint
+        await buscarProximaSprint();
+      } catch (error) {
+        console.error('Erro ao atualizar sprint:', error);
+        setError('Erro ao carregar próxima sprint');
+      }
+    }
+  };
+
+  // Efeito para buscar próxima sprint quando a sprint atual mudar
+  useEffect(() => {
+    if (sprint) {
+      buscarProximaSprint();
+    }
+  }, [sprint]);
+
   if (loading && !sprint) {
     return <div className={styles.loading}>Carregando...</div>;
   }
@@ -282,9 +341,25 @@ export default function AlunoDashboard() {
       
       <div className={styles.sprintRow}>
         <div className={styles.sprintContainer}>
+          {sprint && metasConcluidas === totalMetas && totalMetas > 0 && (
+            <div className={styles.nextSprintContainer}>
+              {proximaSprint ? (
+                <button 
+                  className={styles.nextSprintButton}
+                  onClick={irParaProximaSprint}
+                >
+                  Próxima Sprint
+                </button>
+              ) : (
+                <div className={styles.finishedMessage}>
+                  Finalizado
+                </div>
+              )}
+            </div>
+          )}
           <SprintHeader 
             sprintTitle={sprint?.nome}
-            progress={sprint ? (sprint.metas.filter(m => m.status === 'Concluída').length / sprint.metas.length) * 100 : 0}
+            progress={sprint ? (metasConcluidas / totalMetas) * 100 : 0}
             startDate={sprint?.dataInicio}
             disableSprintChange={true}
             sprints={[sprint].filter(Boolean)}

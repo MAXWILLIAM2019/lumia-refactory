@@ -1,4 +1,5 @@
 const express = require('express');
+const sprintController = require('../controllers/sprintController');
 const Sprint = require('../models/Sprint');
 const Meta = require('../models/Meta');
 
@@ -49,5 +50,8 @@ router.get('/:id/metas', async (req, res) => {
   if (!sprint) return res.status(404).json({ error: 'Sprint não encontrada' });
   res.json(sprint.metas);
 });
+
+// Atualizar uma meta
+router.put('/metas/:id', sprintController.updateMeta);
 
 module.exports = router; 

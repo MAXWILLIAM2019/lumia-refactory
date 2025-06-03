@@ -116,7 +116,8 @@ exports.getSprintById = async (req, res) => {
       include: [
         {
           model: Meta,
-          as: 'metas'
+          as: 'metas',
+          order: [['id', 'ASC']]
         },
         {
           model: Plano,
@@ -133,6 +134,34 @@ exports.getSprintById = async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar sprint:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Atualiza o status da sprint baseado no status das metas
+ * @param {number} sprintId - ID da sprint
+ */
+const atualizarStatusSprint = async (sprintId) => {
+  const sprint = await Sprint.findByPk(sprintId, {
+    include: [{ model: Meta, as: 'metas' }]
+  });
+
+  if (!sprint || !sprint.metas) return;
+
+  const totalMetas = sprint.metas.length;
+  const metasConcluidas = sprint.metas.filter(meta => meta.status === 'Concluída').length;
+
+  let novoStatus;
+  if (metasConcluidas === 0) {
+    novoStatus = 'Pendente';
+  } else if (metasConcluidas === totalMetas) {
+    novoStatus = 'Concluída';
+  } else {
+    novoStatus = 'Em Andamento';
+  }
+
+  if (sprint.status !== novoStatus) {
+    await sprint.update({ status: novoStatus });
   }
 };
 
@@ -240,6 +269,9 @@ exports.updateSprint = async (req, res) => {
       ]
     });
 
+    // Atualizar status da sprint após atualizar as metas
+    await atualizarStatusSprint(sprint.id);
+
     res.json(sprintAtualizada);
   } catch (error) {
     console.error('Erro ao atualizar sprint:', error);
@@ -346,5 +378,33 @@ exports.reordenarSprints = async (req, res) => {
   } catch (error) {
     console.error('Erro ao reordenar sprints:', error);
     res.status(500).json({ message: error.message });
+  }
+};
+
+// Atualizar uma meta
+exports.updateMeta = async (req, res) => {
+  try {
+    const meta = await Meta.findByPk(req.params.id);
+    if (!meta) {
+      return res.status(404).json({ message: 'Meta não encontrada' });
+    }
+
+    const { status, tempoEstudado, desempenho, totalQuestoes, questoesCorretas } = req.body;
+
+    await meta.update({
+      status,
+      tempoEstudado,
+      desempenho,
+      totalQuestoes,
+      questoesCorretas
+    });
+
+    // Atualizar status da sprint após atualizar a meta
+    await atualizarStatusSprint(meta.SprintId);
+
+    res.json(meta);
+  } catch (error) {
+    console.error('Erro ao atualizar meta:', error);
+    res.status(400).json({ message: error.message });
   }
 }; 

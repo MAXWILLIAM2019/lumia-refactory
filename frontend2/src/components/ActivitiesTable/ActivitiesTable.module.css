@@ -385,6 +385,7 @@
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
+  overflow-x: visible !important;
   color: #fff;
 }
 
@@ -420,6 +421,7 @@
 
 .modalContent {
   padding: 24px;
+  overflow: visible !important;
 }
 
 .modalContent h4 {
@@ -435,7 +437,7 @@
 
 /* Form Styles */
 .formGroup {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .errorMessage {
@@ -487,7 +489,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: 32px;
 }
 
 .saveButton,
@@ -679,7 +681,7 @@
 
 /* Estilos para questões */
 .questionsContainer {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
 .questionsContainer > label {
@@ -759,7 +761,7 @@
   flex-direction: row;
   flex-wrap: nowrap;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
   background-color: #1d2235;
   border-radius: 8px;
   padding: 16px 24px;
@@ -768,6 +770,54 @@
   justify-content: flex-start;
   align-items: center;
   overflow-x: hidden;
+}
+
+/* Estilo específico para o header de comandos */
+.metaHeader:first-of-type {
+  background-color: #1a1f2e;
+  border-left: 4px solid #f59e0b;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  overflow: visible !important;
+  position: relative;
+  z-index: 1;
+}
+
+.metaHeader:first-of-type .metaInfoGroup {
+  max-width: none;
+  width: 100%;
+  flex: 1;
+  overflow: visible !important;
+}
+
+.comandoContent {
+  white-space: pre-wrap !important;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+  font-family: 'Consolas', 'Monaco', monospace;
+  width: 100%;
+  max-width: none;
+  overflow: visible !important;
+  text-overflow: initial;
+  word-wrap: break-word;
+  word-break: break-word;
+  padding-right: 24px;
+  position: relative;
+  z-index: 2;
+}
+
+.metaHeader:first-of-type .metaInfoValue {
+  display: none;
+}
+
+.metaHeader:first-of-type .metaInfoLabel {
+  color: #f59e0b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
 }
 
 .metaInfoGroup {
@@ -897,4 +947,63 @@
   color: #4b5563;
   opacity: 0.5;
   font-size: 1.1rem;
+}
+
+.completedMetaInfo {
+  padding: 20px;
+  background-color: #1d2235;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border-left: 4px solid #22c55e;
+}
+
+.completedMetaHeader {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.completedMetaHeader h4 {
+  color: #22c55e;
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.completedMetaHeader p {
+  color: #94a3b8;
+  font-size: 1rem;
+}
+
+.completedMetaDetails {
+  background-color: #23283a;
+  border-radius: 6px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.completedMetaItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #2c3448;
+}
+
+.completedMetaItem:last-child {
+  border-bottom: none;
+}
+
+.completedMetaLabel {
+  color: #94a3b8;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.completedMetaValue {
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.completedMetaValue:last-child {
+  color: #22c55e;
 } 
