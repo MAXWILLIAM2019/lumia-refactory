@@ -31,13 +31,7 @@ export default function AlunoDashboard() {
 
   useEffect(() => {
     fetchUsuarioInfo();
-    // Tentar carregar a sprint salva primeiro
-    const sprintSalva = localStorage.getItem('sprintAtual');
-    if (sprintSalva) {
-      fetchSprintById(JSON.parse(sprintSalva));
-    } else {
-      fetchAlunoPrimeiroSprint();
-    }
+    fetchAlunoPrimeiroSprint();
   }, []);
 
   const fetchUsuarioInfo = async () => {
@@ -148,8 +142,6 @@ export default function AlunoDashboard() {
         setTotalMetas(response.data.metas.length);
         setMetasConcluidas(contarMetasConcluidas(response.data.metas));
         calculateStats(response.data);
-        // Salvar a sprint atual no localStorage
-        localStorage.setItem('sprintAtual', sprintId);
         console.log('Sprint atualizada no estado com sucesso');
       } else {
         setError('Sprint não encontrada');
@@ -157,11 +149,8 @@ export default function AlunoDashboard() {
     } catch (error) {
       console.error('Erro ao buscar sprint:', error);
       setError('Erro ao buscar sprint');
-      // Se houver erro ao buscar a sprint salva, tentar carregar a primeira sprint
-      if (localStorage.getItem('sprintAtual')) {
-        localStorage.removeItem('sprintAtual');
-        fetchAlunoPrimeiroSprint();
-      }
+      // Se houver erro ao buscar a sprint, tentar carregar a primeira sprint
+      fetchAlunoPrimeiroSprint();
     } finally {
       setLoading(false);
     }
@@ -284,18 +273,14 @@ export default function AlunoDashboard() {
 
   // Função para ir para a próxima sprint
   const irParaProximaSprint = async () => {
-    if (proximaSprint) {
-      try {
-        // Atualizar a sprint atual com a próxima sprint
-        await fetchSprintById(proximaSprint.id);
-        // Salvar a nova sprint no localStorage
-        localStorage.setItem('sprintAtual', proximaSprint.id);
-        // Atualizar a próxima sprint
-        await buscarProximaSprint();
-      } catch (error) {
-        console.error('Erro ao atualizar sprint:', error);
-        setError('Erro ao carregar próxima sprint');
-      }
+    if (!proximaSprint) return;
+    
+    try {
+      await fetchSprintById(proximaSprint.id);
+      await buscarProximaSprint();
+    } catch (error) {
+      console.error('Erro ao navegar para próxima sprint:', error);
+      setError('Erro ao navegar para próxima sprint');
     }
   };
 
