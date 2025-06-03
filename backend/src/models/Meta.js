@@ -54,7 +54,7 @@ const Meta = sequelize.define('Meta', {
     defaultValue: '00:00'
   },
   desempenho: {
-    type: DataTypes.INTEGER,
+    type: DataTypes.DECIMAL(5,2),
     defaultValue: 0
   },
   status: {

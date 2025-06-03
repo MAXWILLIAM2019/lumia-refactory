@@ -163,11 +163,19 @@ export default function AlunoDashboard() {
       return acc + hours + (minutes / 60);
     }, 0);
     
-    // Calcular desempenho como média dos desempenhos das metas
+    // Filtrar apenas metas que:
+    // 1. Foram concluídas
+    // 2. Têm questões resolvidas (totalQuestoes > 0)
+    // 3. Têm um desempenho válido
     const metasComDesempenho = currentSprint.metas.filter(m => 
-      m.desempenho !== undefined && m.desempenho !== null && !isNaN(parseFloat(m.desempenho))
+      m.status === 'Concluída' && 
+      m.totalQuestoes > 0 && 
+      m.desempenho !== undefined && 
+      m.desempenho !== null && 
+      !isNaN(parseFloat(m.desempenho))
     );
     
+    // Calcular desempenho médio apenas das metas que têm questões resolvidas
     let desempenhoMedio = 0;
     if (metasComDesempenho.length > 0) {
       const somaDesempenhos = metasComDesempenho.reduce((acc, meta) => 
@@ -176,10 +184,10 @@ export default function AlunoDashboard() {
       desempenhoMedio = somaDesempenhos / metasComDesempenho.length;
     }
     
-    // Calcular total de questões resolvidas (soma de totalQuestoes de todas as metas)
-    const questionsSolved = currentSprint.metas.reduce((acc, meta) => 
-      acc + (meta.totalQuestoes || 0), 0
-    );
+    // Calcular total de questões resolvidas (soma de totalQuestoes de todas as metas concluídas)
+    const questionsSolved = currentSprint.metas
+      .filter(m => m.status === 'Concluída')
+      .reduce((acc, meta) => acc + (meta.totalQuestoes || 0), 0);
     
     // Calcular média diária
     const startDate = new Date(currentSprint.dataInicio);

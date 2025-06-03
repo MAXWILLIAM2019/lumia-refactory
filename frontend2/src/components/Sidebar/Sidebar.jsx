@@ -47,7 +47,7 @@ export default function Sidebar() {
   return (
     <aside className={styles.sidebar}>
       {/* Logo e perfil */}
-      <div className={styles.logo}>Foca Meta</div>
+      <div className={styles.logo}>Mentoria</div>
       <div className={styles.profileCircle}>B</div>
 
       {/* Menu de navegação */}

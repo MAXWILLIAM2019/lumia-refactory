@@ -17,6 +17,7 @@ import RegisterStudent from '../pages/RegisterStudent/RegisterStudent';
 import Sprints from '../pages/Sprints/Sprints';
 import Disciplinas from '../pages/Disciplinas/Disciplinas';
 import CadastrarDisciplina from '../pages/CadastrarDisciplina/CadastrarDisciplina';
+import AlunoEstatisticas from '../pages/AlunoEstatisticas/AlunoEstatisticas';
 
 // Componente para rotas protegidas de administrador
 const AdminRoute = ({ children }) => {
@@ -191,6 +192,14 @@ const AppRoutes = () => {
           element={
             <AlunoRoute>
               <div>Meu Perfil (em desenvolvimento)</div>
+            </AlunoRoute>
+          }
+        />
+        <Route
+          path="/aluno/estatisticas"
+          element={
+            <AlunoRoute>
+              <AlunoEstatisticas />
             </AlunoRoute>
           }
         />

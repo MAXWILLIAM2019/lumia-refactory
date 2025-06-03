@@ -253,9 +253,10 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
       const tempoEstudado = `${horasFormatadas}:${minutosFormatados}`;
       
       // Calcular o desempenho baseado nas questões (se houver)
-      let desempenho = 0;
+      let desempenho = null;
       if (formData.totalQuestoes > 0 && formData.questoesCorretas > 0) {
-        desempenho = parseFloat(((formData.questoesCorretas / formData.totalQuestoes) * 100).toFixed(2));
+        // Calcular o desempenho como número decimal (ex: 16.67)
+        desempenho = (formData.questoesCorretas / formData.totalQuestoes) * 100;
       }
       
       // Preparar os dados para envio

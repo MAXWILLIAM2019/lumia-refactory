@@ -9,6 +9,7 @@ Este é o frontend do Sistema de Mentoria, desenvolvido com React + Vite.
 - [Vite](https://vitejs.dev/) - Build tool e servidor de desenvolvimento
 - [React Router](https://reactrouter.com/) - Roteamento da aplicação
 - [Axios](https://axios-http.com/) - Cliente HTTP para requisições à API
+- [Recharts](https://recharts.org/) - Biblioteca para visualização de gráficos
 
 ### UI/UX
 - [Tailwind CSS](https://tailwindcss.com/) - Framework CSS utilitário
@@ -605,3 +606,41 @@ Os estilos CSS implementados garantem que a paginação funcione bem em disposit
 
 ### Sprints
 - `
+
+## Instalação de dependências
+
+Para instalar todas as dependências do projeto, execute:
+
+```bash
+npm install
+```
+
+## Instalação do Recharts
+
+O projeto utiliza a biblioteca [Recharts](https://recharts.org/) para visualização de gráficos e estatísticas.
+
+Para instalar o Recharts, execute o comando abaixo dentro da pasta `frontend2`:
+
+```bash
+npm install recharts
+```
+
+## Como usar o Recharts
+
+Após a instalação, você pode importar os componentes do Recharts normalmente nos seus arquivos React:
+
+```jsx
+import { PieChart, Pie, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+```
+
+Veja a [documentação oficial](https://recharts.org/en-US/examples) para exemplos de uso.
+
+## Rodando o projeto
+
+Para iniciar o frontend em modo de desenvolvimento:
+
+```bash
+npm start
+```
+
+Acesse em: http://localhost:3000

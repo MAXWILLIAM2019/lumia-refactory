@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import sprintIcon from '../../assets/icons/sprint.svg';
 import listSprintIcon from '../../assets/icons/list-sprint.svg';
+import statsIcon from '../../assets/icons/stats.svg';
 import authService from '../../services/authService';
 
 /**
@@ -25,6 +26,10 @@ export default function AlunoSidebar() {
     navigate('/aluno/sprints');
   };
 
+  const handleEstatisticasClick = () => {
+    navigate('/aluno/estatisticas');
+  };
+
   const handleLogout = () => {
     authService.removeToken();
     navigate('/aluno/login');
@@ -33,7 +38,7 @@ export default function AlunoSidebar() {
   return (
     <aside className={styles.sidebar}>
       {/* Logo e perfil */}
-      <div className={styles.logo}>Foca Meta</div>
+      <div className={styles.logo}>Mentoria</div>
       <div className={styles.profileCircle}>A</div>
 
       {/* Menu de navegação - simplificado para alunos */}
@@ -49,12 +54,21 @@ export default function AlunoSidebar() {
             </div>
           </li>
           <li 
-            className={`${styles.menuItem} ${location.pathname === '/aluno/todas-sprints' ? styles.active : ''}`}
+            className={`${styles.menuItem} ${location.pathname === '/aluno/sprints' ? styles.active : ''}`}
             onClick={handleTodasSprintsClick}
           >
             <div className={styles.menuItemContent}>
               <img src={listSprintIcon} alt="Todas as Sprints" className={styles.icon} />
               <span>Todas as Sprints</span>
+            </div>
+          </li>
+          <li 
+            className={`${styles.menuItem} ${location.pathname === '/aluno/estatisticas' ? styles.active : ''}`}
+            onClick={handleEstatisticasClick}
+          >
+            <div className={styles.menuItemContent}>
+              <img src={statsIcon} alt="Minhas Estatísticas" className={styles.icon} />
+              <span>Minhas Estatísticas</span>
             </div>
           </li>
           <li 

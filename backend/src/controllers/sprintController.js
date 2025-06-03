@@ -2,6 +2,7 @@ const Sprint = require('../models/Sprint');
 const Meta = require('../models/Meta');
 const Plano = require('../models/Plano');
 const sequelize = require('../db');
+const { Op } = require('sequelize');
 
 /**
  * Controller de Sprint
@@ -163,20 +164,66 @@ exports.updateSprint = async (req, res) => {
 
     // Atualizar metas
     if (metas) {
-      // Remover metas antigas
-      await Meta.destroy({
+      // Buscar metas existentes para preservar dados de evolução
+      const metasExistentes = await Meta.findAll({
         where: { SprintId: sprint.id }
       });
 
-      // Criar novas metas
-      await Promise.all(
-        metas.map(meta =>
-          Meta.create({
-            ...meta,
-            SprintId: sprint.id
-          })
-        )
+      // Mapear metas existentes por ID para fácil acesso
+      const metasExistentesMap = new Map(
+        metasExistentes.map(meta => [meta.id, meta])
       );
+
+      // Array para armazenar os IDs das metas que serão mantidas
+      const idsMetasManter = [];
+
+      // Processar cada meta da requisição
+      for (const meta of metas) {
+        if (meta.id && metasExistentesMap.has(meta.id)) {
+          // Se a meta já existe, atualizar preservando dados de evolução
+          const metaExistente = metasExistentesMap.get(meta.id);
+          await metaExistente.update({
+            disciplina: meta.disciplina,
+            tipo: meta.tipo,
+            titulo: meta.titulo,
+            descricao: meta.descricao,
+            relevancia: meta.relevancia,
+            comando: meta.comando,
+            link: meta.link,
+            // Preservar dados de evolução
+            status: metaExistente.status,
+            tempoEstudado: metaExistente.tempoEstudado,
+            desempenho: metaExistente.desempenho,
+            totalQuestoes: metaExistente.totalQuestoes,
+            questoesCorretas: metaExistente.questoesCorretas
+          });
+          idsMetasManter.push(meta.id);
+        } else if (!meta.id) {
+          // Se é uma nova meta (sem ID), criar
+          const novaMeta = await Meta.create({
+            ...meta,
+            SprintId: sprint.id,
+            status: 'Pendente',
+            tempoEstudado: '00:00',
+            desempenho: 0,
+            totalQuestoes: 0,
+            questoesCorretas: 0
+          });
+          idsMetasManter.push(novaMeta.id);
+        }
+      }
+
+      // Remover apenas as metas que não estão mais presentes na requisição
+      if (idsMetasManter.length > 0) {
+        await Meta.destroy({
+          where: {
+            SprintId: sprint.id,
+            id: {
+              [Op.notIn]: idsMetasManter
+            }
+          }
+        });
+      }
     }
 
     // Buscar sprint atualizada com metas
@@ -195,6 +242,7 @@ exports.updateSprint = async (req, res) => {
 
     res.json(sprintAtualizada);
   } catch (error) {
+    console.error('Erro ao atualizar sprint:', error);
     res.status(400).json({ message: error.message });
   }
 };

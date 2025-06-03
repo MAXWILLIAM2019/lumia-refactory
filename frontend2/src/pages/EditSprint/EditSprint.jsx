@@ -73,11 +73,15 @@ export default function EditSprint() {
         nome: formData.title,
         dataInicio: formData.startDate,
         dataFim: formData.endDate,
+        planoId: formData.planoId,
         metas: formData.activities.map(activity => ({
+          id: activity.id,
           disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
           titulo: activity.title,
           tipo: activity.type,
-          relevancia: activity.relevance
+          relevancia: activity.relevance,
+          comandos: activity.comandos,
+          link: activity.link
         }))
       };
 

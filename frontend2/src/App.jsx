@@ -1,5 +1,6 @@
 import React from 'react';
 import AppRoutes from './routes';
+import AlunoEstatisticas from './pages/AlunoEstatisticas/AlunoEstatisticas';
 
 /**
  * Componente principal da aplicação
