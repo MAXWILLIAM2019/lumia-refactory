@@ -522,159 +522,159 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
                         </div>
                       </>
                     )}
-                  </div>
+                </div>
                 </div>
               ) : (
                 <>
                   <div className={styles.metaHeader}>
-                    <div className={`${styles.metaInfoGroup} ${styles.titleGroup}`}>
+                <div className={`${styles.metaInfoGroup} ${styles.titleGroup}`}>
                       <span className={styles.metaInfoLabel}>Comando</span>
                       <div className={styles.comandoContent} dangerouslySetInnerHTML={{ __html: selectedActivity.comando }} />
-                    </div>
+                </div>
+              </div>
+              
+              <form onSubmit={handleSubmit}>
+                {errorMessage && (
+                  <div className={styles.errorMessage}>
+                    {errorMessage}
                   </div>
-                  
-                  <form onSubmit={handleSubmit}>
-                    {errorMessage && (
-                      <div className={styles.errorMessage}>
-                        {errorMessage}
-                      </div>
-                    )}
-                    
-                    <div className={styles.toggleContainer}>
-                      <label htmlFor="toggleCompleted">Concluir meta</label>
-                      <div className={styles.toggleSwitch}>
-                        <input
-                          type="checkbox"
-                          id="toggleCompleted"
-                          checked={formData.completed}
-                          onChange={handleToggleChange}
-                          className={styles.toggleCheckbox}
-                        />
-                        <label className={styles.toggleLabel} htmlFor="toggleCompleted">
-                          <span className={styles.toggleButton}></span>
-                        </label>
-                      </div>
-                    </div>
-                    
-                    <div className={styles.formGroup}>
-                      <label>Tempo de Estudo</label>
-                      <div className={styles.timeInputContainer}>
-                        <div className={styles.timeInputGroup}>
-                          <button 
-                            type="button" 
-                            className={styles.timeControlButton} 
-                            onClick={() => handleTimeIncrement('horas')}
-                          >
-                            +
-                          </button>
-                          <input 
-                            type="text" 
-                            name="horas" 
-                            value={formData.horas}
-                            onChange={handleInputChange}
-                            onBlur={handleTimeBlur}
-                            className={styles.timeInput}
-                            maxLength="2"
-                            required
-                          />
-                          <button 
-                            type="button" 
-                            className={styles.timeControlButton} 
-                            onClick={() => handleTimeDecrement('horas')}
-                          >
-                            -
-                          </button>
-                          <span className={styles.timeLabel}>horas</span>
-                        </div>
-                        
-                        <span className={styles.timeSeparator}>:</span>
-                        
-                        <div className={styles.timeInputGroup}>
-                          <button 
-                            type="button" 
-                            className={styles.timeControlButton} 
-                            onClick={() => handleTimeIncrement('minutos')}
-                          >
-                            +
-                          </button>
-                          <input 
-                            type="text" 
-                            name="minutos" 
-                            value={formData.minutos}
-                            onChange={handleInputChange}
-                            onBlur={handleTimeBlur}
-                            className={styles.timeInput}
-                            maxLength="2"
-                            required
-                          />
-                          <button 
-                            type="button" 
-                            className={styles.timeControlButton} 
-                            onClick={() => handleTimeDecrement('minutos')}
-                          >
-                            -
-                          </button>
-                          <span className={styles.timeLabel}>minutos</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className={styles.questionsContainer}>
-                      <label>Questões</label>
-                      
-                      <div className={styles.questionsInputContainer}>
-                        <div className={styles.questionsInputGroup}>
-                          <label>Total</label>
-                          <input 
-                            type="number" 
-                            name="totalQuestoes" 
-                            value={formData.totalQuestoes}
-                            onChange={handleInputChange}
-                            min="0"
-                            className={styles.questionInput}
-                          />
-                        </div>
-                        
-                        <div className={styles.questionsInputGroup}>
-                          <label>Corretas</label>
-                          <input 
-                            type="number" 
-                            name="questoesCorretas" 
-                            value={formData.questoesCorretas}
-                            onChange={handleInputChange}
-                            min="0"
-                            max={formData.totalQuestoes}
-                            className={styles.questionInput}
-                          />
-                        </div>
-                        
-                        <div className={styles.questionResultGroup}>
-                          <div className={styles.questionResultLabel}>Desempenho</div>
-                          <div className={styles.questionResultValue}>
-                            {calcularPorcentagemAcerto()}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className={styles.formActions}>
-                      <button 
-                        type="submit" 
-                        className={styles.saveButton}
-                        disabled={loading}
-                      >
-                        {loading ? 'Salvando...' : 'Salvar'}
-                      </button>
+                )}
+                
+                <div className={styles.toggleContainer}>
+                  <label htmlFor="toggleCompleted">Concluir meta</label>
+                  <div className={styles.toggleSwitch}>
+                    <input
+                      type="checkbox"
+                      id="toggleCompleted"
+                      checked={formData.completed}
+                      onChange={handleToggleChange}
+                      className={styles.toggleCheckbox}
+                    />
+                    <label className={styles.toggleLabel} htmlFor="toggleCompleted">
+                      <span className={styles.toggleButton}></span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div className={styles.formGroup}>
+                  <label>Tempo de Estudo</label>
+                  <div className={styles.timeInputContainer}>
+                    <div className={styles.timeInputGroup}>
                       <button 
                         type="button" 
-                        className={styles.cancelButton} 
-                        onClick={handleModalClose}
-                        disabled={loading}
+                        className={styles.timeControlButton} 
+                        onClick={() => handleTimeIncrement('horas')}
                       >
-                        Cancelar
+                        +
                       </button>
+                      <input 
+                        type="text" 
+                        name="horas" 
+                        value={formData.horas}
+                        onChange={handleInputChange}
+                        onBlur={handleTimeBlur}
+                        className={styles.timeInput}
+                        maxLength="2"
+                        required
+                      />
+                      <button 
+                        type="button" 
+                        className={styles.timeControlButton} 
+                        onClick={() => handleTimeDecrement('horas')}
+                      >
+                        -
+                      </button>
+                      <span className={styles.timeLabel}>horas</span>
                     </div>
-                  </form>
+                    
+                    <span className={styles.timeSeparator}>:</span>
+                    
+                    <div className={styles.timeInputGroup}>
+                      <button 
+                        type="button" 
+                        className={styles.timeControlButton} 
+                        onClick={() => handleTimeIncrement('minutos')}
+                      >
+                        +
+                      </button>
+                      <input 
+                        type="text" 
+                        name="minutos" 
+                        value={formData.minutos}
+                        onChange={handleInputChange}
+                        onBlur={handleTimeBlur}
+                        className={styles.timeInput}
+                        maxLength="2"
+                        required
+                      />
+                      <button 
+                        type="button" 
+                        className={styles.timeControlButton} 
+                        onClick={() => handleTimeDecrement('minutos')}
+                      >
+                        -
+                      </button>
+                      <span className={styles.timeLabel}>minutos</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className={styles.questionsContainer}>
+                  <label>Questões</label>
+                  
+                  <div className={styles.questionsInputContainer}>
+                    <div className={styles.questionsInputGroup}>
+                      <label>Total</label>
+                      <input 
+                        type="number" 
+                        name="totalQuestoes" 
+                        value={formData.totalQuestoes}
+                        onChange={handleInputChange}
+                        min="0"
+                        className={styles.questionInput}
+                      />
+                    </div>
+                    
+                    <div className={styles.questionsInputGroup}>
+                      <label>Corretas</label>
+                      <input 
+                        type="number" 
+                        name="questoesCorretas" 
+                        value={formData.questoesCorretas}
+                        onChange={handleInputChange}
+                        min="0"
+                        max={formData.totalQuestoes}
+                        className={styles.questionInput}
+                      />
+                    </div>
+                    
+                    <div className={styles.questionResultGroup}>
+                      <div className={styles.questionResultLabel}>Desempenho</div>
+                      <div className={styles.questionResultValue}>
+                        {calcularPorcentagemAcerto()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className={styles.formActions}>
+                  <button 
+                    type="submit" 
+                    className={styles.saveButton}
+                    disabled={loading}
+                  >
+                    {loading ? 'Salvando...' : 'Salvar'}
+                  </button>
+                  <button 
+                    type="button" 
+                    className={styles.cancelButton} 
+                    onClick={handleModalClose}
+                    disabled={loading}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
                 </>
               )}
             </div>

@@ -57,13 +57,14 @@ export const sprintService = {
   
   async reordenarSprints(planoId, ordemSprints) {
     try {
-      console.log('Enviando reordenação:', { planoId, ordemSprints });
-      const response = await api.post('/sprints/reordenar', { planoId, ordemSprints });
-      console.log('Resposta da reordenação:', response.data);
+      const response = await api.post('/sprints/reordenar', {
+        planoId,
+        ordemSprints
+      });
       return response.data;
     } catch (error) {
-      console.error('Erro detalhado ao reordenar:', error.response?.data || error.message);
-      throw error;
+      console.error('Erro ao reordenar sprints:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao reordenar sprints');
     }
   }
 }; 

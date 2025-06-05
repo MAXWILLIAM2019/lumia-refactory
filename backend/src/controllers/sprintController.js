@@ -313,78 +313,51 @@ exports.deleteSprint = async (req, res) => {
 exports.reordenarSprints = async (req, res) => {
   const { planoId, ordemSprints } = req.body;
   
-  console.log('Dados recebidos para reordenação:', { planoId, ordemSprints });
-  
   if (!planoId || !ordemSprints || !Array.isArray(ordemSprints) || ordemSprints.length === 0) {
-    console.log('Dados inválidos recebidos');
     return res.status(400).json({ message: 'Dados inválidos. planoId e ordemSprints (array) são necessários' });
   }
   
   try {
-    console.log('Buscando plano:', planoId);
     const plano = await Plano.findByPk(planoId);
     if (!plano) {
-      console.log('Plano não encontrado:', planoId);
       return res.status(404).json({ message: 'Plano não encontrado' });
     }
     
-    console.log('Buscando sprints do plano');
+    // Verificar se todas as sprints pertencem ao plano
     const sprints = await Sprint.findAll({
       where: { PlanoId: planoId }
     });
     
-    console.log('Sprints encontradas:', sprints.map(s => ({ id: s.id, nome: s.nome, status: s.status })));
-    
     const sprintIds = sprints.map(s => s.id);
+    
+    for (const id of ordemSprints) {
+      if (!sprintIds.includes(id)) {
+        return res.status(400).json({ 
+          message: `Sprint com ID ${id} não pertence ao plano ${planoId}` 
+        });
+      }
+    }
     
     // Verificar se todos os IDs de sprints do plano estão na ordemSprints
     if (new Set([...sprintIds]).size !== new Set([...ordemSprints]).size) {
-      console.log('Lista de sprints incompleta');
       return res.status(400).json({ 
         message: 'A lista de sprints fornecida não contém todas as sprints do plano'
       });
     }
     
-    // Mapeia a ordem desejada para cada sprint
-    const posicaoPorId = {};
-    ordemSprints.forEach((id, idx) => {
-      posicaoPorId[id] = idx + 1;
-    });
-
-    // Verifica se a ordem relativa das sprints não pendentes mudou
-    const ordemOriginalNaoPendentes = sprints
-      .filter(s => s.status !== 'Pendente')
-      .sort((a, b) => a.posicao - b.posicao)
-      .map(s => s.id);
-
-    const ordemNovaNaoPendentes = ordemSprints
-      .map(id => sprints.find(s => s.id === id))
-      .filter(s => s && s.status !== 'Pendente')
-      .map(s => s.id);
-
-    const ordemIgual = JSON.stringify(ordemOriginalNaoPendentes) === JSON.stringify(ordemNovaNaoPendentes);
-
-    if (!ordemIgual) {
-      return res.status(400).json({
-        message: 'Não é permitido alterar a posição de sprints já iniciadas ou concluídas.',
-        sprintsBloqueadas: sprints.filter(s => s.status !== 'Pendente')
-      });
-    }
-
-    console.log('Iniciando transação para atualizar posições apenas das pendentes');
-    // Só atualiza a posição das pendentes
+    // Atualizar posições em uma transação para garantir consistência
     await sequelize.transaction(async (t) => {
-      for (const sprint of sprints) {
-        if (sprint.status === 'Pendente') {
-          await Sprint.update(
-            { posicao: posicaoPorId[sprint.id] },
-            { where: { id: sprint.id }, transaction: t }
-          );
-        }
+      for (let i = 0; i < ordemSprints.length; i++) {
+        await Sprint.update(
+          { posicao: i + 1 },
+          { 
+            where: { id: ordemSprints[i] },
+            transaction: t
+          }
+        );
       }
     });
     
-    console.log('Buscando sprints atualizadas');
     // Retornar as sprints reordenadas
     const sprintsAtualizadas = await Sprint.findAll({
       where: { PlanoId: planoId },
@@ -401,10 +374,9 @@ exports.reordenarSprints = async (req, res) => {
       ]
     });
     
-    console.log('Reordenação concluída com sucesso');
     res.json(sprintsAtualizadas);
   } catch (error) {
-    console.error('Erro detalhado ao reordenar sprints:', error);
+    console.error('Erro ao reordenar sprints:', error);
     res.status(500).json({ message: error.message });
   }
 };

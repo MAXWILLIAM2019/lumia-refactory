@@ -39,55 +39,49 @@ import { sprintService } from '../../services/sprintService';
  * @param {number} index - Índice do item na lista
  */
 function SortableItem({ sprint, index }) {
+  // Hook useSortable fornece propriedades e funções necessárias para arrastar e soltar
   const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging
-  } = useSortable({ 
-    id: sprint.id,
-    disabled: sprint.status !== 'Pendente' // Corrigido para usar 'Pendente' com P maiúsculo
-  });
+    attributes,  // Atributos para adicionar ao elemento arrastável
+    listeners,   // Listeners para eventos de arrastar/soltar
+    setNodeRef,  // Função para definir a referência do nó DOM
+    transform,   // Transformação atual durante arrasto
+    transition,  // Transição para animar o movimento
+  } = useSortable({ id: sprint.id });
 
+  // Estilo para o item arrastável
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     padding: '16px',
     margin: '0 0 8px 0',
-    backgroundColor: sprint.status !== 'Pendente' ? '#f3f4f6' : 'white',
-    color: sprint.status !== 'Pendente' ? '#9ca3af' : '#1f2937',
+    backgroundColor: 'white',
+    color: '#1f2937',
     border: '1px solid #e5e7eb',
     borderRadius: '8px',
     boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
     position: 'relative',
-    zIndex: isDragging ? 999 : 0,
-    opacity: sprint.status !== 'Pendente' ? 0.7 : 1,
-    cursor: sprint.status !== 'Pendente' ? 'not-allowed' : 'default'
+    zIndex: 0,
   };
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
       <div style={{ display: 'flex', alignItems: 'center' }}>
-        {/* Alça de arrasto - só aparece se a sprint estiver pendente */}
-        {sprint.status === 'Pendente' && (
-          <div
-            style={{
-              marginRight: '10px',
-              color: '#9ca3af',
-              fontSize: '20px',
-              cursor: 'grab',
-            }}
-            {...listeners}
-          >
-            ⠿
-          </div>
-        )}
+        {/* Alça de arrasto - este é o elemento que o usuário clica para arrastar */}
+        <div
+          style={{
+            marginRight: '10px',
+            color: '#9ca3af',
+            fontSize: '20px',
+            cursor: 'grab',
+          }}
+          {...listeners}
+        >
+          ⠿
+        </div>
         {/* Número indicador da posição */}
         <div style={{ 
           marginRight: '10px', 
-          backgroundColor: sprint.status === 'Pendente' ? '#3b82f6' : '#9ca3af', 
+          backgroundColor: '#3b82f6', 
           color: 'white', 
           width: '24px', 
           height: '24px', 
@@ -106,35 +100,6 @@ function SortableItem({ sprint, index }) {
           <div style={{ fontSize: '14px', color: '#6b7280' }}>
             {new Date(sprint.dataInicio).toLocaleDateString()} - {new Date(sprint.dataFim).toLocaleDateString()}
           </div>
-          {/* Status badge */}
-          <div style={{
-            display: 'inline-block',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            fontSize: '12px',
-            fontWeight: '500',
-            marginTop: '4px',
-            backgroundColor: 
-              sprint.status === 'Pendente' ? '#fee2e2' :
-              sprint.status === 'Em Andamento' ? '#fef3c7' :
-              '#dcfce7',
-            color: 
-              sprint.status === 'Pendente' ? '#b91c1c' :
-              sprint.status === 'Em Andamento' ? '#b45309' :
-              '#166534'
-          }}>
-            {sprint.status}
-          </div>
-          {sprint.status !== 'Pendente' && (
-            <div style={{ 
-              fontSize: '12px', 
-              color: '#6b7280', 
-              marginTop: '4px',
-              fontStyle: 'italic'
-            }}>
-              Não é possível reordenar sprints {sprint.status === 'Em Andamento' ? 'em andamento' : 'concluídas'}
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -248,36 +213,24 @@ export default function Sprints() {
   /**
    * Salva a nova ordem das sprints
    * @param {number} planoId - ID do plano
-   * @param {Array} sprintsOriginais - Array com todas as sprints do plano
-   * @param {Array} pendentesReordenadas - Array com as sprints pendentes reordenadas
+   * @param {Array} planoSprints - Array com as sprints do plano na nova ordem
    */
-  const handleSalvarReordenacao = async (planoId, sprintsOriginais, pendentesReordenadas) => {
+  const handleSalvarReordenacao = async (planoId, planoSprints) => {
     try {
       setSalvandoOrdem(true);
-      // Monta a lista completa de sprints, reordenando apenas as pendentes
-      const pendentesFila = [...pendentesReordenadas];
-      const ordemSprints = sprintsOriginais.map(sprint => {
-        if (sprint.status === 'Pendente') {
-          return pendentesFila.shift().id;
-        }
-        return sprint.id;
-      });
-
-      // (Validação extra removida - agora só no backend)
-
-      console.log('Enviando ordem final:', ordemSprints);
+      const ordemSprints = planoSprints.map(sprint => sprint.id);
+      
+      console.log('Salvando nova ordem:', ordemSprints);
       await sprintService.reordenarSprints(planoId, ordemSprints);
+      
+      // Atualizar sprints após reordenação
       await fetchSprints();
+      
+      // Sair do modo de reordenação
       setReordenandoPlanoId(null);
     } catch (error) {
       console.error('Erro ao salvar ordem:', error);
-      if (error.response?.data?.sprintsBloqueadas) {
-        const sprintsBloqueadas = error.response.data.sprintsBloqueadas;
-        const mensagem = `Não é permitido alterar a posição das seguintes sprints já iniciadas ou concluídas:\n${sprintsBloqueadas.map(s => `- ${s.nome} (${s.status})`).join('\n')}`;
-        alert(mensagem);
-      } else {
-        alert('Erro ao salvar a nova ordem. Tente novamente.');
-      }
+      alert('Erro ao salvar a nova ordem. Tente novamente.');
     } finally {
       setSalvandoOrdem(false);
     }
@@ -368,7 +321,7 @@ export default function Sprints() {
               <div className={styles.reordenarControles}>
                 <button 
                   className={styles.salvarReordenacaoButton}
-                  onClick={() => handleSalvarReordenacao(plano.id, plano.sprints, plano.sprints.filter(s => s.status === 'Pendente'))}
+                  onClick={() => handleSalvarReordenacao(plano.id, plano.sprints)}
                   disabled={salvandoOrdem}
                 >
                   {salvandoOrdem ? 'Salvando...' : 'Salvar ordem'}
