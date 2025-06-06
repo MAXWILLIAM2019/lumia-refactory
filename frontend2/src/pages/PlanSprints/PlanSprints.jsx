@@ -2,13 +2,18 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import styles from '../RegisterPlan/RegisterPlan.module.css';
 import { sprintService } from '../../services/sprintService';
+import { planoService } from '../../services/planoService';
 import addSprintIcon from '../../assets/icons/add-sprint.svg';
+import registerSprintIcon from '../../assets/icons/register-sprint.svg';
+import editDisciplineIcon from '../../assets/icons/edit-discipline.svg';
+import deletePlanIcon from '../../assets/icons/delete-plan.svg';
 
 export default function PlanSprints() {
   const { id } = useParams();
   const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [planoNome, setPlanoNome] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,6 +33,18 @@ export default function PlanSprints() {
     fetchSprints();
   }, [id]);
 
+  useEffect(() => {
+    const fetchPlano = async () => {
+      try {
+        const plano = await planoService.buscarPlanoPorId(id);
+        setPlanoNome(plano?.nome || '');
+      } catch {
+        setPlanoNome('');
+      }
+    };
+    fetchPlano();
+  }, [id]);
+
   const NovoSprintCard = (
     <div className={styles.novoPlanoCard} onClick={() => navigate(`/planos/${id}/sprints/cadastrar`.replace('id', 'planoId'))}>
       <div className={styles.novoPlanoIcon}>
@@ -45,14 +62,29 @@ export default function PlanSprints() {
         <div className={styles.planoCardLogo}></div>
         <div>
           <h2 className={styles.planoCardTitle}>{sprint.nome}</h2>
+          <p className={styles.planoCardDescription} style={{ color: '#666' }}>Metas: {sprint.metas?.length || 0}</p>
         </div>
+      </div>
+      <div className={styles.planoCardActions}>
+        <button className={styles.actionButton} onClick={() => navigate(`/sprints/${sprint.id}`)}>
+          <img src={addSprintIcon} alt="Visualizar" width={24} height={24} style={{ marginRight: '8px' }} />
+          <span>Visualizar</span>
+        </button>
+        <button className={styles.actionButton} onClick={() => navigate(`/sprints/${sprint.id}/editar`)}>
+          <img src={editDisciplineIcon} alt="Editar" width={24} height={24} style={{ marginRight: '8px' }} />
+          <span>Editar</span>
+        </button>
+        <button className={styles.actionButton} onClick={() => handleDeleteSprint(sprint.id)}>
+          <img src={deletePlanIcon} alt="Excluir" width={24} height={24} style={{ marginRight: '8px' }} />
+          <span>Excluir</span>
+        </button>
       </div>
     </div>
   );
 
   return (
     <div className={styles.container}>
-      <h1>Sprints</h1>
+      <h1>{planoNome ? `${planoNome} → Sprints` : 'Sprints'}</h1>
       <div className={styles.tabsUnderline}></div>
       {error && <div className={styles.error}>{error}</div>}
       {loading ? (
