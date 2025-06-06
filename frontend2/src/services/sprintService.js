@@ -66,5 +66,15 @@ export const sprintService = {
       console.error('Erro ao reordenar sprints:', error);
       throw new Error(error.response?.data?.message || 'Erro ao reordenar sprints');
     }
+  },
+
+  async listarSprintsPorPlano(planoId) {
+    try {
+      const response = await api.get(`/planos/${planoId}/sprints`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao listar sprints do plano:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao listar sprints do plano');
+    }
   }
 }; 

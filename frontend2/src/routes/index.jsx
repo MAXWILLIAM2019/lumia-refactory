@@ -18,6 +18,7 @@ import Sprints from '../pages/Sprints/Sprints';
 import Disciplinas from '../pages/Disciplinas/Disciplinas';
 import CadastrarDisciplina from '../pages/CadastrarDisciplina/CadastrarDisciplina';
 import AlunoEstatisticas from '../pages/AlunoEstatisticas/AlunoEstatisticas';
+import PlanSprints from '../pages/PlanSprints/PlanSprints';
 
 // Componente para rotas protegidas de administrador
 const AdminRoute = ({ children }) => {
@@ -45,6 +46,15 @@ const AlunoRoute = ({ children }) => {
 
   console.log('Aluno autenticado, renderizando rota protegida');
   return <AlunoLayout>{children}</AlunoLayout>;
+};
+
+// Componente para rotas protegidas para qualquer usuário autenticado
+const PrivateRoute = ({ children }) => {
+  const isAuthenticated = authService.isAuthenticated();
+  if (!isAuthenticated) {
+    return <Navigate to="/aluno/login" replace />;
+  }
+  return children;
 };
 
 const AppRoutes = () => {
@@ -201,6 +211,26 @@ const AppRoutes = () => {
             <AlunoRoute>
               <AlunoEstatisticas />
             </AlunoRoute>
+          }
+        />
+
+        {/* Rota de Sprints de um Plano */}
+        <Route
+          path="/planos/:id/sprints"
+          element={
+            <AdminRoute>
+              <PlanSprints />
+            </AdminRoute>
+          }
+        />
+
+        {/* Rota de Cadastro de Sprint vinculada a um Plano */}
+        <Route
+          path="/planos/:planoId/sprints/cadastrar"
+          element={
+            <AdminRoute>
+              <RegisterSprint />
+            </AdminRoute>
           }
         />
 

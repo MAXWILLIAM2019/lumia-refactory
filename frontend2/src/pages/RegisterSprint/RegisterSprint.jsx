@@ -22,7 +22,7 @@ const PREDEFINED_DISCIPLINES = [
 
 const RegisterSprint = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id, planoId } = useParams();
   const [loading, setLoading] = useState(id ? true : false);
   const [showTextEditor, setShowTextEditor] = useState(false);
   const [currentActivityIndex, setCurrentActivityIndex] = useState(0);
@@ -73,12 +73,14 @@ const RegisterSprint = () => {
 
   // Carregar planos ao inicializar o componente
   useEffect(() => {
-    carregarPlanos();
-  }, []);
+    if (!planoId) {
+      carregarPlanos();
+    }
+  }, [planoId]);
 
   // Carregar disciplinas quando o plano é selecionado
   useEffect(() => {
-    if (formData.planoId) {
+    if (formData.planoId || planoId) {
       // Verificar se o ID do plano mudou para evitar carregamentos desnecessários
       if (formData.planoId !== lastLoadedPlanoId) {
         console.log(`Plano alterado de ${lastLoadedPlanoId} para ${formData.planoId}`);
@@ -99,8 +101,8 @@ const RegisterSprint = () => {
         }));
         
         // Carregar disciplinas do novo plano
-        carregarDisciplinasDoPlanoDisciplinas(formData.planoId);
-        setLastLoadedPlanoId(formData.planoId);
+        carregarDisciplinasDoPlanoDisciplinas(planoId || formData.planoId);
+        setLastLoadedPlanoId(planoId || formData.planoId);
       }
     } else {
       // Se não há plano selecionado, limpar as disciplinas
@@ -108,7 +110,7 @@ const RegisterSprint = () => {
       setAssuntosDaDisciplina({});
       setLastLoadedPlanoId(null);
     }
-  }, [formData.planoId, lastLoadedPlanoId]);
+  }, [formData.planoId, lastLoadedPlanoId, planoId]);
 
   // Efeito para verificar e buscar assuntos quando uma disciplina é selecionada
   useEffect(() => {
@@ -144,23 +146,21 @@ const RegisterSprint = () => {
   };
 
   // Carregamento de disciplinas do plano selecionado
-  const carregarDisciplinasDoPlanoDisciplinas = async (planoId) => {
-    if (!planoId) return;
-    
+  const carregarDisciplinasDoPlanoDisciplinas = async (planoIdParam) => {
+    if (!planoIdParam) return;
     try {
-      console.log(`Carregando disciplinas do plano ${planoId}...`);
+      console.log(`Carregando disciplinas do plano ${planoIdParam}...`);
       setLoadingDisciplinas(true);
-      const disciplinas = await planoService.buscarDisciplinasPorPlano(planoId);
-      console.log(`Disciplinas do plano ${planoId} carregadas:`, disciplinas);
-      
-      // Verificar se o planoId ainda é o mesmo (o usuário pode ter trocado enquanto carregava)
-      if (planoId === formData.planoId) {
+      const disciplinas = await planoService.buscarDisciplinasPorPlano(planoIdParam);
+      console.log(`Disciplinas do plano ${planoIdParam} carregadas:`, disciplinas);
+      // Se estiver no fluxo via planoId da URL, sempre setar as disciplinas
+      if (planoId || planoIdParam === formData.planoId) {
         setDisciplinasDoPlanoDisciplinas(disciplinas);
       } else {
         console.log('Plano alterado durante o carregamento. Ignorando resultados.');
       }
     } catch (error) {
-      console.error(`Erro ao carregar disciplinas do plano ${planoId}:`, error);
+      console.error(`Erro ao carregar disciplinas do plano ${planoIdParam}:`, error);
     } finally {
       setLoadingDisciplinas(false);
     }
@@ -251,7 +251,7 @@ const RegisterSprint = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.planoId) {
+    if (!formData.planoId && !planoId) {
       alert('Selecione um plano de estudo para a sprint.');
       return;
     }
@@ -261,7 +261,7 @@ const RegisterSprint = () => {
         nome: formData.title,
         dataInicio: formData.startDate,
         dataFim: formData.endDate,
-        planoId: formData.planoId,
+        planoId: planoId || formData.planoId,
         metas: formData.activities.map(activity => ({
           disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
           tipo: activity.type,
@@ -411,7 +411,19 @@ const RegisterSprint = () => {
   console.log('- Disciplinas carregadas:', disciplinasDoPlanoDisciplinas.map(d => d.nome));
   console.log('- Assuntos carregados para disciplinas:', Object.keys(assuntosDaDisciplina));
 
-  if (loading || loadingPlanos) {
+  useEffect(() => {
+    if (planoId && !formData.planoId) {
+      setFormData(prev => ({ ...prev, planoId }));
+    }
+  }, [planoId, formData.planoId]);
+
+  useEffect(() => {
+    if (planoId) {
+      carregarDisciplinasDoPlanoDisciplinas(planoId);
+    }
+  }, [planoId]);
+
+  if (loading || (planoId ? false : loadingPlanos)) {
     return <div className={styles.loading}>Carregando...</div>;
   }
 
@@ -461,27 +473,29 @@ const RegisterSprint = () => {
       
       <form onSubmit={handleSubmit} className={styles.form}>
         {/* Seletor de plano de estudo */}
-        <div className={styles.formGroup}>
-          <label htmlFor="planoId">Plano de Estudo</label>
-          <select
-            id="planoId"
-            name="planoId"
-            value={formData.planoId}
-            onChange={handleChange}
-            required
-            className={styles.selectField}
-          >
-            <option value="">Selecione um plano de estudo</option>
-            {planos.map(plano => (
-              <option key={plano.id} value={plano.id}>
-                {plano.nome} - {plano.cargo}
-              </option>
-            ))}
-          </select>
-          <p className={styles.fieldHelp}>
-            * Selecione o plano de estudo que esta sprint irá seguir
-          </p>
-        </div>
+        {!planoId && (
+          <div className={styles.formGroup}>
+            <label htmlFor="planoId">Plano de Estudo</label>
+            <select
+              id="planoId"
+              name="planoId"
+              value={formData.planoId}
+              onChange={handleChange}
+              required
+              className={styles.selectField}
+            >
+              <option value="">Selecione um plano de estudo</option>
+              {planos.map(plano => (
+                <option key={plano.id} value={plano.id}>
+                  {plano.nome} - {plano.cargo}
+                </option>
+              ))}
+            </select>
+            <p className={styles.fieldHelp}>
+              * Selecione o plano de estudo que esta sprint irá seguir
+            </p>
+          </div>
+        )}
 
         <div className={styles.formGroup}>
           <label htmlFor="title">Nome da Sprint</label>
