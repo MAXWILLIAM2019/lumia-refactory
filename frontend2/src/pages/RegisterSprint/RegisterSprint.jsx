@@ -155,12 +155,13 @@ const RegisterSprint = () => {
       console.log(`Disciplinas do plano ${planoIdParam} carregadas:`, disciplinas);
       // Se estiver no fluxo via planoId da URL, sempre setar as disciplinas
       if (planoId || planoIdParam === formData.planoId) {
-        setDisciplinasDoPlanoDisciplinas(disciplinas);
+        setDisciplinasDoPlanoDisciplinas(disciplinas || []);
       } else {
         console.log('Plano alterado durante o carregamento. Ignorando resultados.');
       }
     } catch (error) {
       console.error(`Erro ao carregar disciplinas do plano ${planoIdParam}:`, error);
+      setDisciplinasDoPlanoDisciplinas([]);
     } finally {
       setLoadingDisciplinas(false);
     }
@@ -387,13 +388,8 @@ const RegisterSprint = () => {
 
   // Obtém as disciplinas disponíveis para seleção
   const getDisciplinasDisponiveis = () => {
-    // Se temos disciplinas do plano, usamos elas
-    if (disciplinasDoPlanoDisciplinas.length > 0) {
-      return disciplinasDoPlanoDisciplinas.map(d => d.nome);
-    }
-    
-    // Caso contrário, usamos as disciplinas predefinidas como fallback
-    return PREDEFINED_DISCIPLINES;
+    // Retorna apenas as disciplinas do plano, sem disciplinas predefinidas
+    return disciplinasDoPlanoDisciplinas.map(d => d.nome);
   };
   
   // Verificar se uma disciplina tem assuntos disponíveis

@@ -11,10 +11,6 @@ export const planoService = {
         throw new Error('Todos os campos são obrigatórios');
       }
 
-      if (!planoData.disciplinas || !Array.isArray(planoData.disciplinas) || planoData.disciplinas.length === 0) {
-        throw new Error('É necessário adicionar pelo menos uma disciplina');
-      }
-
       const response = await api.post('/planos', planoData);
       console.log('3. Resposta da API:', response.data);
       return response.data;

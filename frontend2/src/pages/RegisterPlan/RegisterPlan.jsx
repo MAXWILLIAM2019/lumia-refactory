@@ -34,6 +34,9 @@ export default function RegisterPlan() {
   const [planos, setPlanos] = useState([]);
   const [sprintsPorPlano, setSprintsPorPlano] = useState({});
   const [showForm, setShowForm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPlano, setEditingPlano] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef(null);
 
   // Carregar disciplinas ativas ao montar o componente
@@ -61,9 +64,23 @@ export default function RegisterPlan() {
       try {
         setLoading(true);
         const data = await planoService.listarPlanos();
-        setPlanos(data);
+        
+        // Ordena os planos por data de criação (mais recentes primeiro) e depois por nome
+        const planosOrdenados = data.sort((a, b) => {
+          // Primeiro ordena por data de criação (mais recente primeiro)
+          const dataA = new Date(a.createdAt);
+          const dataB = new Date(b.createdAt);
+          if (dataB - dataA !== 0) {
+            return dataB - dataA;
+          }
+          // Se as datas forem iguais, ordena por nome
+          return a.nome.localeCompare(b.nome);
+        });
+        
+        setPlanos(planosOrdenados);
+        
         // Buscar sprints de cada plano
-        const sprintsPromises = data.map(async (plano) => {
+        const sprintsPromises = planosOrdenados.map(async (plano) => {
           try {
             const resp = await sprintService.listarSprintsPorPlano(plano.id);
             return { planoId: plano.id, count: Array.isArray(resp) ? resp.length : 0 };
@@ -77,12 +94,17 @@ export default function RegisterPlan() {
           sprintsMap[planoId] = count;
         });
         setSprintsPorPlano(sprintsMap);
+        
+        setError('');
       } catch (error) {
+        console.error('Erro ao carregar planos:', error);
         setError('Erro ao carregar planos. Tente novamente.');
+        setPlanos([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchPlanos();
   }, [success]);
 
@@ -161,6 +183,45 @@ export default function RegisterPlan() {
     setSelectedDisciplines(prev => prev.filter(d => d.id !== discipline.id));
   };
 
+  const handleEdit = (plano) => {
+    setEditingPlano(plano);
+    setFormData({
+      nome: plano.nome,
+      descricao: plano.descricao,
+      duracao: plano.duracao,
+      cargo: plano.cargo
+    });
+    
+    const disciplinasSource = plano.Disciplinas || plano.disciplinas || [];
+    const disciplinasFormatadas = disciplinasSource.map(disciplina => {
+      const assuntosSource = disciplina.Assuntos || disciplina.assuntos || [];
+      return {
+        id: disciplina.id,
+        nome: disciplina.nome,
+        assuntos: assuntosSource.map(assunto => ({ 
+          id: assunto.id,
+          nome: assunto.nome
+        }))
+      };
+    });
+    
+    setSelectedDisciplines(disciplinasFormatadas);
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setEditingPlano(null);
+    setFormData({
+      nome: '',
+      descricao: '',
+      duracao: '',
+      cargo: '',
+      disciplinas: []
+    });
+    setSelectedDisciplines([]);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -172,21 +233,17 @@ export default function RegisterPlan() {
         ...formData,
         disciplinas: selectedDisciplines
       };
-      console.log('1. Dados do plano antes de enviar:', dataToSubmit);
-      console.log('2. Verificando estrutura dos dados:');
-      console.log('- Nome:', dataToSubmit.nome);
-      console.log('- Cargo:', dataToSubmit.cargo);
-      console.log('- Descrição:', dataToSubmit.descricao);
-      console.log('- Duração:', dataToSubmit.duracao);
-      console.log('- Disciplinas:', dataToSubmit.disciplinas);
       
-      await planoService.cadastrarPlano(dataToSubmit);
-      console.log('3. Plano cadastrado com sucesso');
+      if (editingPlano) {
+        await planoService.atualizarPlano(editingPlano.id, dataToSubmit);
+        setSuccess('Plano atualizado com sucesso!');
+        handleCloseEditModal();
+      } else {
+        await planoService.cadastrarPlano(dataToSubmit);
+        setSuccess('Plano cadastrado com sucesso!');
+        setShowForm(false);
+      }
       
-      // Define a mensagem de sucesso e deixa o redirecionamento para o useEffect
-      setSuccess('Plano cadastrado com sucesso! Redirecionando...');
-      
-      // Limpa o formulário
       setFormData({
         nome: '',
         descricao: '',
@@ -196,10 +253,8 @@ export default function RegisterPlan() {
       });
       setSelectedDisciplines([]);
     } catch (error) {
-      console.error('4. Erro detalhado ao cadastrar plano:', error);
-      console.error('5. Mensagem de erro:', error.message);
-      console.error('6. Stack trace:', error.stack);
-      setError(error.message || 'Erro ao cadastrar plano. Tente novamente.');
+      console.error('Erro ao salvar plano:', error);
+      setError(error.message || 'Erro ao salvar plano. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -226,6 +281,22 @@ export default function RegisterPlan() {
     </div>
   );
 
+  const handleDelete = async (id) => {
+    if (window.confirm('Tem certeza que deseja excluir este plano?')) {
+      try {
+        setLoading(true);
+        await planoService.excluirPlano(id);
+        setPlanos(planos.filter(plano => plano.id !== id));
+        setSuccess('Plano excluído com sucesso!');
+      } catch (error) {
+        console.error('Erro ao excluir plano:', error);
+        setError('Erro ao excluir plano. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   // Card de plano já cadastrado
   const PlanoCard = (plano) => (
     <div className={styles.planoCard} key={plano.id}>
@@ -246,11 +317,11 @@ export default function RegisterPlan() {
           <img src={addSprintIcon} alt="Sprints" width={24} height={24} />
           <span>Sprints</span>
         </button>
-        <button className={styles.actionButton + ' ' + styles.editarDisciplina}>
+        <button className={styles.actionButton + ' ' + styles.editarDisciplina} onClick={() => handleEdit(plano)}>
           <img src={editDisciplineIcon} alt="Editar" width={24} height={24} />
           <span>Editar</span>
         </button>
-        <button className={styles.actionButton + ' ' + styles.excluirPlano}>
+        <button className={styles.actionButton + ' ' + styles.excluirPlano} onClick={() => handleDelete(plano.id)}>
           <img src={deletePlanIcon} alt="Excluir" width={24} height={24} />
           <span>Excluir</span>
         </button>
@@ -258,17 +329,40 @@ export default function RegisterPlan() {
     </div>
   );
 
-  // Layout dos cards em linhas de 3
-  const cards = [NovoPlanoCard, ...planos.map(PlanoCard)];
+  // Filtra os planos de acordo com o termo de busca
+  const filteredPlanos = planos.filter(plano => 
+    plano.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    plano.cargo.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className={styles.container}>
-      <h1>Planos</h1>
+      <div className={styles.header}>
+        <h1>Planos</h1>
+        <div className={styles.searchContainer}>
+          <input
+            type="text"
+            placeholder="Buscar planos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={styles.searchInput}
+          />
+          {searchTerm && (
+            <button 
+              className={styles.clearSearch}
+              onClick={() => setSearchTerm('')}
+              title="Limpar busca"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      </div>
       <div className={styles.tabsUnderline}></div>
       
-      {!showForm ? (
+      {!showForm && !showEditModal ? (
         <div className={styles.cardsGrid}>
-          {cards}
+          {[NovoPlanoCard, ...filteredPlanos.map(PlanoCard)]}
         </div>
       ) : (
         <form onSubmit={handleSubmit} className={styles.form}>
@@ -429,11 +523,11 @@ export default function RegisterPlan() {
               className={styles.submitButton}
               disabled={loading || !!success}
             >
-              {loading ? 'Cadastrando...' : success ? 'Cadastrado' : 'Cadastrar Plano'}
+              {loading ? 'Salvando...' : success ? 'Salvo' : editingPlano ? 'Atualizar Plano' : 'Cadastrar Plano'}
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(false)}
+              onClick={editingPlano ? handleCloseEditModal : () => setShowForm(false)}
               className={styles.cancelButton}
               disabled={loading || !!success}
             >
