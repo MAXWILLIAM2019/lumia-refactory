@@ -66,15 +66,15 @@ export default function PlanSprints() {
         </div>
       </div>
       <div className={styles.planoCardActions}>
-        <button className={styles.actionButton} onClick={() => navigate(`/sprints/${sprint.id}`)}>
+        <button className={styles.actionButton}>
           <img src={addSprintIcon} alt="Visualizar" width={24} height={24} style={{ marginRight: '8px' }} />
           <span>Visualizar</span>
         </button>
-        <button className={styles.actionButton} onClick={() => navigate(`/sprints/${sprint.id}/editar`)}>
+        <button className={styles.actionButton}>
           <img src={editDisciplineIcon} alt="Editar" width={24} height={24} style={{ marginRight: '8px' }} />
           <span>Editar</span>
         </button>
-        <button className={styles.actionButton} onClick={() => handleDeleteSprint(sprint.id)}>
+        <button className={styles.actionButton}>
           <img src={deletePlanIcon} alt="Excluir" width={24} height={24} style={{ marginRight: '8px' }} />
           <span>Excluir</span>
         </button>
