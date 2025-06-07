@@ -976,22 +976,22 @@ const RegisterSprint = () => {
             <h3 style={{ color: '#e0e6ed', marginBottom: 16 }}>Pré-visualização da importação de metas</h3>
             <div style={{ width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, fontSize: 16, color: '#e0e6ed', marginBottom: 8, background: 'rgba(37,99,235,0.18)', borderRadius: 8, position: 'sticky', top: 0, zIndex: 1, padding: 8, paddingRight: 16 }}>
-                <div style={{ minWidth: 120, maxWidth: 180, marginLeft: 12, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
+                <div style={{ flex: 1, minWidth: 120, maxWidth: 180, marginLeft: 12, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'left' }}>
                   Disciplina
                 </div>
-                <div style={{ minWidth: 100, maxWidth: 140, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
+                <div style={{ flex: 1, minWidth: 100, maxWidth: 140, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'left' }}>
                   Tipo
                 </div>
-                <div style={{ flex: 2, minWidth: 180, marginLeft: 16, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'center' }}>
+                <div style={{ flex: 2, minWidth: 180, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'left' }}>
                   Título
                 </div>
-                <div style={{ flex: 2, minWidth: 180, marginLeft: 16, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'center' }}>
+                <div style={{ flex: 2, minWidth: 180, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'left' }}>
                   Comandos
                 </div>
-                <div style={{ flex: 2, minWidth: 180, marginLeft: 16, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'center' }}>
+                <div style={{ flex: 2, minWidth: 180, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'left' }}>
                   Link
                 </div>
-                <div style={{ minWidth: 110, maxWidth: 140, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
+                <div style={{ flex: 1, minWidth: 110, maxWidth: 140, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'center' }}>
                   Relevância
                 </div>
               </div>
@@ -1018,12 +1018,26 @@ const RegisterSprint = () => {
                       minHeight: 44,
                     }}
                   >
-                    <div style={{ minWidth: 120, maxWidth: 180, marginLeft: 12, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 15, padding: '6px 16px', display: 'inline-block', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.disciplina}</div>
-                    <div style={{ minWidth: 100, maxWidth: 140, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 15, padding: '6px 16px', display: 'inline-block', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.tipo}</div>
+                    <div style={{ minWidth: 120, maxWidth: 180, marginLeft: 12, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 15, padding: '6px 16px', display: 'inline-block', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.disciplina}</div>
+                    <div style={{ minWidth: 100, maxWidth: 140, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 15, padding: '6px 16px', display: 'inline-block', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.tipo}</div>
                     <div style={{ flex: 2, minWidth: 180, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.titulo}</div>
                     <div style={{ flex: 2, minWidth: 180, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.comandos}</div>
                     <div style={{ flex: 2, minWidth: 180, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.link}</div>
-                    <div style={{ minWidth: 110, maxWidth: 140, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 15, padding: '6px 16px', display: 'inline-block', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.relevancia}</div>
+                    <div style={{ minWidth: 110, maxWidth: 140, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 18, padding: '6px 16px', display: 'inline-block', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                        <div className={styles.starsContainer} style={{ gap: 2, marginTop: 0 }}>
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <span
+                              key={star}
+                              className={`${styles.starButton} ${Number(row.relevancia) >= star ? styles.active : ''}`}
+                              style={{ cursor: 'default', fontSize: 20, padding: 0, transition: 'none', color: Number(row.relevancia) >= star ? '#f59e0b' : '#4b5563' }}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                     <button
                       onClick={() => handleRemoveImportMeta(idx)}
                       style={{
