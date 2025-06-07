@@ -25,8 +25,7 @@ exports.getSprintAtual = async (req, res) => {
           include: [{
             model: Meta,
             as: 'metas'
-          }],
-          order: [['posicao', 'ASC']]
+          }]
         }]
       }]
     });
@@ -34,6 +33,10 @@ exports.getSprintAtual = async (req, res) => {
     if (!alunoPlano || !alunoPlano.Plano || !alunoPlano.Plano.sprints || alunoPlano.Plano.sprints.length === 0) {
       return res.status(404).json({ message: 'Aluno não possui plano de estudo com sprints' });
     }
+
+    // Ordenar as sprints por posição
+    const sprintsOrdenadas = alunoPlano.Plano.sprints.sort((a, b) => a.posicao - b.posicao);
+    const primeiraSprint = sprintsOrdenadas[0];
 
     // Buscar a sprint atual do aluno
     let sprintAtual = await SprintAtual.findOne({
@@ -49,7 +52,6 @@ exports.getSprintAtual = async (req, res) => {
 
     // Se não existir sprint atual, criar com a primeira sprint do plano
     if (!sprintAtual) {
-      const primeiraSprint = alunoPlano.Plano.sprints[0];
       sprintAtual = await SprintAtual.create({
         AlunoId: alunoId,
         SprintId: primeiraSprint.id
@@ -172,8 +174,7 @@ exports.inicializarSprintAtual = async (req, res) => {
           include: [{
             model: Meta,
             as: 'metas'
-          }],
-          order: [['posicao', 'ASC']]
+          }]
         }]
       }]
     });
@@ -182,7 +183,9 @@ exports.inicializarSprintAtual = async (req, res) => {
       return res.status(404).json({ message: 'Aluno não possui plano de estudo com sprints' });
     }
 
-    const primeiraSprint = alunoPlano.Plano.sprints[0];
+    // Ordenar as sprints por posição
+    const sprintsOrdenadas = alunoPlano.Plano.sprints.sort((a, b) => a.posicao - b.posicao);
+    const primeiraSprint = sprintsOrdenadas[0];
     
     // Criar o registro da sprint atual
     const sprintAtual = await SprintAtual.create({
