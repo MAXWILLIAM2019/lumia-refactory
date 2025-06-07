@@ -644,3 +644,21 @@ npm start
 ```
 
 Acesse em: http://localhost:3000
+
+## Importação de Disciplinas e Assuntos via Planilha
+
+O sistema permite importar disciplinas e assuntos em lote a partir de uma planilha (Excel ou CSV), facilitando o cadastro em massa.
+
+- A funcionalidade utiliza a biblioteca [xlsx](https://www.npmjs.com/package/xlsx) para leitura dos arquivos.
+- Para instalar manualmente:
+  ```bash
+  npm install xlsx
+  # ou
+  yarn add xlsx
+  ```
+- O botão de importação está disponível na tela de Disciplinas.
+- O arquivo deve conter as colunas "disciplina" e "assunto".
+- O sistema faz validações e mostra pré-visualização antes de salvar.
+
+**Observação:**
+A dependência `xlsx` já está listada no `package.json` do frontend.
