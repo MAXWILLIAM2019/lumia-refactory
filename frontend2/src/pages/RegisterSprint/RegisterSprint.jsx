@@ -437,6 +437,7 @@ const RegisterSprint = () => {
         const tipo = row[indices[1]];
         const titulo = row[indices[2]];
         const relevancia = row[indices[5]];
+        const tiposValidos = ['teoria', 'questoes', 'revisao', 'reforco'];
         if (!disciplina || !tipo || !titulo || !relevancia) {
           return {
             linha: index + 2,
@@ -446,6 +447,12 @@ const RegisterSprint = () => {
               !titulo ? 'Título não preenchido' : '',
               !relevancia ? 'Relevância não preenchida' : ''
             ].filter(Boolean).join(', ')
+          };
+        }
+        if (!tiposValidos.includes(tipo.toLowerCase())) {
+          return {
+            linha: index + 2,
+            motivo: `Tipo inválido. Valores aceitos: ${tiposValidos.join(', ')}`
           };
         }
         return null;
@@ -711,111 +718,161 @@ const RegisterSprint = () => {
               </div>
 
               <div className={styles.activityContent}>
-                <div className={styles.activityRow}>
-                  <div className={styles.formGroup}>
-                    <label>Disciplina</label>
-                    <select
-                      value={activity.discipline}
-                      onChange={(e) => handleActivityChange(index, 'discipline', e.target.value)}
-                      required
-                      className={styles.selectField}
-                    >
-                      <option value="">Selecione uma disciplina</option>
-                      {disciplinasDoPlanoDisciplinas.map((disciplina) => (
-                        <option key={disciplina.id} value={disciplina.nome}>
-                          {disciplina.nome}
-                        </option>
-                      ))}
-                      <option value="custom">Outra (especifique)</option>
-                    </select>
-                    {activity.discipline === 'custom' && (
-                      <input
-                        type="text"
-                        value={activity.customDiscipline}
-                        onChange={(e) => handleActivityChange(index, 'customDiscipline', e.target.value)}
-                        placeholder="Digite o nome da disciplina"
-                        required
-                        className={styles.inputField}
-                      />
-                    )}
-                    {loadingDisciplinas ? (
-                      <p className={styles.fieldHelp}>Carregando disciplinas...</p>
-                    ) : disciplinasDoPlanoDisciplinas.length > 0 ? (
-                      <p className={styles.fieldHelp}>
-                        {disciplinasDoPlanoDisciplinas.length} disciplina(s) disponíveis
-                      </p>
-                    ) : (
-                      <p className={styles.fieldHelp}>
-                        Nenhuma disciplina encontrada para este plano
-                      </p>
-                    )}
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label>Título da Meta</label>
-                    <div className={styles.inputWithDropdown}>
-                      <input
-                        type="text"
-                        value={activity.title}
-                        onChange={(e) => handleActivityChange(index, 'title', e.target.value)}
-                        required
-                      />
-                      {temAssuntosDisponiveis(activity.discipline) && (
-                        <button
-                          type="button"
-                          className={styles.assuntosButton}
-                          onClick={() => toggleAssuntosDropdown(index)}
-                          title="Selecionar um assunto como título"
-                        >
-                          <span>▼</span>
-                        </button>
-                      )}
-                      {showAssuntosDropdown[index] && temAssuntosDisponiveis(activity.discipline) && (
-                        <div className={styles.assuntosDropdown}>
-                          <div className={styles.assuntosHeader}>
-                            <span>Selecione um assunto:</span>
-                            <button 
-                              type="button" 
-                              onClick={() => toggleAssuntosDropdown(index)}
-                              className={styles.closeDropdownButton}
-                            >
-                              ×
-                            </button>
-                          </div>
-                          <ul>
-                            {assuntosDaDisciplina[activity.discipline].map((assunto, assuntoIndex) => (
-                              <li 
-                                key={assuntoIndex} 
-                                onClick={() => selecionarAssuntoComoTitulo(index, assunto.nome)}
-                              >
-                                {assunto.nome}
-                              </li>
-                            ))}
-                          </ul>
+                {activity.imported ? (
+                  // Renderização somente leitura para metas importadas
+                  <div>
+                    <div className={styles.activityRow}>
+                      <div className={styles.formGroup}>
+                        <label>Disciplina</label>
+                        <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff'}}>{activity.discipline}</div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Título da Meta</label>
+                        <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff'}}>{activity.title}</div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Tipo</label>
+                        <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff'}}>{activity.type}</div>
+                      </div>
+                    </div>
+                    <div className={styles.activityRow}>
+                      <div className={styles.formGroup}>
+                        <label>Comandos</label>
+                        <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff', minHeight: 52}}>
+                          {activity.comandos ? (
+                            <div dangerouslySetInnerHTML={{ __html: activity.comandos }} />
+                          ) : (
+                            <span style={{color: '#6b7280'}}>Nenhum comando</span>
+                          )}
                         </div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Link</label>
+                        <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff'}}>{activity.link || <span style={{color: '#6b7280'}}>Nenhum</span>}</div>
+                      </div>
+                      <div className={styles.formGroup}>
+                        <label>Relevância</label>
+                        <div className={styles.starsContainer} style={{gap: 2, marginTop: 0}}>
+                          {[1,2,3,4,5].map(star => (
+                            <span
+                              key={star}
+                              className={`${styles.starButton} ${activity.relevance >= star ? styles.active : ''}`}
+                              style={{cursor: 'default', fontSize: 20, padding: 0, color: activity.relevance >= star ? '#f59e0b' : '#4b5563'}}
+                            >
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.activityRow}>
+                    <div className={styles.formGroup}>
+                      <label>Disciplina</label>
+                      <select
+                        value={activity.discipline}
+                        onChange={(e) => handleActivityChange(index, 'discipline', e.target.value)}
+                        required
+                        className={styles.selectField}
+                      >
+                        <option value="">Selecione uma disciplina</option>
+                        {disciplinasDoPlanoDisciplinas.map((disciplina) => (
+                          <option key={disciplina.id} value={disciplina.nome}>
+                            {disciplina.nome}
+                          </option>
+                        ))}
+                        <option value="custom">Outra (especifique)</option>
+                      </select>
+                      {activity.discipline === 'custom' && (
+                        <input
+                          type="text"
+                          value={activity.customDiscipline}
+                          onChange={(e) => handleActivityChange(index, 'customDiscipline', e.target.value)}
+                          placeholder="Digite o nome da disciplina"
+                          required
+                          className={styles.inputField}
+                        />
+                      )}
+                      {loadingDisciplinas ? (
+                        <p className={styles.fieldHelp}>Carregando disciplinas...</p>
+                      ) : disciplinasDoPlanoDisciplinas.length > 0 ? (
+                        <p className={styles.fieldHelp}>
+                          {disciplinasDoPlanoDisciplinas.length} disciplina(s) disponíveis
+                        </p>
+                      ) : (
+                        <p className={styles.fieldHelp}>
+                          Nenhuma disciplina encontrada para este plano
+                        </p>
                       )}
                     </div>
-                    {temAssuntosDisponiveis(activity.discipline) && (
-                      <p className={styles.fieldHelp}>
-                        Clique na seta para selecionar um assunto como título
-                      </p>
-                    )}
-                  </div>
 
-                  <div className={styles.formGroup}>
-                    <label>Tipo</label>
-                    <select
-                      value={activity.type}
-                      onChange={(e) => handleActivityChange(index, 'type', e.target.value)}
-                      required
-                    >
-                      <option value="teoria">Teoria</option>
-                      <option value="questoes">Questões</option>
-                      <option value="revisao">Revisão</option>
-                      <option value="reforco">Reforço</option>
-                    </select>
+                    <div className={styles.formGroup}>
+                      <label>Título da Meta</label>
+                      <div className={styles.inputWithDropdown}>
+                        <input
+                          type="text"
+                          value={activity.title}
+                          onChange={(e) => handleActivityChange(index, 'title', e.target.value)}
+                          required
+                        />
+                        {temAssuntosDisponiveis(activity.discipline) && (
+                          <button
+                            type="button"
+                            className={styles.assuntosButton}
+                            onClick={() => toggleAssuntosDropdown(index)}
+                            title="Selecionar um assunto como título"
+                          >
+                            <span>▼</span>
+                          </button>
+                        )}
+                        {showAssuntosDropdown[index] && temAssuntosDisponiveis(activity.discipline) && (
+                          <div className={styles.assuntosDropdown}>
+                            <div className={styles.assuntosHeader}>
+                              <span>Selecione um assunto:</span>
+                              <button 
+                                type="button" 
+                                onClick={() => toggleAssuntosDropdown(index)}
+                                className={styles.closeDropdownButton}
+                              >
+                                ×
+                              </button>
+                            </div>
+                            <ul>
+                              {assuntosDaDisciplina[activity.discipline].map((assunto, assuntoIndex) => (
+                                <li 
+                                  key={assuntoIndex} 
+                                  onClick={() => selecionarAssuntoComoTitulo(index, assunto.nome)}
+                                >
+                                  {assunto.nome}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                      {temAssuntosDisponiveis(activity.discipline) && (
+                        <p className={styles.fieldHelp}>
+                          Clique na seta para selecionar um assunto como título
+                        </p>
+                      )}
+                    </div>
+
+                    <div className={styles.formGroup}>
+                      <label>Tipo</label>
+                      <select
+                        value={activity.type}
+                        onChange={(e) => handleActivityChange(index, 'type', e.target.value)}
+                        required
+                      >
+                        <option value="teoria">Teoria</option>
+                        <option value="questoes">Questões</option>
+                        <option value="revisao">Revisão</option>
+                        <option value="reforco">Reforço</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className={styles.activityRow}>
                   <div className={styles.formGroup}>
@@ -837,32 +894,6 @@ const RegisterSprint = () => {
                     </div>
                   </div>
 
-                  <div className={styles.formGroup}>
-                    <label>Link</label>
-                    <input
-                      type="url"
-                      value={activity.link}
-                      onChange={(e) => handleActivityChange(index, 'link', e.target.value)}
-                      placeholder="URL de referência (opcional)"
-                      style={{ width: '100%', boxSizing: 'border-box' }}
-                    />
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label>Relevância</label>
-                    <div className={styles.starsContainer}>
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          className={`${styles.starButton} ${activity.relevance >= star ? styles.active : ''}`}
-                          onClick={() => handleActivityChange(index, 'relevance', star)}
-                        >
-                          ★
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1175,7 +1206,6 @@ const RegisterSprint = () => {
               </button>
               <button
                 onClick={() => {
-                  // Adiciona as metas importadas ao formulário principal
                   setFormData(prev => ({
                     ...prev,
                     activities: [
@@ -1187,7 +1217,8 @@ const RegisterSprint = () => {
                         type: meta.tipo,
                         relevance: Number(meta.relevancia) || 1,
                         comandos: meta.comandos || '',
-                        link: meta.link || ''
+                        link: meta.link || '',
+                        imported: true
                       }))
                     ]
                   }));
