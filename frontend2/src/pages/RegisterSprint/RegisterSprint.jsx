@@ -7,6 +7,7 @@ import 'react-quill/dist/quill.snow.css';
 import styles from './RegisterSprint.module.css';
 import * as XLSX from 'xlsx';
 import deleteMetasSprintIcon from '../../assets/icons/delete-metas-sprint.svg';
+import listSprintIcon from '../../assets/icons/list-sprint.svg';
 
 // Disciplinas predefinidas para fallback (serão usadas apenas se a API falhar)
 const PREDEFINED_DISCIPLINES = [
@@ -598,11 +599,100 @@ const RegisterSprint = () => {
                 fontWeight: 600,
                 fontSize: 15,
                 cursor: 'pointer',
-                marginLeft: 8
+                marginLeft: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                transition: 'background 0.2s, color 0.2s',
+              }}
+              onMouseOver={e => {
+                e.currentTarget.style.background = '#fff';
+                e.currentTarget.style.color = '#2563eb';
+                const svg = e.currentTarget.querySelector('svg');
+                if (svg) svg.querySelectorAll('path, rect').forEach(el => el.setAttribute('stroke', '#2563eb') || el.setAttribute('fill', '#2563eb'));
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.background = '#2563eb';
+                e.currentTarget.style.color = '#fff';
+                const svg = e.currentTarget.querySelector('svg');
+                if (svg) {
+                  svg.querySelectorAll('path').forEach(el => el.setAttribute('stroke', '#fff'));
+                  svg.querySelectorAll('rect').forEach(el => el.setAttribute('fill', '#fff'));
+                }
               }}
               onClick={() => document.getElementById('input-import-metas').click()}
             >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" style={{marginRight: 2}}>
+                <path d="M12 16V4M12 16l-4-4M12 16l4-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <rect x="4" y="18" width="16" height="2" rx="1" fill="#fff"/>
+              </svg>
               Importar
+            </button>
+            <button
+              type="button"
+              style={{
+                background: '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 20px',
+                fontWeight: 600,
+                fontSize: 15,
+                cursor: importedMetas.length === 0 ? 'not-allowed' : 'pointer',
+                marginLeft: 8,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                transition: 'background 0.2s, color 0.2s',
+                opacity: importedMetas.length === 0 ? 0.6 : 1
+              }}
+              disabled={importedMetas.length === 0}
+              onMouseOver={e => {
+                if (importedMetas.length === 0) return;
+                e.currentTarget.style.background = '#fff';
+                e.currentTarget.style.color = '#2563eb';
+                const img = e.currentTarget.querySelector('img');
+                if (img) img.style.filter = 'invert(0)';
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.background = '#2563eb';
+                e.currentTarget.style.color = '#fff';
+                const img = e.currentTarget.querySelector('img');
+                if (img) img.style.filter = 'invert(1)';
+              }}
+              onClick={() => importedMetas.length > 0 && setShowImportMetasModal(true)}
+            >
+              <img src={listSprintIcon} alt="Visualizar" style={{ width: 20, height: 20, marginRight: 2, filter: 'invert(1)', transition: 'filter 0.2s' }} />
+              Visualizar
+            </button>
+            <button
+              type="button"
+              style={{
+                background: '#ef4444',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 20px',
+                fontWeight: 600,
+                fontSize: 15,
+                cursor: importedMetas.length === 0 ? 'not-allowed' : 'pointer',
+                marginLeft: 8,
+                transition: 'background 0.2s, color 0.2s',
+                opacity: importedMetas.length === 0 ? 0.6 : 1
+              }}
+              disabled={importedMetas.length === 0}
+              onMouseOver={e => {
+                if (importedMetas.length === 0) return;
+                e.currentTarget.style.background = '#fff';
+                e.currentTarget.style.color = '#ef4444';
+              }}
+              onMouseOut={e => {
+                e.currentTarget.style.background = '#ef4444';
+                e.currentTarget.style.color = '#fff';
+              }}
+              onClick={() => importedMetas.length > 0 && setImportedMetas([])}
+            >
+              Limpar
             </button>
           </div>
           {formData.activities.map((activity, index) => (
@@ -1083,7 +1173,39 @@ const RegisterSprint = () => {
               >
                 Cancelar
               </button>
-              {/* Botão de salvar será implementado depois */}
+              <button
+                onClick={() => {
+                  // Adiciona as metas importadas ao formulário principal
+                  setFormData(prev => ({
+                    ...prev,
+                    activities: [
+                      ...prev.activities,
+                      ...importedMetas.map(meta => ({
+                        discipline: meta.disciplina,
+                        customDiscipline: '',
+                        title: meta.titulo,
+                        type: meta.tipo,
+                        relevance: Number(meta.relevancia) || 1,
+                        comandos: meta.comandos || '',
+                        link: meta.link || ''
+                      }))
+                    ]
+                  }));
+                  setShowImportMetasModal(false);
+                }}
+                style={{
+                  background: '#10b981',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '8px 24px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                Finalizar
+              </button>
             </div>
           </div>
         </div>
