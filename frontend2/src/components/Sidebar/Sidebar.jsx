@@ -57,17 +57,8 @@ export default function Sidebar() {
             onClick={handleRegisterPlanClick}
           >
             <div className={styles.menuItemContent}>
-              <img src={registerPlanIcon} alt="Cadastrar Plano" className={styles.icon} />
-              <span>Cadastrar plano</span>
-            </div>
-          </li>
-          <li 
-            className={styles.menuItem}
-            onClick={handleRegisterStudentClick}
-          >
-            <div className={styles.menuItemContent}>
-              <img src={registerStudentIcon} alt="Cadastrar Aluno" className={styles.icon} />
-              <span>Cadastrar aluno</span>
+              <img src={registerPlanIcon} alt="Planos" className={styles.icon} />
+              <span>Planos</span>
             </div>
           </li>
           <li 
@@ -79,8 +70,17 @@ export default function Sidebar() {
               <span>Disciplinas</span>
             </div>
           </li>
+          <li 
+            className={styles.menuItem}
+            onClick={handleRegisterStudentClick}
+          >
+            <div className={styles.menuItemContent}>
+              <img src={registerStudentIcon} alt="Alunos" className={styles.icon} />
+              <span>Alunos</span>
+            </div>
+          </li>
         </ul>
       </nav>
     </aside>
   );
-} 
+}
