@@ -63,7 +63,7 @@ O projeto é dividido em duas partes principais:
    npm run dev
    ```
 
-Após esses passos, o frontend estará disponível em `http://localhost:5173` e o backend em `http://localhost:3001`.
+Após esses passos, o frontend estará disponível em `http://localhost:5173` e o backend em `http://localhost:3000`.
 
 ## Funcionalidades Principais
 
@@ -346,3 +346,25 @@ CREATE TABLE public."Sprints" (
 - A combinação de `PlanoId` e `posicao` deve ser única
 - Cada sprint deve estar associada a um plano válido
 - Ao excluir um plano, as sprints associadas terão seu `PlanoId` definido como NULL 
+
+## Padrão de Rotas do Frontend (Axios)
+
+O frontend utiliza uma instância do Axios configurada com o seguinte baseURL:
+
+```
+http://localhost:3000/api
+```
+
+**IMPORTANTE:**
+- Todas as chamadas para a API devem ser feitas usando apenas o caminho relativo após `/api`.
+- **Exemplo correto:**
+  ```js
+  axios.get('/disciplinas') // Vai para http://localhost:3000/api/disciplinas
+  ```
+- **Exemplo incorreto:**
+  ```js
+  axios.get('/api/disciplinas') // Vai para http://localhost:3000/api/api/disciplinas (DUPLICADO!)
+  ```
+- Esse padrão vale para **todas** as requisições do projeto.
+
+Sempre consulte o arquivo `frontend2/src/services/api.js` para mais detalhes sobre a configuração do Axios. 

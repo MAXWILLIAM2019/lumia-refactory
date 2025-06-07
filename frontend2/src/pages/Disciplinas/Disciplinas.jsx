@@ -4,6 +4,7 @@ import styles from './Disciplinas.module.css';
 import axios from '../../services/api';
 import editIcon from '../../assets/icons/edit.svg';
 import deleteIcon from '../../assets/icons/delete.svg';
+import deleteDisciplinaAssuntoIcon from '../../assets/icons/delete-disciplina-assunto.svg';
 import ImportarPlanilhaButton from '../../components/ImportarPlanilhaButton/ImportarPlanilhaButton';
 import * as XLSX from 'xlsx';
 
@@ -18,9 +19,20 @@ export default function Disciplinas() {
   const [selectedDisciplina, setSelectedDisciplina] = useState(null);
   const [importedData, setImportedData] = useState([]);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [importError, setImportError] = useState(null);
+  const [savingImport, setSavingImport] = useState(false);
 
   useEffect(() => {
     fetchDisciplinas();
+  }, []);
+
+  // Limpar estados quando o componente for desmontado
+  useEffect(() => {
+    return () => {
+      setImportError(null);
+      setImportedData([]);
+      setShowImportModal(false);
+    };
   }, []);
 
   // Fechar o modal ao pressionar ESC
@@ -103,6 +115,11 @@ export default function Disciplinas() {
   };
 
   const handleImportarPlanilha = (file) => {
+    // Limpar estados anteriores
+    setImportError(null);
+    setImportedData([]);
+    setShowImportModal(false);
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const data = new Uint8Array(e.target.result);
@@ -111,9 +128,66 @@ export default function Disciplinas() {
       const worksheet = workbook.Sheets[firstSheetName];
       const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       const [header, ...rows] = json;
+
+      // Validar se todas as linhas têm disciplina e assunto
+      const linhasComErro = rows.map((row, index) => {
+        if (!row[0] || !row[1]) {
+          return {
+            linha: index + 2, // +2 porque index começa em 0 e pulamos o header
+            motivo: !row[0] && !row[1] ? 'Disciplina e Assunto não preenchidos' :
+                   !row[0] ? 'Disciplina não preenchida' : 'Assunto não preenchido'
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      if (linhasComErro.length > 0) {
+        setImportError({
+          titulo: 'Erro na importação',
+          mensagens: linhasComErro.map(erro => 
+            `Linha ${erro.linha}: ${erro.motivo}`
+          )
+        });
+        return;
+      }
+
+      // Validar assuntos repetidos por disciplina
+      const assuntosPorDisciplina = {};
+      const assuntosRepetidos = [];
+
+      rows.forEach((row, index) => {
+        const disciplina = row[0].trim();
+        const assunto = row[1].trim();
+        
+        if (!assuntosPorDisciplina[disciplina]) {
+          assuntosPorDisciplina[disciplina] = new Set();
+        }
+        
+        if (assuntosPorDisciplina[disciplina].has(assunto)) {
+          assuntosRepetidos.push({
+            linha: index + 2,
+            disciplina,
+            assunto
+          });
+        } else {
+          assuntosPorDisciplina[disciplina].add(assunto);
+        }
+      });
+
+      if (assuntosRepetidos.length > 0) {
+        setImportError({
+          titulo: 'Erro na importação',
+          mensagens: assuntosRepetidos.map(erro => 
+            `Linha ${erro.linha}: Assunto "${erro.assunto}" já existe para a disciplina "${erro.disciplina}"`
+          )
+        });
+        return;
+      }
+
+      // Se passou nas validações, processa os dados
       const result = rows.map(row => ({
-        disciplina: row[0],
-        assunto: row[1]
+        disciplina: row[0].trim(),
+        assunto: row[1].trim()
       }));
       setImportedData(result);
       setShowImportModal(true);
@@ -145,6 +219,73 @@ export default function Disciplinas() {
       if (a.ativa !== b.ativa) return b.ativa ? 1 : -1;
       return a.nome.localeCompare(b.nome);
     });
+
+  const handleCloseErrorModal = () => {
+    setImportedData([]);
+    setShowImportModal(false);
+    setImportError(null);
+  };
+
+  const handleRemoveImportItem = (index) => {
+    const newData = [...importedData];
+    newData.splice(index, 1);
+    setImportedData(newData);
+  };
+
+  const handleSaveImport = async () => {
+    try {
+      setSavingImport(true);
+
+      // Agrupa os assuntos por disciplina
+      const disciplinasMap = importedData.reduce((acc, item) => {
+        if (!acc[item.disciplina]) {
+          acc[item.disciplina] = {
+            nome: item.disciplina,
+            assuntos: []
+          };
+        }
+        acc[item.disciplina].assuntos.push({ nome: item.assunto });
+        return acc;
+      }, {});
+
+      // Converte o mapa em array
+      const disciplinas = Object.values(disciplinasMap);
+
+      // Salva cada disciplina com seus assuntos
+      for (const disciplina of disciplinas) {
+        await axios.post('/disciplinas', {
+          nome: disciplina.nome,
+          assuntos: disciplina.assuntos,
+          ativa: true
+        });
+      }
+
+      // Atualiza a lista de disciplinas
+      await fetchDisciplinas();
+      
+      // Fecha o modal e limpa os estados
+      setShowImportModal(false);
+      setImportedData([]);
+      setSavingImport(false);
+    } catch (error) {
+      console.error('Erro ao salvar importação:', error);
+      let mensagens = [];
+      if (error.response?.data?.message) {
+        mensagens.push(error.response.data.message);
+      }
+      if (error.response?.data?.error) {
+        mensagens.push(error.response.data.error);
+      }
+      if (mensagens.length === 0) {
+        mensagens.push('Erro ao salvar os dados importados');
+      }
+      setImportError({
+        titulo: 'Erro ao salvar importação',
+        mensagens
+      });
+      setSavingImport(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -230,7 +371,10 @@ export default function Disciplinas() {
               flexDirection: 'column',
             }}>
               <button
-                onClick={() => setShowImportModal(false)}
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportedData([]);
+                }}
                 style={{
                   position: 'absolute',
                   top: 16,
@@ -248,10 +392,12 @@ export default function Disciplinas() {
               <h3 style={{ color: '#e0e6ed', marginBottom: 16 }}>Pré-visualização da importação</h3>
               <div style={{ width: '100%' }}>
                 <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, fontSize: 16, color: '#e0e6ed', marginBottom: 8, background: 'rgba(37,99,235,0.18)', borderRadius: 8, position: 'sticky', top: 0, zIndex: 1, padding: 8, paddingRight: 16 }}>
-                  <div style={{ minWidth: 90, marginLeft: 12, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 13, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
+                  <div style={{ minWidth: 90, marginLeft: 12, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
                     Disciplina
                   </div>
-                  <div style={{ flex: 1, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16 }}>Assunto</div>
+                  <div style={{ flex: 1, color: '#e0e6ed', fontSize: 16, padding: '8px 0', marginLeft: 16, fontWeight: 700 }}>
+                    Assunto
+                  </div>
                 </div>
                 <div style={{ 
                   maxHeight: '45vh', 
@@ -279,22 +425,179 @@ export default function Disciplinas() {
                       <div style={{
                         minWidth: 90,
                         marginLeft: 12,
-                        marginRight: 8,
-                        background: '#2563eb',
-                        color: '#fff',
+                        marginRight: 12,
+                        color: '#e0e6ed',
                         borderRadius: 8,
-                        fontWeight: 700,
-                        fontSize: 13,
+                        fontWeight: 600,
+                        fontSize: 15,
                         padding: '6px 16px',
                         display: 'inline-block',
                         textAlign: 'center',
                       }}>
                         {row.disciplina}
                       </div>
-                      <div style={{ flex: 1, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16 }}>{row.assunto}</div>
+                      <div style={{ color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginRight: 12 }}>-</div>
+                      <div style={{ flex: 1, color: '#e0e6ed', fontSize: 15, padding: '8px 0' }}>{row.assunto}</div>
+                      <button
+                        onClick={() => handleRemoveImportItem(idx)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '8px',
+                          marginRight: 12,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        title="Remover item"
+                      >
+                        <img 
+                          src={deleteDisciplinaAssuntoIcon} 
+                          alt="Remover" 
+                          style={{ width: 20, height: 20 }}
+                        />
+                      </button>
                     </div>
                   ))}
                 </div>
+              </div>
+              <div style={{ 
+                marginTop: 24,
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: 12
+              }}>
+                <button
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setImportedData([]);
+                  }}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #e0e6ed',
+                    color: '#e0e6ed',
+                    padding: '8px 24px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: 14,
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveImport}
+                  disabled={savingImport || importedData.length === 0}
+                  style={{
+                    background: '#2563eb',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 24px',
+                    borderRadius: 8,
+                    cursor: savingImport || importedData.length === 0 ? 'not-allowed' : 'pointer',
+                    fontWeight: 600,
+                    fontSize: 14,
+                    opacity: savingImport || importedData.length === 0 ? 0.7 : 1,
+                  }}
+                >
+                  {savingImport ? 'Salvando...' : 'Salvar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de erro na importação */}
+        {importError && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(24,28,35,0.92)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <div style={{
+              background: '#181c23',
+              borderRadius: 16,
+              padding: 24,
+              minWidth: 500,
+              maxWidth: 600,
+              width: '90%',
+              color: '#e0e6ed',
+              boxShadow: '0 4px 32px #000a',
+              position: 'relative',
+            }}>
+              <button
+                onClick={handleCloseErrorModal}
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  background: 'none',
+                  border: 'none',
+                  color: '#e0e6ed',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                }}
+                title="Fechar"
+              >
+                ×
+              </button>
+              <h3 style={{ 
+                color: '#ef4444', 
+                marginBottom: 16,
+                fontSize: 20,
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}>
+                {importError.titulo}
+              </h3>
+              <div style={{ 
+                background: 'rgba(239,68,68,0.1)', 
+                borderRadius: 8, 
+                padding: 16,
+                maxHeight: '60vh',
+                overflowY: 'auto',
+                border: '1px solid rgba(239,68,68,0.2)'
+              }}>
+                {importError.mensagens.map((msg, idx) => (
+                  <div key={idx} style={{ 
+                    color: '#e0e6ed',
+                    padding: '8px 0',
+                    borderBottom: idx < importError.mensagens.length - 1 ? '1px solid rgba(239,68,68,0.2)' : 'none'
+                  }}>
+                    {msg}
+                  </div>
+                ))}
+              </div>
+              <div style={{ 
+                marginTop: 24,
+                display: 'flex',
+                justifyContent: 'flex-end'
+              }}>
+                <button
+                  onClick={handleCloseErrorModal}
+                  style={{
+                    background: '#2563eb',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '8px 24px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                    fontSize: 14,
+                  }}
+                >
+                  Entendi
+                </button>
               </div>
             </div>
           </div>

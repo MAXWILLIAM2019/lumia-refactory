@@ -13,7 +13,7 @@ Este serviço é responsável pelo cadastro de sprints e metas dos mentorados.
    npm run dev
    ```
 
-O serviço estará disponível em `http://localhost:3001` (ou na porta definida no arquivo `.env`).
+O serviço estará disponível em `http://localhost:3000` (ou na porta definida no arquivo `.env`).
 
 ## Endpoints iniciais
 - `GET /health` — Verifica se o serviço está online.

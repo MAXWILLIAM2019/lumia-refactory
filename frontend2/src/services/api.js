@@ -17,6 +17,15 @@ const api = axios.create({
 });
 
 /**
+ * IMPORTANTE:
+ * O baseURL já inclui '/api'. Portanto, todas as chamadas devem ser feitas usando apenas o caminho relativo após '/api'.
+ * Exemplo correto: axios.get('/disciplinas') => http://localhost:3000/api/disciplinas
+ * Exemplo incorreto: axios.get('/api/disciplinas') => http://localhost:3000/api/api/disciplinas (DUPLICADO!)
+ *
+ * Esse padrão vale para TODAS as requisições deste projeto.
+ */
+
+/**
  * Interceptor de requisição
  * 
  * Adiciona automaticamente o token JWT de autenticação no header
