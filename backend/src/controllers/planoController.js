@@ -1,4 +1,4 @@
-const { Plano, Disciplina, Assunto, Sprint } = require('../models');
+const { Plano, Disciplina, Assunto, Sprint, Meta } = require('../models');
 const sequelize = require('../db');
 const { Op } = require('sequelize');
 
@@ -404,9 +404,16 @@ const buscarSprintsPorPlano = async (req, res) => {
       return res.status(404).json({ error: 'Plano não encontrado' });
     }
     
-    // Buscar sprints do plano
+    // Buscar sprints do plano com suas metas
     const sprints = await Sprint.findAll({
       where: { PlanoId: id },
+      include: [
+        {
+          model: Meta,
+          as: 'metas',
+          order: [['id', 'ASC']]
+        }
+      ],
       order: [
         ['posicao', 'ASC'],
         ['dataInicio', 'ASC']
