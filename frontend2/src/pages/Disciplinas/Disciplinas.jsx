@@ -4,6 +4,8 @@ import styles from './Disciplinas.module.css';
 import axios from '../../services/api';
 import editIcon from '../../assets/icons/edit.svg';
 import deleteIcon from '../../assets/icons/delete.svg';
+import ImportarPlanilhaButton from '../../components/ImportarPlanilhaButton/ImportarPlanilhaButton';
+import * as XLSX from 'xlsx';
 
 export default function Disciplinas() {
   const navigate = useNavigate();
@@ -14,6 +16,8 @@ export default function Disciplinas() {
   const [statusFilter, setStatusFilter] = useState('todos');
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDisciplina, setSelectedDisciplina] = useState(null);
+  const [importedData, setImportedData] = useState([]);
+  const [showImportModal, setShowImportModal] = useState(false);
 
   useEffect(() => {
     fetchDisciplinas();
@@ -98,6 +102,25 @@ export default function Disciplinas() {
     setSelectedDisciplina(null);
   };
 
+  const handleImportarPlanilha = (file) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const [header, ...rows] = json;
+      const result = rows.map(row => ({
+        disciplina: row[0],
+        assunto: row[1]
+      }));
+      setImportedData(result);
+      setShowImportModal(true);
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   // Destaca o termo de busca no texto
   const highlightMatch = (text, term) => {
     if (!term.trim()) return text;
@@ -125,18 +148,23 @@ export default function Disciplinas() {
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Carregando disciplinas...</div>
+      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div className={styles.container}>
+          <div className={styles.loading}>Carregando disciplinas...</div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Disciplinas</h1>
+    <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div className={styles.container}>
+        <div className={styles.header} style={{ flexDirection: 'column', alignItems: 'flex-start', marginBottom: 0 }}>
+          <h1 className={styles.tituloPlanos}>Disciplinas</h1>
+        </div>
+        <div className={styles.tabsUnderline}></div>
         <div className={styles.headerActions}>
-          <div className={styles.searchContainer}>
+          <div className={styles.searchContainer} style={{ marginRight: 24 }}>
             <input
               type="text"
               placeholder="Buscar disciplinas..."
@@ -154,8 +182,7 @@ export default function Disciplinas() {
               </button>
             )}
           </div>
-          
-          <div className={styles.filterContainer}>
+          <div className={styles.filterContainer} style={{ marginRight: 24 }}>
             <select 
               className={styles.filterSelect}
               value={statusFilter}
@@ -166,152 +193,225 @@ export default function Disciplinas() {
               <option value="inativos">Inativos</option>
             </select>
           </div>
-          
           <button 
             className={styles.addButton}
             onClick={handleCadastrarClick}
           >
             + Nova Disciplina
           </button>
+          <ImportarPlanilhaButton onFileSelected={handleImportarPlanilha} />
         </div>
-      </div>
-
-      {error && (
-        <div className={styles.error}>
-          <p>{error}</p>
-          <button onClick={fetchDisciplinas}>Tentar novamente</button>
-        </div>
-      )}
-
-      {!error && disciplinas.length === 0 && (
-        <div className={styles.emptyState}>
-          <p>Nenhuma disciplina encontrada. Clique em "Nova Disciplina" para criar.</p>
-        </div>
-      )}
-
-      {!error && disciplinas.length > 0 && filteredDisciplinas.length === 0 && (
-        <div className={styles.emptyState}>
-          <p>
-            {searchTerm 
-              ? `Nenhuma disciplina encontrada para "${searchTerm}"${statusFilter !== 'todos' ? ' com o filtro selecionado' : ''}.`
-              : `Nenhuma disciplina ${statusFilter === 'ativos' ? 'ativa' : 'inativa'} encontrada.`
-            }
-          </p>
-          <div className={styles.emptyStateActions}>
-            {searchTerm && (
-              <button 
-                className={styles.clearSearchButton}
-                onClick={() => setSearchTerm('')}
+        {/* Modal de pré-visualização dos dados importados */}
+        {showImportModal && importedData.length > 0 && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(24,28,35,0.92)',
+            zIndex: 2000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}>
+            <div style={{
+              background: '#181c23',
+              borderRadius: 16,
+              padding: 24,
+              minWidth: 600,
+              maxWidth: 900,
+              width: '90%',
+              color: '#e0e6ed',
+              boxShadow: '0 4px 32px #000a',
+              position: 'relative',
+              maxHeight: '70vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}>
+              <button
+                onClick={() => setShowImportModal(false)}
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  background: 'none',
+                  border: 'none',
+                  color: '#e0e6ed',
+                  fontSize: 24,
+                  cursor: 'pointer',
+                }}
+                title="Fechar"
               >
-                Limpar busca
+                ×
               </button>
-            )}
-            {statusFilter !== 'todos' && (
-              <button 
-                className={styles.clearFilterButton}
-                onClick={() => setStatusFilter('todos')}
-              >
-                Mostrar todas
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className={styles.disciplinasList}>
-        {filteredDisciplinas.map((disciplina) => (
-          <div key={disciplina.id} className={styles.disciplinaCard}>
-            <div className={styles.disciplinaHeader}>
-              <h2 dangerouslySetInnerHTML={{ __html: highlightMatch(disciplina.nome, searchTerm) }}></h2>
-              <div className={styles.disciplinaActions}>
-                <button
-                  className={styles.editButton}
-                  onClick={(e) => handleEditClick(disciplina.id, e)}
-                  title="Editar disciplina"
-                >
-                  <img src={editIcon} alt="Editar" />
-                </button>
-                <button
-                  className={styles.deleteButton}
-                  onClick={(e) => handleDeleteClick(disciplina.id, e)}
-                  title="Excluir disciplina"
-                >
-                  <img src={deleteIcon} alt="Excluir" />
-                </button>
+              <h3 style={{ color: '#e0e6ed', marginBottom: 16 }}>Pré-visualização da importação</h3>
+              <div style={{ width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, fontSize: 16, color: '#e0e6ed', marginBottom: 8, background: 'rgba(37,99,235,0.18)', borderRadius: 8, position: 'sticky', top: 0, zIndex: 1, padding: 8, paddingRight: 16 }}>
+                  <div style={{ minWidth: 90, marginLeft: 12, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 13, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
+                    Disciplina
+                  </div>
+                  <div style={{ flex: 1, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16 }}>Assunto</div>
+                </div>
+                <div style={{ 
+                  maxHeight: '45vh', 
+                  overflowY: 'auto', 
+                  padding: 8, 
+                  border: '1px solid #fff', 
+                  borderRadius: 8, 
+                  boxSizing: 'border-box',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: '#666 transparent'
+                }}>
+                  {importedData.map((row, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: idx % 2 === 0 ? '#23283a' : '#181c23',
+                        borderRadius: 8,
+                        marginBottom: 8,
+                        boxShadow: '0 1px 4px #0002',
+                        minHeight: 44,
+                      }}
+                    >
+                      <div style={{
+                        minWidth: 90,
+                        marginLeft: 12,
+                        marginRight: 8,
+                        background: '#2563eb',
+                        color: '#fff',
+                        borderRadius: 8,
+                        fontWeight: 700,
+                        fontSize: 13,
+                        padding: '6px 16px',
+                        display: 'inline-block',
+                        textAlign: 'center',
+                      }}>
+                        {row.disciplina}
+                      </div>
+                      <div style={{ flex: 1, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16 }}>{row.assunto}</div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            
-            <div className={styles.statusBadge + ' ' + (disciplina.ativa ? styles.statusAtiva : styles.statusInativa)}>
-              {disciplina.ativa ? 'Ativa' : 'Inativa'}
+          </div>
+        )}
+
+        {error && (
+          <div className={styles.error}>
+            <p>{error}</p>
+            <button onClick={fetchDisciplinas}>Tentar novamente</button>
+          </div>
+        )}
+
+        {!error && disciplinas.length === 0 && (
+          <div className={styles.emptyState}>
+            <p>Nenhuma disciplina encontrada. Clique em "Nova Disciplina" para criar.</p>
+          </div>
+        )}
+
+        {!error && disciplinas.length > 0 && filteredDisciplinas.length === 0 && (
+          <div className={styles.emptyState}>
+            <p>
+              {searchTerm 
+                ? `Nenhuma disciplina encontrada para "${searchTerm}"${statusFilter !== 'todos' ? ' com o filtro selecionado' : ''}.`
+                : `Nenhuma disciplina ${statusFilter === 'ativos' ? 'ativa' : 'inativa'} encontrada.`
+              }
+            </p>
+            <div className={styles.emptyStateActions}>
+              {searchTerm && (
+                <button 
+                  className={styles.clearSearchButton}
+                  onClick={() => setSearchTerm('')}
+                >
+                  Limpar busca
+                </button>
+              )}
+              {statusFilter !== 'todos' && (
+                <button 
+                  className={styles.clearFilterButton}
+                  onClick={() => setStatusFilter('todos')}
+                >
+                  Mostrar todas
+                </button>
+              )}
             </div>
-            
-            <div 
-              className={styles.assuntosContainer}
-              onClick={() => handleAssuntosClick(disciplina)}
-            >
-              <h3>Assuntos</h3>
-              {disciplina.assuntos && disciplina.assuntos.length > 0 ? (
-                <>
-                  <ul className={styles.assuntosList}>
-                    {disciplina.assuntos.map((assunto, index) => (
-                      <li key={index} className={styles.assuntoItem}
-                        dangerouslySetInnerHTML={{ __html: highlightMatch(assunto.nome, searchTerm) }}>
+          </div>
+        )}
+
+        {/* Cards de disciplinas em grid de 3 colunas */}
+        {!error && filteredDisciplinas.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginTop: 32 }}>
+            {filteredDisciplinas.map((disciplina) => (
+              <div key={disciplina.id} className={styles.disciplinaCard}>
+                {/* Conteúdo do card da disciplina */}
+                <div className={styles.cardHeader}>
+                  <h2 className={styles.cardTitle}>{disciplina.nome}</h2>
+                  <span className={disciplina.ativa ? styles.statusAtivo : styles.statusInativo} style={{ minWidth: 90, marginLeft: 12, marginRight: 32 }}>
+                    {disciplina.ativa ? 'Ativa' : 'Inativa'}
+                  </span>
+                </div>
+                <div className={styles.cardActions}>
+                  <button onClick={(e) => handleEditClick(disciplina.id, e)} className={styles.editButton}>
+                    <img src={editIcon} alt="Editar" />
+                  </button>
+                  <button onClick={(e) => handleDeleteClick(disciplina.id, e)} className={styles.deleteButton}>
+                    <img src={deleteIcon} alt="Excluir" />
+                  </button>
+                  <button onClick={() => handleAssuntosClick(disciplina)} className={styles.assuntosButton}>
+                    Assuntos
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Modal de Assuntos */}
+        {modalVisible && selectedDisciplina && (
+          <div className={styles.modalOverlay} onClick={handleCloseModal}>
+            <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+              <div className={styles.modalHeader}>
+                <h3>Assuntos - {selectedDisciplina.nome}</h3>
+                <button 
+                  className={styles.closeModalButton}
+                  onClick={handleCloseModal}
+                >
+                  &times;
+                </button>
+              </div>
+              <div className={styles.modalContent}>
+                {selectedDisciplina.assuntos && selectedDisciplina.assuntos.length > 0 ? (
+                  <ul className={styles.modalAssuntosList}>
+                    {selectedDisciplina.assuntos.map((assunto, index) => (
+                      <li key={index} className={styles.modalAssuntoItem}>
+                        <span dangerouslySetInnerHTML={{ __html: highlightMatch(assunto.nome, searchTerm) }}></span>
                       </li>
                     ))}
                   </ul>
-                  <div className={styles.fadeOverlay}>
-                    <span className={styles.expandText}>Ver todos</span>
-                  </div>
-                </>
-              ) : (
-                <p className={styles.emptyAssuntos}>Nenhum assunto cadastrado</p>
-              )}
+                ) : (
+                  <p className={styles.emptyModalAssuntos}>Nenhum assunto cadastrado para esta disciplina.</p>
+                )}
+              </div>
+              <div className={styles.modalFooter}>
+                <button
+                  className={styles.editModalButton}
+                  onClick={() => {
+                    handleCloseModal();
+                    handleEditClick(selectedDisciplina.id);
+                  }}
+                >
+                  <img src={editIcon} alt="Editar" />
+                  <span>Editar Disciplina</span>
+                </button>
+              </div>
             </div>
           </div>
-        ))}
+        )}
       </div>
-
-      {/* Modal de Assuntos */}
-      {modalVisible && selectedDisciplina && (
-        <div className={styles.modalOverlay} onClick={handleCloseModal}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3>Assuntos - {selectedDisciplina.nome}</h3>
-              <button 
-                className={styles.closeModalButton}
-                onClick={handleCloseModal}
-              >
-                &times;
-              </button>
-            </div>
-            <div className={styles.modalContent}>
-              {selectedDisciplina.assuntos && selectedDisciplina.assuntos.length > 0 ? (
-                <ul className={styles.modalAssuntosList}>
-                  {selectedDisciplina.assuntos.map((assunto, index) => (
-                    <li key={index} className={styles.modalAssuntoItem}>
-                      <span dangerouslySetInnerHTML={{ __html: highlightMatch(assunto.nome, searchTerm) }}></span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className={styles.emptyModalAssuntos}>Nenhum assunto cadastrado para esta disciplina.</p>
-              )}
-            </div>
-            <div className={styles.modalFooter}>
-              <button
-                className={styles.editModalButton}
-                onClick={() => {
-                  handleCloseModal();
-                  handleEditClick(selectedDisciplina.id);
-                }}
-              >
-                <img src={editIcon} alt="Editar" />
-                <span>Editar Disciplina</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 } 

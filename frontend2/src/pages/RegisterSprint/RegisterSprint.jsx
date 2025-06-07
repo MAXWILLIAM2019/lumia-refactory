@@ -74,7 +74,7 @@ const RegisterSprint = () => {
   // Carregar planos ao inicializar o componente
   useEffect(() => {
     if (!planoId) {
-      carregarPlanos();
+    carregarPlanos();
     }
   }, [planoId]);
 
@@ -378,7 +378,7 @@ const RegisterSprint = () => {
   // Obtém as disciplinas disponíveis para seleção
   const getDisciplinasDisponiveis = () => {
     // Retorna apenas as disciplinas do plano, sem disciplinas predefinidas
-    return disciplinasDoPlanoDisciplinas.map(d => d.nome);
+      return disciplinasDoPlanoDisciplinas.map(d => d.nome);
   };
   
   // Verificar se uma disciplina tem assuntos disponíveis

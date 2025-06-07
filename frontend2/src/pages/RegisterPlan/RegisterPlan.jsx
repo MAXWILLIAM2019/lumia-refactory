@@ -239,7 +239,7 @@ export default function RegisterPlan() {
         setSuccess('Plano atualizado com sucesso!');
         handleCloseEditModal();
       } else {
-        await planoService.cadastrarPlano(dataToSubmit);
+      await planoService.cadastrarPlano(dataToSubmit);
         setSuccess('Plano cadastrado com sucesso!');
         setShowForm(false);
       }
@@ -366,175 +366,175 @@ export default function RegisterPlan() {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className={styles.form}>
-          {error && (
-            <div className={styles.error}>
-              <p>Erro: {error}</p>
-              <p>Por favor, verifique os dados e tente novamente.</p>
-            </div>
-          )}
-          
-          {success && (
-            <div className={styles.success}>
-              <p>{success}</p>
-            </div>
-          )}
-          
-          <div className={styles.formGroup}>
-            <label htmlFor="nome">Nome do Plano</label>
-            <input
-              type="text"
-              id="nome"
-              name="nome"
-              value={formData.nome}
-              onChange={handleChange}
-              required
-              placeholder="Digite o nome do plano"
-              disabled={loading || !!success}
-            />
-          </div>
+      {error && (
+        <div className={styles.error}>
+          <p>Erro: {error}</p>
+          <p>Por favor, verifique os dados e tente novamente.</p>
+        </div>
+      )}
+      
+      {success && (
+        <div className={styles.success}>
+          <p>{success}</p>
+        </div>
+      )}
+      
+        <div className={styles.formGroup}>
+          <label htmlFor="nome">Nome do Plano</label>
+          <input
+            type="text"
+            id="nome"
+            name="nome"
+            value={formData.nome}
+            onChange={handleChange}
+            required
+            placeholder="Digite o nome do plano"
+            disabled={loading || !!success}
+          />
+        </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="cargo">Cargo</label>
-            <input
-              type="text"
-              id="cargo"
-              name="cargo"
-              value={formData.cargo}
-              onChange={handleChange}
-              required
-              placeholder="Digite o cargo"
-              disabled={loading || !!success}
-            />
-          </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="cargo">Cargo</label>
+          <input
+            type="text"
+            id="cargo"
+            name="cargo"
+            value={formData.cargo}
+            onChange={handleChange}
+            required
+            placeholder="Digite o cargo"
+            disabled={loading || !!success}
+          />
+        </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="descricao">Descrição</label>
-            <textarea
-              id="descricao"
-              name="descricao"
-              value={formData.descricao}
-              onChange={handleChange}
-              required
-              placeholder="Digite a descrição do plano"
-              disabled={loading || !!success}
-              rows="4"
-            />
-          </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="descricao">Descrição</label>
+          <textarea
+            id="descricao"
+            name="descricao"
+            value={formData.descricao}
+            onChange={handleChange}
+            required
+            placeholder="Digite a descrição do plano"
+            disabled={loading || !!success}
+            rows="4"
+          />
+        </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="duracao">Duração (meses)</label>
-            <input
-              type="number"
-              id="duracao"
-              name="duracao"
-              value={formData.duracao}
-              onChange={handleChange}
-              required
-              placeholder="Digite a duração em meses"
-              min="1"
-              disabled={loading || !!success}
-            />
-          </div>
+        <div className={styles.formGroup}>
+          <label htmlFor="duracao">Duração (meses)</label>
+          <input
+            type="number"
+            id="duracao"
+            name="duracao"
+            value={formData.duracao}
+            onChange={handleChange}
+            required
+            placeholder="Digite a duração em meses"
+            min="1"
+            disabled={loading || !!success}
+          />
+        </div>
 
-          <div className={styles.formGroup}>
-            <label>Disciplinas</label>
-            <div className={styles.disciplineSelector}>
-              <div className={styles.customDropdown} ref={dropdownRef}>
-                <div 
-                  className={styles.dropdownHeader} 
-                  onClick={toggleDropdown}
-                  tabIndex="0"
-                  aria-haspopup="listbox"
-                  aria-expanded={isDropdownOpen}
-                  disabled={loading || !!success}
-                >
-                  {getSelectedDisciplineName()}
-                </div>
-                
-                {isDropdownOpen && (
-                  <ul className={styles.dropdownList}>
-                    {loadingDisciplinas ? (
-                      <li className={styles.dropdownItem}>
-                        Carregando disciplinas...
-                      </li>
-                    ) : availableDisciplines.length > 0 ? (
-                      availableDisciplines.map(disciplina => (
-                        <li 
-                          key={disciplina.id} 
-                          className={styles.dropdownItem}
-                          onClick={() => handleDisciplineSelect(disciplina.id.toString())}
-                          aria-selected={selectedDiscipline === disciplina.id.toString()}
-                          role="option"
-                        >
-                          {disciplina.nome}
-                        </li>
-                      ))
-                    ) : (
-                      <li className={styles.dropdownItem}>
-                        Nenhuma disciplina ativa disponível
-                      </li>
-                    )}
-                  </ul>
-                )}
+        <div className={styles.formGroup}>
+          <label>Disciplinas</label>
+          <div className={styles.disciplineSelector}>
+            <div className={styles.customDropdown} ref={dropdownRef}>
+              <div 
+                className={styles.dropdownHeader} 
+                onClick={toggleDropdown}
+                tabIndex="0"
+                aria-haspopup="listbox"
+                aria-expanded={isDropdownOpen}
+                disabled={loading || !!success}
+              >
+                {getSelectedDisciplineName()}
               </div>
               
-              <button
-                type="button"
-                onClick={handleAddDiscipline}
-                disabled={loading || !selectedDiscipline || !!success}
-                className={styles.addDisciplineButton}
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {selectedDisciplines.length > 0 && (
-            <div className={styles.selectedDisciplines}>
-              <h3>Disciplinas Selecionadas</h3>
-              <div className={styles.disciplinesList}>
-                {selectedDisciplines.map(discipline => (
-                  <div key={discipline.id} className={styles.selectedDiscipline}>
-                    <div className={styles.disciplineInfo}>
-                      <span className={styles.disciplineName}>{discipline.nome}</span>
-                      <span className={styles.assuntosCount}>
-                        {discipline.assuntos.length} {discipline.assuntos.length === 1 ? 'assunto' : 'assuntos'}
-                      </span>
-                    </div>
-                    <div className={styles.disciplineActions}>
-                      <button
-                        type="button"
-                        onClick={() => removeDiscipline(discipline)}
-                        className={styles.removeDisciplineButton}
-                        disabled={loading || !!success}
+              {isDropdownOpen && (
+                <ul className={styles.dropdownList}>
+                  {loadingDisciplinas ? (
+                    <li className={styles.dropdownItem}>
+                      Carregando disciplinas...
+                    </li>
+                  ) : availableDisciplines.length > 0 ? (
+                    availableDisciplines.map(disciplina => (
+                      <li 
+                        key={disciplina.id} 
+                        className={styles.dropdownItem}
+                        onClick={() => handleDisciplineSelect(disciplina.id.toString())}
+                        aria-selected={selectedDiscipline === disciplina.id.toString()}
+                        role="option"
                       >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                        {disciplina.nome}
+                      </li>
+                    ))
+                  ) : (
+                    <li className={styles.dropdownItem}>
+                      Nenhuma disciplina ativa disponível
+                    </li>
+                  )}
+                </ul>
+              )}
             </div>
-          )}
-
-          <div className={styles.buttonGroup}>
-            <button 
-              type="submit" 
-              className={styles.submitButton}
-              disabled={loading || !!success}
-            >
-              {loading ? 'Salvando...' : success ? 'Salvo' : editingPlano ? 'Atualizar Plano' : 'Cadastrar Plano'}
-            </button>
+            
             <button
               type="button"
-              onClick={editingPlano ? handleCloseEditModal : () => setShowForm(false)}
-              className={styles.cancelButton}
-              disabled={loading || !!success}
+              onClick={handleAddDiscipline}
+              disabled={loading || !selectedDiscipline || !!success}
+              className={styles.addDisciplineButton}
             >
-              Cancelar
+              +
             </button>
           </div>
-        </form>
+        </div>
+
+        {selectedDisciplines.length > 0 && (
+          <div className={styles.selectedDisciplines}>
+            <h3>Disciplinas Selecionadas</h3>
+            <div className={styles.disciplinesList}>
+              {selectedDisciplines.map(discipline => (
+                <div key={discipline.id} className={styles.selectedDiscipline}>
+                  <div className={styles.disciplineInfo}>
+                    <span className={styles.disciplineName}>{discipline.nome}</span>
+                    <span className={styles.assuntosCount}>
+                      {discipline.assuntos.length} {discipline.assuntos.length === 1 ? 'assunto' : 'assuntos'}
+                    </span>
+                  </div>
+                  <div className={styles.disciplineActions}>
+                    <button
+                      type="button"
+                      onClick={() => removeDiscipline(discipline)}
+                      className={styles.removeDisciplineButton}
+                      disabled={loading || !!success}
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className={styles.buttonGroup}>
+          <button 
+            type="submit" 
+            className={styles.submitButton}
+            disabled={loading || !!success}
+          >
+              {loading ? 'Salvando...' : success ? 'Salvo' : editingPlano ? 'Atualizar Plano' : 'Cadastrar Plano'}
+          </button>
+          <button
+            type="button"
+              onClick={editingPlano ? handleCloseEditModal : () => setShowForm(false)}
+            className={styles.cancelButton}
+            disabled={loading || !!success}
+          >
+            Cancelar
+          </button>
+        </div>
+      </form>
       )}
     </div>
   );
