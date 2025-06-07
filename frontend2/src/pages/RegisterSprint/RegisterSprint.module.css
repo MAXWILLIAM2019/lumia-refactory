@@ -92,6 +92,18 @@
   width: 100%;
 }
 
+.dateGroup {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.dateGroup .formGroup {
+  flex: 1;
+  margin-bottom: 0;
+}
+
 .formGroup label {
   display: block;
   margin-bottom: 12px;
@@ -130,12 +142,15 @@
 
 .formRow {
   display: flex;
-  gap: 48px;
+  gap: 24px;
   margin-bottom: 24px;
+  width: 100%;
 }
 
 .formRow .formGroup {
   flex: 1;
+  margin-bottom: 0;
+  min-width: 0;
 }
 
 .buttonGroup {

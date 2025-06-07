@@ -313,4 +313,36 @@ O sistema de mentoria suporta diferentes perfis de usuários, cada um com funcio
 
 ## Licença
 
-Este projeto está sob a licença [INSERIR TIPO DE LICENÇA]. 
+Este projeto está sob a licença [INSERIR TIPO DE LICENÇA].
+
+## Estrutura do Banco de Dados
+
+### Tabela Sprints
+A tabela `Sprints` armazena as sprints de estudo com as seguintes características:
+
+- Cada sprint está associada a um único plano de estudo
+- A posição da sprint dentro do plano é única (não pode haver duas sprints com a mesma posição no mesmo plano)
+- A ordem das sprints é mantida através do campo `posicao`
+- O status da sprint é atualizado automaticamente com base no progresso das metas
+
+```sql
+CREATE TABLE public."Sprints" (
+    id serial4 NOT NULL,
+    nome varchar(255) NOT NULL,
+    "dataInicio" date NOT NULL,
+    "dataFim" date NOT NULL,
+    status public."enum_Sprints_status" DEFAULT 'Pendente'::"enum_Sprints_status" NOT NULL,
+    posicao int4 DEFAULT 0 NOT NULL,
+    "createdAt" timestamptz NOT NULL,
+    "updatedAt" timestamptz NOT NULL,
+    "PlanoId" int4 NOT NULL,
+    CONSTRAINT "Sprints_pkey" PRIMARY KEY (id),
+    CONSTRAINT plano_posicao_unique UNIQUE ("PlanoId", posicao),
+    CONSTRAINT "Sprints_PlanoId_fkey" FOREIGN KEY ("PlanoId") REFERENCES public."Planos"(id) ON DELETE SET NULL ON UPDATE CASCADE
+);
+```
+
+### Restrições Importantes
+- A combinação de `PlanoId` e `posicao` deve ser única
+- Cada sprint deve estar associada a um plano válido
+- Ao excluir um plano, as sprints associadas terão seu `PlanoId` definido como NULL 

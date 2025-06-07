@@ -39,7 +39,7 @@ const RegisterSprint = () => {
     title: '',
     startDate: '',
     endDate: '',
-    planoId: '',
+    planoId: planoId,
     activities: [{ 
       discipline: '', 
       customDiscipline: '', 
@@ -78,39 +78,15 @@ const RegisterSprint = () => {
     }
   }, [planoId]);
 
-  // Carregar disciplinas quando o plano é selecionado
+  // Carregar disciplinas quando o componente é montado
   useEffect(() => {
-    if (formData.planoId || planoId) {
-      // Verificar se o ID do plano mudou para evitar carregamentos desnecessários
-      if (formData.planoId !== lastLoadedPlanoId) {
-        console.log(`Plano alterado de ${lastLoadedPlanoId} para ${formData.planoId}`);
-        
-        // Resetar estados relacionados a disciplinas e assuntos
-        setDisciplinasDoPlanoDisciplinas([]);
-        setAssuntosDaDisciplina({});
-        
-        // Limpar as disciplinas selecionadas nas atividades
-        setFormData(prev => ({
-          ...prev,
-          activities: prev.activities.map(activity => ({
-            ...activity,
-            discipline: '', // Resetar a disciplina
-            customDiscipline: '',
-            // Manter outros campos intactos
-          }))
-        }));
-        
-        // Carregar disciplinas do novo plano
-        carregarDisciplinasDoPlanoDisciplinas(planoId || formData.planoId);
-        setLastLoadedPlanoId(planoId || formData.planoId);
-      }
+    if (planoId) {
+      console.log('1. Iniciando carregamento de disciplinas do plano:', planoId);
+      carregarDisciplinasDoPlanoDisciplinas(planoId);
     } else {
-      // Se não há plano selecionado, limpar as disciplinas
-      setDisciplinasDoPlanoDisciplinas([]);
-      setAssuntosDaDisciplina({});
-      setLastLoadedPlanoId(null);
+      console.warn('2. planoId não encontrado na URL');
     }
-  }, [formData.planoId, lastLoadedPlanoId, planoId]);
+  }, [planoId]);
 
   // Efeito para verificar e buscar assuntos quando uma disciplina é selecionada
   useEffect(() => {
@@ -145,22 +121,35 @@ const RegisterSprint = () => {
     }
   };
 
-  // Carregamento de disciplinas do plano selecionado
+  // Carregamento de disciplinas do plano
   const carregarDisciplinasDoPlanoDisciplinas = async (planoIdParam) => {
-    if (!planoIdParam) return;
+    if (!planoIdParam) {
+      console.warn('3. planoIdParam não fornecido');
+      return;
+    }
     try {
-      console.log(`Carregando disciplinas do plano ${planoIdParam}...`);
+      console.log(`4. Iniciando busca do plano ${planoIdParam}...`);
       setLoadingDisciplinas(true);
-      const disciplinas = await planoService.buscarDisciplinasPorPlano(planoIdParam);
-      console.log(`Disciplinas do plano ${planoIdParam} carregadas:`, disciplinas);
-      // Se estiver no fluxo via planoId da URL, sempre setar as disciplinas
-      if (planoId || planoIdParam === formData.planoId) {
-        setDisciplinasDoPlanoDisciplinas(disciplinas || []);
+      
+      // Buscar o plano com suas disciplinas
+      const plano = await planoService.buscarPlanoPorId(planoIdParam);
+      console.log('5. Plano encontrado:', plano);
+      
+      if (plano && plano.disciplinas) {
+        console.log('6. Disciplinas do plano:', plano.disciplinas);
+        setDisciplinasDoPlanoDisciplinas(plano.disciplinas);
       } else {
-        console.log('Plano alterado durante o carregamento. Ignorando resultados.');
+        console.warn('7. Plano não encontrado ou sem disciplinas:', plano);
+        setDisciplinasDoPlanoDisciplinas([]);
       }
     } catch (error) {
-      console.error(`Erro ao carregar disciplinas do plano ${planoIdParam}:`, error);
+      console.error(`8. Erro ao carregar disciplinas do plano ${planoIdParam}:`, error);
+      if (error.response) {
+        console.error('9. Detalhes do erro:', {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       setDisciplinasDoPlanoDisciplinas([]);
     } finally {
       setLoadingDisciplinas(false);
@@ -407,18 +396,6 @@ const RegisterSprint = () => {
   console.log('- Disciplinas carregadas:', disciplinasDoPlanoDisciplinas.map(d => d.nome));
   console.log('- Assuntos carregados para disciplinas:', Object.keys(assuntosDaDisciplina));
 
-  useEffect(() => {
-    if (planoId && !formData.planoId) {
-      setFormData(prev => ({ ...prev, planoId }));
-    }
-  }, [planoId, formData.planoId]);
-
-  useEffect(() => {
-    if (planoId) {
-      carregarDisciplinasDoPlanoDisciplinas(planoId);
-    }
-  }, [planoId]);
-
   if (loading || (planoId ? false : loadingPlanos)) {
     return <div className={styles.loading}>Carregando...</div>;
   }
@@ -468,33 +445,8 @@ const RegisterSprint = () => {
       <h1>{id ? 'Editar Sprint' : 'Nova Sprint'}</h1>
       
       <form onSubmit={handleSubmit} className={styles.form}>
-        {/* Seletor de plano de estudo */}
-        {!planoId && (
-          <div className={styles.formGroup}>
-            <label htmlFor="planoId">Plano de Estudo</label>
-            <select
-              id="planoId"
-              name="planoId"
-              value={formData.planoId}
-              onChange={handleChange}
-              required
-              className={styles.selectField}
-            >
-              <option value="">Selecione um plano de estudo</option>
-              {planos.map(plano => (
-                <option key={plano.id} value={plano.id}>
-                  {plano.nome} - {plano.cargo}
-                </option>
-              ))}
-            </select>
-            <p className={styles.fieldHelp}>
-              * Selecione o plano de estudo que esta sprint irá seguir
-            </p>
-          </div>
-        )}
-
         <div className={styles.formGroup}>
-          <label htmlFor="title">Nome da Sprint</label>
+          <label htmlFor="title">Título da Sprint</label>
           <input
             type="text"
             id="title"
@@ -502,12 +454,11 @@ const RegisterSprint = () => {
             value={formData.title}
             onChange={handleChange}
             required
-            style={{ width: '100%', boxSizing: 'border-box' }}
           />
         </div>
 
-        <div className={styles.formRow}>
-          <div className={styles.formGroup}>
+        <div style={{ display: 'flex', gap: '24px', marginBottom: '24px' }}>
+          <div className={styles.formGroup} style={{ flex: 1 }}>
             <label htmlFor="startDate">Data de Início</label>
             <input
               type="date"
@@ -516,11 +467,10 @@ const RegisterSprint = () => {
               value={formData.startDate}
               onChange={handleChange}
               required
-              style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
 
-          <div className={styles.formGroup}>
+          <div className={styles.formGroup} style={{ flex: 1 }}>
             <label htmlFor="endDate">Data de Término</label>
             <input
               type="date"
@@ -529,7 +479,6 @@ const RegisterSprint = () => {
               value={formData.endDate}
               onChange={handleChange}
               required
-              style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
         </div>
@@ -559,25 +508,31 @@ const RegisterSprint = () => {
                       value={activity.discipline}
                       onChange={(e) => handleActivityChange(index, 'discipline', e.target.value)}
                       required
-                      disabled={loadingDisciplinas || !formData.planoId}
+                      className={styles.selectField}
                     >
                       <option value="">Selecione uma disciplina</option>
-                      {getDisciplinasDisponiveis().map(discipline => (
-                        <option key={discipline} value={discipline}>
-                          {discipline}
+                      {disciplinasDoPlanoDisciplinas.map((disciplina) => (
+                        <option key={disciplina.id} value={disciplina.nome}>
+                          {disciplina.nome}
                         </option>
                       ))}
-                      <option value="custom">Outra</option>
+                      <option value="custom">Outra (especifique)</option>
                     </select>
-                    {!formData.planoId ? (
-                      <p className={styles.fieldHelp}>
-                        Selecione um plano de estudo primeiro
-                      </p>
-                    ) : loadingDisciplinas ? (
-                      <p className={styles.fieldHelp}>Carregando disciplinas do plano...</p>
+                    {activity.discipline === 'custom' && (
+                      <input
+                        type="text"
+                        value={activity.customDiscipline}
+                        onChange={(e) => handleActivityChange(index, 'customDiscipline', e.target.value)}
+                        placeholder="Digite o nome da disciplina"
+                        required
+                        className={styles.inputField}
+                      />
+                    )}
+                    {loadingDisciplinas ? (
+                      <p className={styles.fieldHelp}>Carregando disciplinas...</p>
                     ) : disciplinasDoPlanoDisciplinas.length > 0 ? (
                       <p className={styles.fieldHelp}>
-                        {disciplinasDoPlanoDisciplinas.length} disciplina(s) disponíveis neste plano
+                        {disciplinasDoPlanoDisciplinas.length} disciplina(s) disponíveis
                       </p>
                     ) : (
                       <p className={styles.fieldHelp}>
@@ -585,19 +540,6 @@ const RegisterSprint = () => {
                       </p>
                     )}
                   </div>
-
-                  {activity.discipline === 'custom' && (
-                    <div className={styles.formGroup}>
-                      <label>Nome da Disciplina</label>
-                      <input
-                        type="text"
-                        value={activity.customDiscipline}
-                        onChange={(e) => handleActivityChange(index, 'customDiscipline', e.target.value)}
-                        required
-                        className={styles.customDisciplineField}
-                      />
-                    </div>
-                  )}
 
                   <div className={styles.formGroup}>
                     <label>Título da Meta</label>

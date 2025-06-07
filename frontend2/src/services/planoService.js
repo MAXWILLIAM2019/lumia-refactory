@@ -72,12 +72,25 @@ export const planoService = {
 
   async buscarPlanoPorId(id) {
     try {
-      console.log('Buscando plano por ID:', id);
+      console.log('1. Iniciando busca do plano por ID:', id);
       const response = await api.get(`/planos/${id}`);
-      console.log('Plano encontrado:', response.data);
+      console.log('2. Resposta da API:', response.data);
+      
+      if (!response.data) {
+        console.warn('3. Plano não encontrado');
+        return null;
+      }
+      
+      console.log('4. Plano encontrado com sucesso');
       return response.data;
     } catch (error) {
-      console.error('Erro ao buscar plano:', error);
+      console.error('5. Erro ao buscar plano:', error);
+      if (error.response) {
+        console.error('6. Detalhes do erro:', {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       throw error;
     }
   },
@@ -119,11 +132,22 @@ export const planoService = {
       console.log('Buscando disciplinas do plano ID:', planoId);
       const response = await api.get(`/planos/${planoId}/disciplinas`);
       console.log('Disciplinas encontradas:', response.data);
-      return response.data || [];
+      
+      // Verifica se a resposta é um array
+      if (!Array.isArray(response.data)) {
+        console.warn('Resposta não é um array:', response.data);
+        return [];
+      }
+      
+      return response.data;
     } catch (error) {
       console.error('Erro ao buscar disciplinas do plano:', error);
-      // Retornamos um array vazio em caso de erro em vez de lançar exceção
-      // para não interromper o fluxo da aplicação
+      if (error.response) {
+        console.error('Detalhes do erro:', {
+          status: error.response.status,
+          data: error.response.data
+        });
+      }
       return [];
     }
   }

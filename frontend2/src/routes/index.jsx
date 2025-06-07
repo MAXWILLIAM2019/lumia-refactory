@@ -104,7 +104,7 @@ const AppRoutes = () => {
 
         {/* Rotas de Sprints */}
         <Route
-          path="/sprints/cadastrar"
+          path="/sprints/cadastrar/:planoId"
           element={
             <AdminRoute>
               <RegisterSprint />

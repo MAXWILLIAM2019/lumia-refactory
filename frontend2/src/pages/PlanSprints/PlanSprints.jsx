@@ -67,7 +67,7 @@ export default function PlanSprints() {
   };
 
   const NovoSprintCard = (
-    <div className={styles.novoPlanoCard} onClick={() => navigate(`/sprints/cadastrar?planoId=${id}`)}>
+    <div className={styles.novoPlanoCard} onClick={() => navigate(`/sprints/cadastrar/${id}`)}>
       <div className={styles.novoPlanoIcon}>
         <img src={addSprintIcon} alt="Criar Nova Sprint" width={32} height={32} />
       </div>

@@ -13,6 +13,10 @@ const sequelize = require('../db');
  * - status: Status atual da sprint (Pendente, Em Andamento, Concluída)
  * - posicao: Posição da sprint na sequência do plano (para ordenação)
  * 
+ * Restrições:
+ * - Não pode existir duas sprints com a mesma posição no mesmo plano (restrição de unicidade composta)
+ * - Cada sprint deve estar associada a um plano (chave estrangeira)
+ * 
  * Relacionamentos:
  * - hasMany Meta: Uma sprint pode ter várias metas
  * - belongsTo Plano: Uma sprint pertence a um plano
@@ -44,6 +48,14 @@ const Sprint = sequelize.define('Sprint', {
     allowNull: false,
     defaultValue: 0
   }
+}, {
+  indexes: [
+    {
+      unique: true,
+      fields: ['PlanoId', 'posicao'],
+      name: 'plano_posicao_unique'
+    }
+  ]
 });
 
 module.exports = Sprint; 
