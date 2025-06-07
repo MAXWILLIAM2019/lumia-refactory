@@ -5,6 +5,8 @@ import { planoService } from '../../services/planoService';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import styles from './RegisterSprint.module.css';
+import * as XLSX from 'xlsx';
+import deleteMetasSprintIcon from '../../assets/icons/delete-metas-sprint.svg';
 
 // Disciplinas predefinidas para fallback (serão usadas apenas se a API falhar)
 const PREDEFINED_DISCIPLINES = [
@@ -34,6 +36,9 @@ const RegisterSprint = () => {
   const [assuntosDaDisciplina, setAssuntosDaDisciplina] = useState({});
   const [showAssuntosDropdown, setShowAssuntosDropdown] = useState({});
   const [lastLoadedPlanoId, setLastLoadedPlanoId] = useState(null);
+  const [importedMetas, setImportedMetas] = useState([]);
+  const [showImportMetasModal, setShowImportMetasModal] = useState(false);
+  const [importMetasError, setImportMetasError] = useState(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -396,6 +401,90 @@ const RegisterSprint = () => {
   console.log('- Disciplinas carregadas:', disciplinasDoPlanoDisciplinas.map(d => d.nome));
   console.log('- Assuntos carregados para disciplinas:', Object.keys(assuntosDaDisciplina));
 
+  // Função para importar metas via planilha
+  const handleImportarMetasPlanilha = (file) => {
+    setImportMetasError(null);
+    setImportedMetas([]);
+    setShowImportMetasModal(false);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[firstSheetName];
+      const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      const [header, ...rows] = json;
+
+      // Esperado: disciplina, tipo, titulo, comandos, link, relevancia
+      const colunasEsperadas = ['disciplina', 'tipo', 'titulo', 'comandos', 'link', 'relevancia'];
+      const headerLower = header.map(h => (h || '').toString().toLowerCase().trim());
+      const indices = colunasEsperadas.map(col => headerLower.indexOf(col));
+
+      // Validação de header
+      if (indices.some(idx => idx === -1)) {
+        setImportMetasError({
+          titulo: 'Erro na importação',
+          mensagens: ['A planilha deve conter as colunas: disciplina, tipo, titulo, comandos, link, relevancia']
+        });
+        return;
+      }
+
+      // Validação de linhas
+      const linhasComErro = rows.map((row, index) => {
+        const disciplina = row[indices[0]];
+        const tipo = row[indices[1]];
+        const titulo = row[indices[2]];
+        const relevancia = row[indices[5]];
+        if (!disciplina || !tipo || !titulo || !relevancia) {
+          return {
+            linha: index + 2,
+            motivo: [
+              !disciplina ? 'Disciplina não preenchida' : '',
+              !tipo ? 'Tipo não preenchido' : '',
+              !titulo ? 'Título não preenchido' : '',
+              !relevancia ? 'Relevância não preenchida' : ''
+            ].filter(Boolean).join(', ')
+          };
+        }
+        return null;
+      }).filter(Boolean);
+
+      if (linhasComErro.length > 0) {
+        setImportMetasError({
+          titulo: 'Erro na importação',
+          mensagens: linhasComErro.map(erro => `Linha ${erro.linha}: ${erro.motivo}`)
+        });
+        return;
+      }
+
+      // Montar os dados importados
+      const result = rows.map(row => ({
+        disciplina: row[indices[0]]?.toString().trim() || '',
+        tipo: row[indices[1]]?.toString().trim() || '',
+        titulo: row[indices[2]]?.toString().trim() || '',
+        comandos: row[indices[3]]?.toString().trim() || '',
+        link: row[indices[4]]?.toString().trim() || '',
+        relevancia: row[indices[5]]?.toString().trim() || ''
+      }));
+      setImportedMetas(result);
+      setShowImportMetasModal(true);
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleRemoveImportMeta = (index) => {
+    const newData = [...importedMetas];
+    newData.splice(index, 1);
+    setImportedMetas(newData);
+  };
+
+  const handleCloseImportMetasModal = () => {
+    setShowImportMetasModal(false);
+    setImportedMetas([]);
+    setImportMetasError(null);
+  };
+
   if (loading || (planoId ? false : loadingPlanos)) {
     return <div className={styles.loading}>Carregando...</div>;
   }
@@ -484,7 +573,38 @@ const RegisterSprint = () => {
         </div>
 
         <div className={styles.activitiesSection}>
-          <h2>Metas</h2>
+          <div className={styles.sectionTitle} style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+            <h2 style={{ margin: 0 }}>Metas</h2>
+            <input
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              style={{ display: 'none' }}
+              id="input-import-metas"
+              onChange={e => {
+                if (e.target.files && e.target.files[0]) {
+                  handleImportarMetasPlanilha(e.target.files[0]);
+                  e.target.value = '';
+                }
+              }}
+            />
+            <button
+              type="button"
+              style={{
+                background: '#2563eb',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 20px',
+                fontWeight: 600,
+                fontSize: 15,
+                cursor: 'pointer',
+                marginLeft: 8
+              }}
+              onClick={() => document.getElementById('input-import-metas').click()}
+            >
+              Importar
+            </button>
+          </div>
           {formData.activities.map((activity, index) => (
             <div key={index} className={styles.activityCard}>
               <div className={styles.activityHeader}>
@@ -713,6 +833,247 @@ const RegisterSprint = () => {
           </button>
         </div>
       </form>
+
+      {/* Modal de erro na importação de metas */}
+      {importMetasError && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(24,28,35,0.92)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#181c23',
+            borderRadius: 16,
+            padding: 24,
+            minWidth: 500,
+            maxWidth: 600,
+            width: '90%',
+            color: '#e0e6ed',
+            boxShadow: '0 4px 32px #000a',
+            position: 'relative',
+          }}>
+            <button
+              onClick={handleCloseImportMetasModal}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                background: 'none',
+                border: 'none',
+                color: '#e0e6ed',
+                fontSize: 24,
+                cursor: 'pointer',
+              }}
+              title="Fechar"
+            >
+              ×
+            </button>
+            <h3 style={{ 
+              color: '#ef4444', 
+              marginBottom: 16,
+              fontSize: 20,
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              {importMetasError.titulo}
+            </h3>
+            <div style={{ 
+              background: 'rgba(239,68,68,0.1)', 
+              borderRadius: 8, 
+              padding: 16,
+              maxHeight: '60vh',
+              overflowY: 'auto',
+              border: '1px solid rgba(239,68,68,0.2)'
+            }}>
+              {importMetasError.mensagens.map((msg, idx) => (
+                <div key={idx} style={{ 
+                  color: '#e0e6ed',
+                  padding: '8px 0',
+                  borderBottom: idx < importMetasError.mensagens.length - 1 ? '1px solid rgba(239,68,68,0.2)' : 'none'
+                }}>
+                  {msg}
+                </div>
+              ))}
+            </div>
+            <div style={{ 
+              marginTop: 24,
+              display: 'flex',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={handleCloseImportMetasModal}
+                style={{
+                  background: '#2563eb',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '8px 24px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de pré-visualização das metas importadas */}
+      {showImportMetasModal && importedMetas.length > 0 && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          background: 'rgba(24,28,35,0.92)',
+          zIndex: 2000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <div style={{
+            background: '#181c23',
+            borderRadius: 16,
+            padding: 24,
+            minWidth: 900,
+            maxWidth: 1200,
+            width: '95%',
+            color: '#e0e6ed',
+            boxShadow: '0 4px 32px #000a',
+            position: 'relative',
+            maxHeight: '80vh',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <button
+              onClick={handleCloseImportMetasModal}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                background: 'none',
+                border: 'none',
+                color: '#e0e6ed',
+                fontSize: 24,
+                cursor: 'pointer',
+              }}
+              title="Fechar"
+            >
+              ×
+            </button>
+            <h3 style={{ color: '#e0e6ed', marginBottom: 16 }}>Pré-visualização da importação de metas</h3>
+            <div style={{ width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', fontWeight: 600, fontSize: 16, color: '#e0e6ed', marginBottom: 8, background: 'rgba(37,99,235,0.18)', borderRadius: 8, position: 'sticky', top: 0, zIndex: 1, padding: 8, paddingRight: 16 }}>
+                <div style={{ minWidth: 120, maxWidth: 180, marginLeft: 12, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
+                  Disciplina
+                </div>
+                <div style={{ minWidth: 100, maxWidth: 140, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
+                  Tipo
+                </div>
+                <div style={{ flex: 2, minWidth: 180, marginLeft: 16, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'center' }}>
+                  Título
+                </div>
+                <div style={{ flex: 2, minWidth: 180, marginLeft: 16, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'center' }}>
+                  Comandos
+                </div>
+                <div style={{ flex: 2, minWidth: 180, marginLeft: 16, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', textAlign: 'center' }}>
+                  Link
+                </div>
+                <div style={{ minWidth: 110, maxWidth: 140, marginRight: 8, background: '#2563eb', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '6px 16px', display: 'inline-block', textAlign: 'center' }}>
+                  Relevância
+                </div>
+              </div>
+              <div style={{ 
+                maxHeight: '55vh', 
+                overflowY: 'auto', 
+                padding: 8, 
+                border: '1px solid #fff', 
+                borderRadius: 8, 
+                boxSizing: 'border-box',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#666 transparent'
+              }}>
+                {importedMetas.map((row, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      background: idx % 2 === 0 ? '#23283a' : '#181c23',
+                      borderRadius: 8,
+                      marginBottom: 8,
+                      boxShadow: '0 1px 4px #0002',
+                      minHeight: 44,
+                    }}
+                  >
+                    <div style={{ minWidth: 120, maxWidth: 180, marginLeft: 12, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 15, padding: '6px 16px', display: 'inline-block', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.disciplina}</div>
+                    <div style={{ minWidth: 100, maxWidth: 140, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 15, padding: '6px 16px', display: 'inline-block', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.tipo}</div>
+                    <div style={{ flex: 2, minWidth: 180, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.titulo}</div>
+                    <div style={{ flex: 2, minWidth: 180, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.comandos}</div>
+                    <div style={{ flex: 2, minWidth: 180, color: '#e0e6ed', fontSize: 15, padding: '8px 0', marginLeft: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.link}</div>
+                    <div style={{ minWidth: 110, maxWidth: 140, marginRight: 8, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 15, padding: '6px 16px', display: 'inline-block', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.relevancia}</div>
+                    <button
+                      onClick={() => handleRemoveImportMeta(idx)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: '8px',
+                        marginRight: 12,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      title="Remover item"
+                    >
+                      <img 
+                        src={deleteMetasSprintIcon} 
+                        alt="Remover" 
+                        style={{ width: 20, height: 20 }}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ 
+              marginTop: 24,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: 12
+            }}>
+              <button
+                onClick={handleCloseImportMetasModal}
+                style={{
+                  background: 'none',
+                  border: '1px solid #e0e6ed',
+                  color: '#e0e6ed',
+                  padding: '8px 24px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 14,
+                }}
+              >
+                Cancelar
+              </button>
+              {/* Botão de salvar será implementado depois */}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
