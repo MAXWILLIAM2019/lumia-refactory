@@ -1,7 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './Sidebar.module.css';
 import sprintIcon from '../../assets/icons/sprint.svg';
-import registerSprintIcon from '../../assets/icons/register-sprint.svg';
 import registerPlanIcon from '../../assets/icons/register-plan.svg';
 import registerStudentIcon from '../../assets/icons/register-student.svg';
 import disciplinasIcon from '../../assets/icons/disciplinas.svg';
@@ -18,10 +17,6 @@ import disciplinasIcon from '../../assets/icons/disciplinas.svg';
 export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-
-  const handleRegisterClick = () => {
-    navigate('/sprints/cadastrar');
-  };
 
   const handleSprintClick = () => {
     navigate('/dashboard');
@@ -55,15 +50,6 @@ export default function Sidebar() {
             <div className={styles.menuItemContent}>
               <img src={sprintIcon} alt="Dashboard" className={styles.icon} />
               <span>Dashboard</span>
-            </div>
-          </li>
-          <li 
-            className={styles.menuItem}
-            onClick={handleRegisterClick}
-          >
-            <div className={styles.menuItemContent}>
-              <img src={registerSprintIcon} alt="Cadastrar Sprint" className={styles.icon} />
-              <span>Cadastrar sprints</span>
             </div>
           </li>
           <li 
