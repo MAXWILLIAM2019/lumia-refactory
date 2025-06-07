@@ -33,7 +33,7 @@ const SprintAtual = sequelize.define('SprintAtual', {
     defaultValue: DataTypes.NOW
   }
 }, {
-  tableName: 'SprintAtuals',
+  tableName: 'SprintAtual',
   timestamps: true
 });
 

@@ -111,6 +111,6 @@ router.post('/:id/definir-senha', auth, ownProfileOnly('id'), alunoController.de
  * @access  Privado
  * @param   {id} ID do aluno
  */
-router.post('/:id/gerar-senha', auth, ownProfileOnly('id'), alunoController.gerarSenha);
+router.post('/:id/gerar-senha', auth, checkPermission('admin', 'ownProfile'), alunoController.gerarSenha);
 
 module.exports = router; 

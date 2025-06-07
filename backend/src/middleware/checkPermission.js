@@ -96,6 +96,12 @@ const ownProfileOnly = (paramName = 'id') => {
     const paramId = parseInt(req.params[paramName]);
     const userId = req.user?.id;
 
+    // Se for admin, permite o acesso
+    if (req.user?.role === 'admin') {
+      return next();
+    }
+
+    // Se não for admin, verifica se é o próprio perfil
     if (!userId || paramId !== userId) {
       return res.status(403).json({
         success: false,
