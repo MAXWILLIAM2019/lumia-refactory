@@ -67,13 +67,28 @@
   color: #fff;
 }
 
+/* Largura máxima do container e formulário ajustada para 1200px para corresponder à largura dos cards da página de planos */
+/* Medidas antigas: max-width: 900px, margin-left: -250px (para o título) */
 .container h1 {
   font-size: 2rem;
   margin-bottom: 32px;
-  color: #2563eb;
-  text-align: center;
+  color: #fff;
+  text-align: left;
   width: 100%;
+  max-width: 1200px;
   margin-left: 0;
+  position: relative;
+  padding-bottom: 16px;
+}
+
+.container h1::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .form {
@@ -81,7 +96,7 @@
   padding: 40px 24px;
   border-radius: 18px;
   box-shadow: 0 4px 20px #0004, 0 2px 8px #2563eb22;
-  max-width: 900px;
+  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;

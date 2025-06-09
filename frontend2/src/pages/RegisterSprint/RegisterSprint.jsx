@@ -807,7 +807,83 @@ const RegisterSprint = () => {
             </div>
           </div>
           {/* Sempre mostrar metas importadas (visualização) */}
-          {formData.activities.filter(a => a.imported).map((activity, index) => (
+          {formData.activities.filter(a => a.imported).length > 0 && (
+            <div style={{
+              width: '100%',
+              border: '1px solid #fff',
+              borderRadius: 8,
+              boxSizing: 'border-box',
+              padding: '16px 12px',
+              marginBottom: 32,
+              maxHeight: 320,
+              overflowY: 'auto',
+              background: 'transparent',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#666 transparent'
+            }}>
+              {formData.activities.filter(a => a.imported).map((activity, idx) => (
+                <div key={idx} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#23283a',
+                  borderRadius: 8,
+                  marginBottom: 8,
+                  boxShadow: '0 1px 4px #0002',
+                  minHeight: 44,
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
+                  gap: 8
+                }}>
+                  <div style={{ minWidth: 54, maxWidth: 60, color: '#f59e0b', borderRadius: 8, fontWeight: 700, fontSize: 15, padding: '6px 4px 6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: 'rgba(245,158,11,0.12)', marginRight: 12, marginLeft: 12, borderRight: '4px solid #181c23' }}>{`Meta ${idx + 1}`}</div>
+                  <div style={{ minWidth: 80, maxWidth: 120, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 14, padding: '6px 8px', display: 'inline-block', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.discipline}</div>
+                  <div style={{ minWidth: 70, maxWidth: 100, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 14, padding: '6px 8px', display: 'inline-block', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.type}</div>
+                  <div style={{ flex: 2, minWidth: 100, maxWidth: 180, color: '#e0e6ed', fontSize: 14, padding: '6px 8px', marginLeft: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.title}</div>
+                  <div style={{ flex: 2, minWidth: 100, maxWidth: 180, color: '#e0e6ed', fontSize: 14, padding: '6px 8px', marginLeft: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.comandos}</div>
+                  <div style={{ flex: 2, minWidth: 100, maxWidth: 180, color: '#e0e6ed', fontSize: 14, padding: '6px 8px', marginLeft: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.link}</div>
+                  <div style={{ minWidth: 70, maxWidth: 100, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 16, padding: '6px 8px', display: 'inline-block', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
+                      <div className={styles.starsContainer} style={{ gap: 2, marginTop: 0 }}>
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <span
+                            key={star}
+                            className={`${styles.starButton} ${activity.relevance >= star ? styles.active : ''}`}
+                            style={{ cursor: 'default', fontSize: 18, padding: 0, transition: 'none', color: activity.relevance >= star ? '#f59e0b' : '#4b5563' }}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removeActivity(idx)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '8px',
+                      marginRight: 0,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    title="Remover item"
+                  >
+                    <img 
+                      src={deleteMetasSprintIcon} 
+                      alt="Remover" 
+                      style={{ width: 18, height: 18 }}
+                    />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {/* Mostrar metas manuais apenas se manualMode estiver habilitado */}
+          {manualMode && (
+            <>
+              {formData.activities.filter(a => !a.imported).map((activity, index) => (
             <div key={index} className={styles.activityCard}>
               <div className={styles.activityHeader}>
                 <h3>Meta {index + 1}</h3>
@@ -821,71 +897,6 @@ const RegisterSprint = () => {
                   </button>
                 )}
               </div>
-              <div className={styles.activityContent}>
-                <div className={styles.activityRow}>
-                  <div className={styles.formGroup}>
-                    <label>Disciplina</label>
-                    <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff'}}>{activity.discipline}</div>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Título da Meta</label>
-                    <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff'}}>{activity.title}</div>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Tipo</label>
-                    <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff'}}>{activity.type}</div>
-                  </div>
-                </div>
-                <div className={styles.activityRow}>
-                  <div className={styles.formGroup}>
-                    <label>Comandos</label>
-                    <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff', minHeight: 52}}>
-                      {activity.comandos ? (
-                        <div dangerouslySetInnerHTML={{ __html: activity.comandos }} />
-                      ) : (
-                        <span style={{color: '#6b7280'}}>Nenhum comando</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Link</label>
-                    <div style={{padding: '14px 16px', background: '#181c23', borderRadius: 8, color: '#fff'}}>{activity.link || <span style={{color: '#6b7280'}}>Nenhum</span>}</div>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Relevância</label>
-                    <div className={styles.starsContainer} style={{gap: 2, marginTop: 0}}>
-                      {[1,2,3,4,5].map(star => (
-                        <span
-                          key={star}
-                          className={`${styles.starButton} ${activity.relevance >= star ? styles.active : ''}`}
-                          style={{cursor: 'default', fontSize: 20, padding: 0, color: activity.relevance >= star ? '#f59e0b' : '#4b5563'}}
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-          {/* Mostrar metas manuais apenas se manualMode estiver habilitado */}
-          {manualMode && (
-            <>
-              {formData.activities.filter(a => !a.imported).map((activity, index) => (
-                <div key={index} className={styles.activityCard}>
-                  <div className={styles.activityHeader}>
-                    <h3>Meta {index + 1}</h3>
-                    {formData.activities.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeActivity(index)}
-                        className={styles.removeButton}
-                      >
-                        Remover
-                      </button>
-                    )}
-                  </div>
               <div className={styles.activityContent}>
                 <div className={styles.activityRow}>
                   <div className={styles.formGroup}>
