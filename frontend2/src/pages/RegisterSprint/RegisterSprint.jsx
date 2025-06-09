@@ -1206,22 +1206,35 @@ const RegisterSprint = () => {
               </button>
               <button
                 onClick={() => {
-                  setFormData(prev => ({
-                    ...prev,
-                    activities: [
-                      ...prev.activities,
-                      ...importedMetas.map(meta => ({
-                        discipline: meta.disciplina,
-                        customDiscipline: '',
-                        title: meta.titulo,
-                        type: meta.tipo,
-                        relevance: Number(meta.relevancia) || 1,
-                        comandos: meta.comandos || '',
-                        link: meta.link || '',
-                        imported: true
-                      }))
-                    ]
+                  const metasImportadas = importedMetas.map(meta => ({
+                    discipline: meta.disciplina,
+                    customDiscipline: '',
+                    title: meta.titulo,
+                    type: meta.tipo,
+                    relevance: Number(meta.relevancia) || 1,
+                    comandos: meta.comandos || '',
+                    link: meta.link || '',
+                    imported: true
                   }));
+
+                  setFormData(prev => {
+                    // Verifica se só existe uma meta e ela está vazia (considerando valores padrão)
+                    const soTemMetaVazia =
+                      prev.activities.length === 1 &&
+                      !prev.activities[0].discipline &&
+                      !prev.activities[0].title &&
+                      !prev.activities[0].comandos &&
+                      !prev.activities[0].link &&
+                      prev.activities[0].type === 'teoria' &&
+                      prev.activities[0].relevance === 1 &&
+                      !prev.activities[0].customDiscipline;
+                    return {
+                      ...prev,
+                      activities: soTemMetaVazia
+                        ? metasImportadas
+                        : [...prev.activities, ...metasImportadas]
+                    };
+                  });
                   setShowImportMetasModal(false);
                 }}
                 style={{
