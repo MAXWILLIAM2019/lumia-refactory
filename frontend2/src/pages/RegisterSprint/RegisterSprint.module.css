@@ -69,6 +69,11 @@
 
 /* Largura máxima do container e formulário ajustada para 1200px para corresponder à largura dos cards da página de planos */
 /* Medidas antigas: max-width: 900px, margin-left: -250px (para o título) */
+
+/* Estilo do título ajustado para seguir o padrão visual da página de planos:
+   - Texto branco
+   - Alinhamento à esquerda
+   - Linha sutil de 1.5px com opacidade 20% */
 .container h1 {
   font-size: 2rem;
   margin-bottom: 32px;
@@ -81,6 +86,7 @@
   padding-bottom: 16px;
 }
 
+/* Linha decorativa abaixo do título */
 .container h1::after {
   content: '';
   position: absolute;

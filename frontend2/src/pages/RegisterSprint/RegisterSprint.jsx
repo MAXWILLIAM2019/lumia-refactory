@@ -404,6 +404,11 @@ const RegisterSprint = () => {
   console.log('- Assuntos carregados para disciplinas:', Object.keys(assuntosDaDisciplina));
 
   // Função para importar metas via planilha
+  // - Aceita arquivos .xlsx, .xls e .csv
+  // - Valida colunas obrigatórias: disciplina, tipo, titulo, comandos, link, relevancia
+  // - Valida tipos permitidos: teoria, questoes, revisao, reforco
+  // - Exibe pré-visualização em modal com opção de remover linhas
+  // - Mantém estado separado para metas importadas
   const handleImportarMetasPlanilha = (file) => {
     setImportMetasError(null);
     setImportedMetas([]);
@@ -482,19 +487,21 @@ const RegisterSprint = () => {
     reader.readAsArrayBuffer(file);
   };
 
+  // Remove uma meta específica da lista de metas importadas
   const handleRemoveImportMeta = (index) => {
     const newData = [...importedMetas];
     newData.splice(index, 1);
     setImportedMetas(newData);
   };
 
+  // Fecha o modal de importação e limpa os dados
   const handleCloseImportMetasModal = () => {
     setShowImportMetasModal(false);
     setImportedMetas([]);
     setImportMetasError(null);
   };
 
-  // Adicionar este useEffect para garantir que ao habilitar manualMode, sempre haja uma meta manual
+  // Garante que ao habilitar o modo manual, sempre haja pelo menos uma meta manual
   useEffect(() => {
     if (manualMode) {
       setFormData(prev => {
