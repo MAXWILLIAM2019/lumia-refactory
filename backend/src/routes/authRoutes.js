@@ -8,11 +8,8 @@ router.get('/test', (req, res) => {
   res.json({ message: 'Rota de autenticação está funcionando!' });
 });
 
-// Login de administrador
-router.post('/login', authController.login);
-
-// Login de aluno
-router.post('/aluno/login', authController.loginAluno);
+// Rota de login unificado
+router.post('/login', authController.loginUnificado);
 
 // Registro
 router.post('/register', authController.registrar);

@@ -9,6 +9,11 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const Administrador = require('../models/Administrador');
 const Aluno = require('../models/Aluno');
+const { Op } = require('sequelize');
+const Usuario = require('../models/Usuario');
+const GrupoUsuario = require('../models/GrupoUsuario');
+const AlunoInfo = require('../models/AlunoInfo');
+const AdministradorInfo = require('../models/AdministradorInfo');
 
 /**
  * Configurações de autenticação
@@ -169,8 +174,58 @@ const verificarToken = (token) => {
   }
 };
 
+/**
+ * Realiza o login unificado de um usuário
+ * @param {Object} credentials - Credenciais do usuário
+ * @returns {Object} Dados do usuário e token
+ */
+const realizarLoginUnificado = async (credentials) => {
+  try {
+    const { login, senha } = credentials;
+    // Busca o usuário pelo login
+    const usuario = await Usuario.findOne({
+      where: { login, situacao: true },
+      include: [
+        { model: GrupoUsuario, as: 'grupoUsuario' },
+        { model: AlunoInfo, as: 'alunoInfo' },
+        { model: AdministradorInfo, as: 'adminInfo' }
+      ]
+    });
+    if (!usuario) {
+      throw new Error('Usuário ou senha inválidos');
+    }
+    // Verifica se a senha está correta
+    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    if (!senhaValida) {
+      throw new Error('Usuário ou senha inválidos');
+    }
+    // Define o grupo/role
+    const grupo = usuario.grupoUsuario?.nome || 'desconhecido';
+    // Gera o token JWT
+    const token = gerarToken({
+      id: usuario.IdUsuario,
+      login: usuario.login,
+      grupo,
+      email: usuario.alunoInfo?.email || usuario.adminInfo?.email || null
+    }, grupo);
+    // Monta o objeto de resposta (sem senha)
+    const usuarioSemSenha = usuario.toJSON();
+    delete usuarioSemSenha.senha;
+    return {
+      success: true,
+      token,
+      usuario: usuarioSemSenha,
+      grupo
+    };
+  } catch (error) {
+    console.error('Erro no login unificado:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   realizarLogin,
+  realizarLoginUnificado,
   verificarToken,
   gerarToken,
   getPermissionsForRole,

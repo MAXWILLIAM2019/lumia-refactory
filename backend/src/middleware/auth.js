@@ -10,6 +10,9 @@
 const authService = require('../services/authService');
 const Administrador = require('../models/Administrador');
 const Aluno = require('../models/Aluno');
+const AdministradorInfo = require('../models/AdministradorInfo');
+const Usuario = require('../models/Usuario');
+const AlunoInfo = require('../models/AlunoInfo');
 
 const auth = async (req, res, next) => {
   console.log('🔐 Middleware de autenticação iniciado');
@@ -60,9 +63,12 @@ const auth = async (req, res, next) => {
       req.user = decoded;
       
       // Verifica o tipo de usuário (role) e busca os dados correspondentes
-      if (decoded.role === 'admin') {
+      if (decoded.role === 'administrador') {
         // Caso seja um administrador
-        const admin = await Administrador.findByPk(decoded.id);
+        const admin = await AdministradorInfo.findOne({
+          where: { IdUsuario: decoded.id },
+          include: [{ model: Usuario, as: 'usuario' }]
+        });
         
         if (!admin) {
           console.log('❌ Administrador não encontrado para o ID:', decoded.id);
@@ -72,14 +78,17 @@ const auth = async (req, res, next) => {
           });
         }
         
-        console.log('👤 Administrador autenticado:', admin.nome);
+        console.log('👤 Administrador autenticado:', admin.usuario?.login);
         
         // Mantém a compatibilidade com código existente que pode estar usando req.admin
         req.admin = admin;
       } 
       else if (decoded.role === 'aluno') {
         // Caso seja um aluno
-        const aluno = await Aluno.findByPk(decoded.id);
+        const aluno = await AlunoInfo.findOne({
+          where: { IdUsuario: decoded.id },
+          include: [{ model: Usuario, as: 'usuario' }]
+        });
         
         if (!aluno) {
           console.log('❌ Aluno não encontrado para o ID:', decoded.id);
@@ -89,7 +98,7 @@ const auth = async (req, res, next) => {
           });
         }
         
-        console.log('👤 Aluno autenticado:', aluno.nome);
+        console.log('👤 Aluno autenticado:', aluno.usuario?.login);
         
         // Adiciona o aluno ao request para uso posterior
         req.aluno = aluno;

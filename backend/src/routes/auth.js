@@ -17,11 +17,11 @@ const { adminOnly } = require('../middleware/checkPermission');
  * Rotas Públicas (não necessitam de autenticação)
  */
 
-// Rota de login para administradores
-router.post('/login', authController.login);
-
 // Rota de login para alunos
-router.post('/aluno/login', authController.loginAluno);
+// router.post('/aluno/loginAdministradors', authController.loginAluno);
+
+// Rota de login unificado (novo fluxo)
+router.post('/login', authController.loginUnificado);
 
 // Rota de registro de administradores
 router.post('/register', authController.registrar);

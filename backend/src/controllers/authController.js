@@ -1,118 +1,130 @@
 const authService = require('../services/authService');
-const Administrador = require('../models/Administrador');
-const Aluno = require('../models/Aluno');
+const bcrypt = require('bcryptjs');
+const Usuario = require('../models/Usuario');
+const GrupoUsuario = require('../models/GrupoUsuario');
+const AlunoInfo = require('../models/AlunoInfo');
+const AdministradorInfo = require('../models/AdministradorInfo');
 
 /**
- * @desc Login do administrador
- * @route POST /api/auth/login
- * @access Public
- */
-const login = async (req, res) => {
-  try {
-    console.log('Iniciando login de administrador');
-    const resultado = await authService.realizarLogin(req.body, 'admin');
-    
-    res.json({
-      success: true,
-      token: resultado.token,
-      admin: resultado.usuario
-    });
-  } catch (error) {
-    console.error('Erro no login de administrador:', error);
-    res.status(401).json({
-      success: false,
-      message: 'Email ou senha inválidos'
-    });
-  }
-};
-
-/**
- * @desc Login do aluno
- * @route POST /api/auth/aluno/login
- * @access Public
- */
-const loginAluno = async (req, res) => {
-  try {
-    console.log('Iniciando login de aluno');
-    const resultado = await authService.realizarLogin(req.body, 'aluno');
-    
-    res.json({
-      success: true,
-      token: resultado.token,
-      aluno: resultado.usuario
-    });
-  } catch (error) {
-    console.error('Erro no login de aluno:', error);
-    
-    // Mensagem específica para alunos sem senha definida
-    if (error.message === 'Credenciais inválidas' && req.body.email) {
-      const aluno = await Aluno.findOne({ where: { email: req.body.email } });
-      if (aluno && !aluno.senha) {
-        return res.status(401).json({
-          success: false,
-          message: 'Senha não definida para este aluno'
-        });
-      }
-    }
-    
-    res.status(401).json({
-      success: false,
-      message: 'Email ou senha inválidos'
-    });
-  }
-};
-
-/**
- * @desc Registro de novo administrador
- * @route POST /api/auth/register
+ * @desc Registro de novo usuário (unificado)
+ * @route POST /auth/register
  * @access Public
  */
 const registrar = async (req, res) => {
   try {
-    const { nome, email, senha, cargo } = req.body;
-
-    // Verifica se o email já está em uso
-    const adminExistente = await Administrador.findOne({
-      where: { email }
+    const { nome, login, senha, grupo } = req.body;
+    if (!nome || !login || !senha || !grupo) {
+      return res.status(400).json({ success: false, message: 'Preencha todos os campos obrigatórios.' });
+    }
+    // Verifica se já existe usuário com o mesmo login
+    const usuarioExistente = await Usuario.findOne({ where: { login } });
+    if (usuarioExistente) {
+      return res.status(400).json({ success: false, message: 'Login já está em uso.' });
+    }
+    // Busca o grupo na tabela grupo_usuario
+    const grupoObj = await GrupoUsuario.findOne({ where: { nome: grupo } });
+    if (!grupoObj) {
+      return res.status(400).json({ success: false, message: 'Grupo de usuário inválido.' });
+    }
+    // Criptografa a senha
+    const senhaCriptografada = await bcrypt.hash(senha, 10);
+    // Cria o usuário
+    const novoUsuario = await Usuario.create({
+      login,
+      senha: senhaCriptografada,
+      grupo: grupoObj.IdGrupo,
+      situacao: true
     });
-
-    if (adminExistente) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email já está em uso'
+    // Cria info complementar
+    if (grupo === 'aluno') {
+      await AlunoInfo.create({
+        IdUsuario: novoUsuario.IdUsuario,
+        email: login
+      });
+    } else if (grupo === 'administrador') {
+      await AdministradorInfo.create({
+        IdUsuario: novoUsuario.IdUsuario,
+        email: login
       });
     }
+    return res.status(201).json({ success: true, message: 'Usuário cadastrado com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao registrar usuário:', error);
+    res.status(500).json({ success: false, message: 'Erro ao registrar usuário.' });
+  }
+};
 
-    // Criptografa a senha
-    const bcrypt = require('bcryptjs');
-    const senhaCriptografada = await bcrypt.hash(senha, 10);
-
-    // Cria o administrador
-    const admin = await Administrador.create({
-      nome,
-      email,
-      senha: senhaCriptografada,
-      cargo
+/**
+ * @desc Login unificado (novo fluxo)
+ * @route POST /auth/login
+ * @access Public
+ */
+const loginUnificado = async (req, res) => {
+  try {
+    const { login, senha, grupo } = req.body;
+    console.log('Tentativa de login:', { login, grupo });
+    
+    // Busca o usuário pelo login
+    const usuario = await Usuario.findOne({
+      where: { login, situacao: true },
+      include: [
+        { model: GrupoUsuario, as: 'grupoUsuario' },
+        { model: AlunoInfo, as: 'alunoInfo' },
+        { model: AdministradorInfo, as: 'adminInfo' }
+      ]
     });
 
-    // Gera o token JWT
-    const token = authService.gerarToken(admin, 'admin');
+    console.log('Usuário encontrado:', usuario ? {
+      id: usuario.IdUsuario,
+      login: usuario.login,
+      grupo: usuario.grupoUsuario?.nome
+    } : 'Não encontrado');
 
-    res.status(201).json({
+    if (!usuario) {
+      throw new Error('Usuário ou senha inválidos');
+    }
+
+    // Verifica se a senha está correta
+    const senhaValida = await bcrypt.compare(senha, usuario.senha);
+    console.log('Senha válida:', senhaValida);
+    
+    if (!senhaValida) {
+      throw new Error('Usuário ou senha inválidos');
+    }
+
+    // Verifica se o grupo informado corresponde ao grupo do usuário
+    const grupoUsuario = usuario.grupoUsuario?.nome;
+    console.log('Grupo do usuário:', grupoUsuario, 'Grupo informado:', grupo);
+    
+    if (grupoUsuario !== grupo) {
+      throw new Error('Tipo de usuário incorreto');
+    }
+
+    // Gera o token JWT usando o authService
+    const token = authService.gerarToken({
+      id: usuario.IdUsuario,
+      login: usuario.login,
+      grupo: grupoUsuario,
+      email: usuario.alunoInfo?.email || usuario.adminInfo?.email || null
+    }, grupoUsuario);
+
+    // Monta o objeto de resposta (sem senha)
+    const usuarioSemSenha = usuario.toJSON();
+    delete usuarioSemSenha.senha;
+
+    console.log('Login bem-sucedido para:', grupoUsuario);
+    
+    res.json({
       success: true,
       token,
-      admin: {
-        id: admin.id,
-        nome: admin.nome,
-        email: admin.email,
-        cargo: admin.cargo
-      }
+      usuario: usuarioSemSenha,
+      grupo: grupoUsuario
     });
   } catch (error) {
-    console.error('Erro no registro:', error);
-    res.status(500).json({
+    console.error('Erro no login unificado:', error);
+    res.status(401).json({
       success: false,
-      message: 'Erro ao registrar administrador'
+      message: error.message || 'Usuário ou senha inválidos'
     });
   }
 };
@@ -123,63 +135,12 @@ const registrar = async (req, res) => {
  * @access Private
  */
 const me = async (req, res) => {
-  try {
-    // Verifica o perfil (role) através do token decodificado
-    if (req.user.role === 'admin') {
-      const admin = await Administrador.findByPk(req.user.id);
-
-      if (!admin) {
-        return res.status(404).json({
-          success: false,
-          message: 'Administrador não encontrado'
-        });
-      }
-
-      return res.json({
-        success: true,
-        role: 'admin',
-        admin: {
-          id: admin.id,
-          nome: admin.nome,
-          email: admin.email,
-          cargo: admin.cargo
-        }
-      });
-    } else if (req.user.role === 'aluno') {
-      const aluno = await Aluno.findByPk(req.user.id, {
-        attributes: { exclude: ['senha'] }
-      });
-
-      if (!aluno) {
-        return res.status(404).json({
-          success: false,
-          message: 'Aluno não encontrado'
-        });
-      }
-
-      return res.json({
-        success: true,
-        role: 'aluno',
-        aluno
-      });
-    }
-
-    return res.status(400).json({
-      success: false,
-      message: 'Perfil de usuário não reconhecido'
-    });
-  } catch (error) {
-    console.error('Erro ao obter dados do usuário:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erro ao obter dados do usuário'
-    });
-  }
+  // (mantido para compatibilidade, pode ser ajustado depois)
+  res.status(501).json({ success: false, message: 'Não implementado para o novo fluxo.' });
 };
 
 module.exports = {
-  login,
-  loginAluno,
   registrar,
+  loginUnificado,
   me
 }; 

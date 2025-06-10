@@ -275,7 +275,7 @@ export default function AlunoDashboard() {
           <h3>Diagnóstico de Autenticação</h3>
           <AuthCheck />
           <p className={styles.hint}>
-            Se o token estiver ausente ou inválido, tente fazer <a href="/aluno/login">login novamente</a>
+            Se o token estiver ausente ou inválido, tente fazer <a href="/login">login novamente</a>
           </p>
         </div>
       )}

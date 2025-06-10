@@ -28,13 +28,6 @@ router.get('/test', (req, res) => {
 });
 
 /**
- * @route   POST /api/alunos/login
- * @desc    Login de aluno
- * @access  Público
- */
-router.post('/login', authController.loginAluno);
-
-/**
  * Rotas Públicas (não necessitam de autenticação)
  */
 

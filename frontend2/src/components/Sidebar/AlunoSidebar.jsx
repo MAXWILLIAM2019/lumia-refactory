@@ -32,7 +32,7 @@ export default function AlunoSidebar() {
 
   const handleLogout = () => {
     authService.removeToken();
-    navigate('/aluno/login');
+    navigate('/login');
   };
 
   return (

@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from '../pages/Login';
-import LoginAluno from '../pages/LoginAluno';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard/Dashboard';
 import AlunoDashboard from '../pages/Aluno/Dashboard';
@@ -25,9 +24,9 @@ const AdminRoute = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
   const userRole = authService.getUserRole();
   
-  if (!isAuthenticated || userRole !== 'admin') {
-    console.log('Usuário não autenticado como admin, redirecionando para login de admin');
-    return <Navigate to="/admin/login" replace />;
+  if (!isAuthenticated || userRole !== 'administrador') {
+    console.log('Usuário não autenticado como administrador, redirecionando para login');
+    return <Navigate to="/login" replace />;
   }
 
   console.log('Administrador autenticado, renderizando rota protegida');
@@ -40,8 +39,8 @@ const AlunoRoute = ({ children }) => {
   const userRole = authService.getUserRole();
   
   if (!isAuthenticated || userRole !== 'aluno') {
-    console.log('Usuário não autenticado como aluno, redirecionando para login de aluno');
-    return <Navigate to="/aluno/login" replace />;
+    console.log('Usuário não autenticado como aluno, redirecionando para login');
+    return <Navigate to="/login" replace />;
   }
 
   console.log('Aluno autenticado, renderizando rota protegida');
@@ -52,7 +51,7 @@ const AlunoRoute = ({ children }) => {
 const PrivateRoute = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
   if (!isAuthenticated) {
-    return <Navigate to="/aluno/login" replace />;
+    return <Navigate to="/login" replace />;
   }
   return children;
 };
@@ -62,9 +61,8 @@ const AppRoutes = () => {
     <BrowserRouter>
       <Routes>
         {/* Rotas públicas */}
-        <Route path="/admin/login" element={<Login />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/aluno/login" element={<LoginAluno />} />
 
         {/* Rotas protegidas de administrador */}
         <Route
@@ -237,11 +235,11 @@ const AppRoutes = () => {
         {/* Redireciona a raiz para o login do aluno */}
         <Route
           path="/"
-          element={<Navigate to="/aluno/login" replace />}
+          element={<Navigate to="/login" replace />}
         />
 
         {/* Redireciona qualquer rota não definida para o login do aluno */}
-        <Route path="*" element={<Navigate to="/aluno/login" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );

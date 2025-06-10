@@ -25,6 +25,7 @@ const authService = {
    */
   setToken: (token, role) => {
     console.log(`Armazenando token no localStorage para ${role}`);
+    console.log('Token recebido:', token);
     localStorage.setItem(AUTH_TOKEN_KEY, token);
     localStorage.setItem(USER_ROLE_KEY, role);
   },
@@ -115,49 +116,25 @@ const authService = {
   },
   
   /**
-   * Realiza login de administrador no sistema
+   * Realiza login unificado no sistema
    * @param {Object} credentials - Credenciais de login
-   * @param {string} credentials.email - Email do administrador
-   * @param {string} credentials.senha - Senha do administrador
+   * @param {string} credentials.login - Login do usuário
+   * @param {string} credentials.senha - Senha do usuário
    * @returns {Promise<Object>} Dados do usuário logado
    */
   login: async (credentials) => {
     try {
-      console.log('Tentando fazer login de administrador com:', credentials.email);
+      console.log('Tentando fazer login com:', credentials.login);
       const response = await api.post('/auth/login', credentials);
-      
       if (response.data.success && response.data.token) {
-        authService.setToken(response.data.token, 'admin');
+        // Armazena o grupo retornado pelo backend
+        authService.setToken(response.data.token, response.data.grupo);
         return response.data;
       } else {
         throw new Error('Resposta inválida do servidor');
       }
     } catch (error) {
-      console.error('Erro no login de administrador:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Realiza login de aluno no sistema
-   * @param {Object} credentials - Credenciais de login
-   * @param {string} credentials.email - Email do aluno
-   * @param {string} credentials.senha - Senha do aluno
-   * @returns {Promise<Object>} Dados do usuário logado
-   */
-  loginAluno: async (credentials) => {
-    try {
-      console.log('Tentando fazer login de aluno com:', credentials.email);
-      const response = await api.post('/auth/aluno/login', credentials);
-      
-      if (response.data.success && response.data.token) {
-        authService.setToken(response.data.token, 'aluno');
-        return response.data;
-      } else {
-        throw new Error('Resposta inválida do servidor');
-      }
-    } catch (error) {
-      console.error('Erro no login de aluno:', error);
+      console.error('Erro no login:', error);
       throw error;
     }
   }

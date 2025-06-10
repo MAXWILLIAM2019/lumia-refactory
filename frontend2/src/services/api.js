@@ -36,9 +36,10 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     console.log('API Interceptor - Token encontrado:', !!token);
+    console.log('API Interceptor - Token completo:', token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('API Interceptor - Authorization header configurado');
+      console.log('API Interceptor - Authorization header configurado:', config.headers.Authorization);
     }
     return config;
   },

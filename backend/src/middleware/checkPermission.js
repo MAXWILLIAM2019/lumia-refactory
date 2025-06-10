@@ -65,7 +65,7 @@ const checkPermission = (requiredPermissions) => {
  * Middleware para restringir acesso apenas a administradores
  */
 const adminOnly = (req, res, next) => {
-  if (req.user?.role !== 'admin') {
+  if (!req.user || req.user.role !== 'administrador') {
     return res.status(403).json({
       success: false,
       message: 'Acesso restrito a administradores'

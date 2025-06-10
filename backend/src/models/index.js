@@ -12,6 +12,10 @@ const Sprint = require('./Sprint');
 const Meta = require('./Meta');
 const AlunoPlano = require('./AlunoPlano');
 const SprintAtual = require('./SprintAtual');
+const Usuario = require('./Usuario');
+const GrupoUsuario = require('./GrupoUsuario');
+const AlunoInfo = require('./AlunoInfo');
+const AdministradorInfo = require('./AdministradorInfo');
 
 // Garante que os relacionamentos são estabelecidos
 console.log('Configurando relacionamentos entre modelos...');
@@ -77,6 +81,21 @@ console.log('Configurando relacionamento Sprint -> SprintAtual');
 Sprint.hasOne(SprintAtual, { foreignKey: 'SprintId' });
 SprintAtual.belongsTo(Sprint, { foreignKey: 'SprintId' });
 
+// Relacionamento Usuario -> GrupoUsuario
+console.log('Configurando relacionamento Usuario -> GrupoUsuario');
+Usuario.belongsTo(GrupoUsuario, { foreignKey: 'grupo', as: 'grupoUsuario' });
+GrupoUsuario.hasMany(Usuario, { foreignKey: 'grupo', as: 'usuarios' });
+
+// Relacionamento Usuario -> AlunoInfo (1:1)
+console.log('Configurando relacionamento Usuario -> AlunoInfo');
+Usuario.hasOne(AlunoInfo, { foreignKey: 'IdUsuario', as: 'alunoInfo' });
+AlunoInfo.belongsTo(Usuario, { foreignKey: 'IdUsuario', as: 'usuario' });
+
+// Relacionamento Usuario -> AdministradorInfo (1:1)
+console.log('Configurando relacionamento Usuario -> AdministradorInfo');
+Usuario.hasOne(AdministradorInfo, { foreignKey: 'IdUsuario', as: 'adminInfo' });
+AdministradorInfo.belongsTo(Usuario, { foreignKey: 'IdUsuario', as: 'usuario' });
+
 console.log('Relacionamentos configurados com sucesso!');
 
 // Exporte os modelos
@@ -88,5 +107,9 @@ module.exports = {
   Sprint,
   Meta,
   AlunoPlano,
-  SprintAtual
+  SprintAtual,
+  Usuario,
+  GrupoUsuario,
+  AlunoInfo,
+  AdministradorInfo
 }; 

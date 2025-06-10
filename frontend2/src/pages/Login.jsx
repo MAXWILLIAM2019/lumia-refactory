@@ -7,8 +7,9 @@ import authService from '../services/authService';
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
-    senha: ''
+    login: '',
+    senha: '',
+    grupo: 'aluno' // valor padrão
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -27,22 +28,46 @@ const Login = () => {
     setLoading(true);
 
     try {
-      console.log('Iniciando processo de login...');
+      console.log('Iniciando processo de login com:', {
+        login: formData.login,
+        grupo: formData.grupo
+      });
       
       // Usa o método login do authService
       const response = await authService.login({
-        email: formData.email,
-        senha: formData.senha
+        login: formData.login,
+        senha: formData.senha,
+        grupo: formData.grupo
       });
 
-      console.log('Login bem-sucedido:', response);
+      console.log('Resposta do login:', response);
       
-      // Redireciona para o dashboard após login
-      navigate('/dashboard');
+      // Verifica se o grupo retornado pelo backend corresponde ao selecionado
+      if (response.grupo !== formData.grupo) {
+        console.log('Grupo não corresponde:', {
+          esperado: formData.grupo,
+          recebido: response.grupo
+        });
+        throw new Error('Tipo de usuário incorreto');
+      }
+      
+      // Redireciona conforme o grupo
+      if (response.grupo === 'administrador') {
+        console.log('Redirecionando para dashboard do administrador');
+        navigate('/dashboard');
+      } else if (response.grupo === 'aluno') {
+        console.log('Redirecionando para dashboard do aluno');
+        navigate('/aluno/dashboard');
+      } else {
+        console.log('Redirecionando para página inicial');
+        navigate('/');
+      }
     } catch (error) {
       console.error('Erro no login:', error);
-      if (error.response?.status === 401) {
-        setError('Email ou senha incorretos');
+      if (error.message === 'Tipo de usuário incorreto') {
+        setError('Tipo de usuário incorreto. Por favor, selecione o tipo correto.');
+      } else if (error.response?.status === 401) {
+        setError('Login ou senha incorretos');
       } else if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
@@ -57,21 +82,21 @@ const Login = () => {
     <div className={styles.container}>
       <BackgroundConnections />
       <div className={styles.loginBox}>
-        <h1 className={styles.title}>Área do Administrador</h1>
+        <h1 className={styles.title}>Acesso ao Sistema</h1>
         
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
-            <label htmlFor="email" className={styles.label}>
-              Email
+            <label htmlFor="login" className={styles.label}>
+              Login
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              id="login"
+              name="login"
+              value={formData.login}
               onChange={handleChange}
               className={styles.input}
-              placeholder="Seu email"
+              placeholder="Seu login"
               required
             />
           </div>
@@ -92,6 +117,23 @@ const Login = () => {
             />
           </div>
 
+          <div className={styles.formGroup}>
+            <label htmlFor="grupo" className={styles.label}>
+              Perfil
+            </label>
+            <select
+              id="grupo"
+              name="grupo"
+              value={formData.grupo}
+              onChange={handleChange}
+              className={styles.input}
+              required
+            >
+              <option value="aluno">Aluno</option>
+              <option value="administrador">Administrador</option>
+            </select>
+          </div>
+
           {error && <div className={styles.error}>{error}</div>}
 
           <button 
@@ -105,8 +147,6 @@ const Login = () => {
 
         <div className={styles.registerLink}>
           Não tem uma conta? <Link to="/register">Registre-se</Link>
-          <br/>
-          <Link to="/aluno/login">Acessar área do aluno</Link>
         </div>
       </div>
     </div>

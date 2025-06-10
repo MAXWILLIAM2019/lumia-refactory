@@ -10,7 +10,7 @@ const Register = () => {
     nome: '',
     email: '',
     senha: '',
-    cargo: ''
+    grupo: 'aluno'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,13 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/register', formData);
+      const payload = {
+        nome: formData.nome,
+        login: formData.email,
+        senha: formData.senha,
+        grupo: formData.grupo
+      };
+      const response = await api.post('/auth/register', payload);
       
       if (response.data.success) {
         navigate('/login');
@@ -77,7 +83,7 @@ const Register = () => {
               value={formData.email}
               onChange={handleChange}
               className={styles.input}
-              placeholder="Seu email"
+              placeholder="Seu email (será seu login)"
               required
             />
           </div>
@@ -99,19 +105,20 @@ const Register = () => {
           </div>
 
           <div className={styles.formGroup}>
-            <label htmlFor="cargo" className={styles.label}>
-              Cargo
+            <label htmlFor="grupo" className={styles.label}>
+              Perfil
             </label>
-            <input
-              type="text"
-              id="cargo"
-              name="cargo"
-              value={formData.cargo}
+            <select
+              id="grupo"
+              name="grupo"
+              value={formData.grupo}
               onChange={handleChange}
               className={styles.input}
-              placeholder="Seu cargo"
               required
-            />
+            >
+              <option value="aluno">Aluno</option>
+              <option value="administrador">Administrador</option>
+            </select>
           </div>
 
           {error && <div className={styles.error}>{error}</div>}
