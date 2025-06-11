@@ -75,7 +75,7 @@ const listarAssociacoes = async () => {
         // Garante que os campos importantes estejam acessíveis de forma consistente
         return {
           id: assoc.id,
-          alunoId: assoc.AlunoId || assoc.alunoId,
+          alunoId: assoc.IdUsuario || assoc.idusuario || assoc.AlunoId || assoc.alunoId,
           planoId: assoc.PlanoId || assoc.planoId,
           status: assoc.status || 'não definido',
           progresso: assoc.progresso || 0,

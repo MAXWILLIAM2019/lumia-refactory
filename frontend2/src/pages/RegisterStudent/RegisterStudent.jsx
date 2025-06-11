@@ -102,6 +102,7 @@ export default function RegisterStudent() {
       // Garante que data é sempre um array, mesmo se a API retornar null/undefined
       const alunosList = Array.isArray(data) ? data : [];
       setAlunos(alunosList);
+      window.alunos = alunosList;
       
       // Mapear os IDs dos alunos para depois buscar os planos
       const idsAlunos = alunosList.map(a => a.id);
@@ -118,12 +119,10 @@ export default function RegisterStudent() {
           
           if (Array.isArray(todasAssociacoes)) {
             todasAssociacoes.forEach(assoc => {
-              // Identificar o ID do aluno (pode estar em diferentes formatos)
-              const alunoId = assoc.alunoId || assoc.AlunoId;
+              // Identificar o ID do aluno (agora usuário) corretamente e garantir que é number
+              const alunoId = Number(assoc.IdUsuario || assoc.idusuario || assoc.AlunoId || assoc.alunoId);
               
               if (alunoId) {
-                // Relacionamento 1:1 simplificado - mantemos apenas a associação mais recente
-                // Comentário: No futuro, para suportar N:N, remover esta restrição e usar um array
                 associacoesPorAluno[alunoId] = [{
                   id: assoc.id,
                   planoNome: assoc.plano?.nome || 'Sem nome',
@@ -137,6 +136,9 @@ export default function RegisterStudent() {
           
           console.log('Associações organizadas por aluno:', associacoesPorAluno);
           setAssociacoesAlunos(associacoesPorAluno);
+          window.associacoesAlunos = associacoesPorAluno;
+          console.log('Dados de alunos recebidos:', alunosList);
+          console.log('Associações organizadas por aluno:', associacoesPorAluno);
         } catch (assocError) {
           console.error('Erro ao carregar associações:', assocError);
         }
@@ -366,26 +368,19 @@ export default function RegisterStudent() {
   // Filtra os alunos de acordo com o termo de busca
   const filteredAlunos = alunos.filter(aluno => {
     const termLower = searchTerm.toLowerCase();
-    
     // Busca por nome, email ou CPF do aluno
     const matchesAluno = 
       aluno.nome.toLowerCase().includes(termLower) ||
       aluno.email.toLowerCase().includes(termLower) ||
       aluno.cpf.toLowerCase().includes(termLower);
-    
-    // Se já encontrou no aluno, retorna verdadeiro
     if (matchesAluno) return true;
-    
     // Busca pelo nome do plano
-    const temPlanos = associacoesAlunos[aluno.id] && associacoesAlunos[aluno.id].length > 0;
+    const temPlanos = associacoesAlunos[Number(aluno.id)] && associacoesAlunos[Number(aluno.id)].length > 0;
     if (temPlanos) {
-      // Verifica se algum plano do aluno contém o termo de busca no nome
-      return associacoesAlunos[aluno.id].some(assoc => 
+      return associacoesAlunos[Number(aluno.id)].some(assoc => 
         assoc.planoNome.toLowerCase().includes(termLower)
       );
     }
-    
-    // Se não encontrou em nenhum lugar, retorna falso
     return false;
   });
 
@@ -734,9 +729,9 @@ export default function RegisterStudent() {
                         __html: highlightMatch(aluno.cpf, searchTerm) 
                       }} />
                       <td>
-                        {associacoesAlunos[aluno.id] && associacoesAlunos[aluno.id].length > 0 ? (
+                        {associacoesAlunos[Number(aluno.id)] && associacoesAlunos[Number(aluno.id)].length > 0 ? (
                           <div className={styles.planosAluno}>
-                            {associacoesAlunos[aluno.id].map((assoc, index) => (
+                            {associacoesAlunos[Number(aluno.id)].map((assoc, index) => (
                               <div key={index} className={styles.planoItem}>
                                 <span className={styles.planoNome} dangerouslySetInnerHTML={{ 
                                   __html: highlightMatch(assoc.planoNome, searchTerm) 
