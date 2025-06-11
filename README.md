@@ -24,6 +24,10 @@ O projeto é dividido em duas partes principais:
 - Express
 - Sequelize (ORM)
 - SQLite (Banco de dados)
+- JWT (Tokens de autenticação)
+- bcryptjs (Criptografia de senhas)
+- CORS (Cross-Origin Resource Sharing)
+- dotenv (Variáveis de ambiente)
 
 ## Instalação e Execução
 
@@ -63,15 +67,262 @@ O projeto é dividido em duas partes principais:
    npm run dev
    ```
 
+6. **Configure as variáveis de ambiente (opcional)**
+   ```bash
+   cd backend
+   cp .env.example .env
+   # Edite o arquivo .env conforme necessário
+   ```
+
 Após esses passos, o frontend estará disponível em `http://localhost:5173` e o backend em `http://localhost:3000`.
+
+## Configuração de Ambiente
+
+O backend utiliza variáveis de ambiente para configuração. Crie um arquivo `.env` no diretório `backend/` com as seguintes variáveis:
+
+```env
+# Configuração do JWT
+JWT_SECRET=sua_chave_secreta_jwt_super_segura
+
+# Configuração do Banco de Dados (opcional - usa SQLite por padrão)
+DATABASE_PATH=./database.sqlite
+
+# Configuração do Servidor
+PORT=3000
+NODE_ENV=development
+
+# Configurações futuras de SSO (para quando implementar)
+# SSO_SERVER_URL=
+# SSO_REALM=
+# SSO_CLIENT_ID=
+```
+
+### Variáveis Importantes:
+- **JWT_SECRET**: Chave secreta para assinar tokens JWT (obrigatório)
+- **PORT**: Porta onde o servidor irá rodar (padrão: 3000)
+- **DATABASE_PATH**: Caminho para o arquivo SQLite
 
 ## Funcionalidades Principais
 
+- **Sistema de Autenticação Centralizado** com controle de acesso por perfis
 - Cadastro e gerenciamento de alunos
 - Criação e edição de sprints
 - Registro de atividades dentro das sprints
 - Editor de texto avançado para conteúdo formatado
 - Reordenação de sprints via arrastar e soltar (drag and drop)
+- Controle de permissões por tipo de usuário
+
+## Sistema de Autenticação Centralizado
+
+O sistema implementa uma arquitetura de autenticação centralizada que unifica o controle de acesso para todos os tipos de usuários em uma única estrutura.
+
+### Arquitetura da Autenticação
+
+#### Tabela Principal - `usuario`
+A tabela `usuario` é o coração do sistema de autenticação, centralizando informações básicas de login:
+
+- **IdUsuario**: Identificador único (chave primária)
+- **nome**: Nome completo do usuário
+- **cpf**: CPF do usuário (único)
+- **login**: Login único para acesso ao sistema
+- **senha**: Senha criptografada (bcrypt)
+- **grupo**: Referência ao tipo de usuário (FK para `grupo_usuario`)
+- **situacao**: Status ativo/inativo do usuário
+- **ultimo_acesso**: Data/hora do último login
+- **data_senha_alterada**: Controle de alteração de senha
+- **data_senha_expirada**: Controle de expiração de senha
+- **login_secundario**: Login alternativo (opcional)
+
+#### Tabela de Grupos - `grupo_usuario`
+Define os tipos/perfis de usuários disponíveis no sistema:
+
+- **IdGrupo**: Identificador único do grupo
+- **nome**: Nome do grupo (ex: 'aluno', 'administrador', 'mentor')
+- **descricao**: Descrição detalhada do grupo
+
+#### Tabelas Complementares
+Para cada tipo de usuário, existe uma tabela complementar que armazena informações específicas:
+
+**`aluno_info`** - Informações específicas de alunos:
+- **IdAlunoInfo**: Identificador único
+- **IdUsuario**: Referência ao usuário (FK para `usuario`)
+- **email**: Email do aluno
+- **cpf**: CPF específico (pode diferir do usuario principal)
+- **data_nascimento**: Data de nascimento
+- **data_criacao**: Data de criação do registro
+
+**`administrador_info`** - Informações específicas de administradores:
+- **IdAdminInfo**: Identificador único
+- **IdUsuario**: Referência ao usuário (FK para `usuario`)
+- **email**: Email do administrador
+- **cpf**: CPF específico
+- **data_nascimento**: Data de nascimento
+- **data_criacao**: Data de criação do registro
+
+### Fluxo de Autenticação
+
+#### 1. Registro de Usuário
+```http
+POST /auth/register
+{
+  "nome": "Nome do Usuário",
+  "login": "usuario123",
+  "senha": "senha123",
+  "grupo": "aluno" // ou "administrador"
+}
+```
+
+O sistema:
+1. Valida se o login é único
+2. Verifica se o grupo existe
+3. Criptografa a senha com bcrypt
+4. Cria o registro na tabela `usuario`
+5. Cria o registro complementar correspondente (aluno_info ou administrador_info)
+
+#### 2. Login Unificado
+```http
+POST /auth/login
+{
+  "login": "usuario123",
+  "senha": "senha123",
+  "grupo": "aluno" // Tipo de acesso desejado
+}
+```
+
+O processo de login:
+1. Busca o usuário pelo login na tabela `usuario`
+2. Verifica se o usuário está ativo (situacao = true)
+3. Valida a senha usando bcrypt
+4. Confirma se o grupo informado corresponde ao grupo do usuário
+5. Gera token JWT com informações do usuário
+6. Retorna o token e dados do usuário (sem a senha)
+
+#### 3. Validação de Token
+```http
+GET /auth/validate
+Authorization: Bearer <token>
+```
+
+### Vantagens da Arquitetura
+
+1. **Centralização**: Um único ponto de controle para autenticação
+2. **Extensibilidade**: Facilita a adição de novos tipos de usuários
+3. **Segurança**: Senhas criptografadas e controle de expiração
+4. **Flexibilidade**: Informações específicas separadas por tipo
+5. **Auditoria**: Controle de último acesso e alterações de senha
+6. **Preparação para SSO**: Estrutura compatível com futura integração SSO
+
+### Permissões por Grupo
+
+O sistema define permissões baseadas no grupo do usuário:
+
+- **Administrador**:
+  - `read:all` - Ler todos os dados
+  - `write:all` - Escrever todos os dados
+  - `manage:users` - Gerenciar usuários
+  - `manage:plans` - Gerenciar planos de estudo
+
+- **Aluno**:
+  - `read:own_profile` - Ler próprio perfil
+  - `read:assigned_plans` - Ler planos atribuídos
+  - `submit:activities` - Submeter atividades
+
+### Middleware de Autenticação
+
+O sistema utiliza middleware para:
+- Validar tokens JWT em rotas protegidas
+- Extrair informações do usuário do token
+- Verificar permissões específicas (adminOnly, etc.)
+- Registrar tentativas de acesso
+
+### Preparação para SSO
+
+A estrutura está preparada para futura integração com sistemas SSO (Single Sign-On) como Keycloak:
+- Separação de responsabilidades entre autenticação e autorização
+- Estrutura de tokens JWT compatível
+- Sistema de permissões baseado em grupos
+- Namespace personalizado nos tokens (`sis-mentoria`)
+
+## Estrutura do Banco de Dados
+
+O sistema utiliza SQLite como banco de dados, organizado com as seguintes tabelas principais:
+
+### Tabelas de Autenticação
+- **`usuario`**: Tabela central de usuários
+- **`grupo_usuario`**: Tipos/perfis de usuários
+- **`aluno_info`**: Informações específicas de alunos
+- **`administrador_info`**: Informações específicas de administradores
+
+### Tabelas de Conteúdo Acadêmico
+- **`plano`**: Planos de estudo
+- **`disciplina`**: Disciplinas do sistema
+- **`assunto`**: Assuntos das disciplinas
+- **`sprint`**: Sprints dos planos de estudo
+- **`meta`**: Metas/atividades das sprints
+
+### Tabelas de Relacionamento
+- **`aluno_plano`**: Relacionamento entre alunos e planos
+- **`sprint_atual`**: Controle da sprint atual do aluno
+- **`PlanoDisciplina`**: Relacionamento entre planos e disciplinas (tabela intermediária)
+
+### Relacionamentos Principais
+
+```
+usuario (1) -----> (*) grupo_usuario
+usuario (1) -----> (1) aluno_info
+usuario (1) -----> (1) administrador_info
+
+plano (1) -----> (*) sprint
+sprint (1) -----> (*) meta
+plano (*) <-----> (*) disciplina (via PlanoDisciplina)
+disciplina (1) -----> (*) assunto
+
+aluno (*) <-----> (*) plano (via aluno_plano)
+sprint (1) -----> (1) sprint_atual
+```
+
+## Endpoints da API
+
+### Autenticação
+- **POST** `/api/auth/login` - Login unificado
+- **POST** `/api/auth/register` - Registro de usuário
+- **GET** `/api/auth/validate` - Validação de token
+- **GET** `/api/auth/me` - Dados do usuário logado
+
+### Gestão de Usuários
+- **GET** `/api/alunos` - Listar alunos
+- **POST** `/api/alunos` - Criar aluno
+- **PUT** `/api/alunos/:id` - Atualizar aluno
+- **DELETE** `/api/alunos/:id` - Remover aluno
+
+### Planos de Estudo
+- **GET** `/api/planos` - Listar planos
+- **POST** `/api/planos` - Criar plano
+- **PUT** `/api/planos/:id` - Atualizar plano
+- **DELETE** `/api/planos/:id` - Remover plano
+
+### Sprints
+- **GET** `/api/sprints` - Listar sprints
+- **POST** `/api/sprints` - Criar sprint
+- **PUT** `/api/sprints/:id` - Atualizar sprint
+- **DELETE** `/api/sprints/:id` - Remover sprint
+- **POST** `/api/sprints/reordenar` - Reordenar sprints
+
+### Disciplinas
+- **GET** `/api/disciplinas` - Listar disciplinas
+- **POST** `/api/disciplinas` - Criar disciplina
+- **PUT** `/api/disciplinas/:id` - Atualizar disciplina
+- **DELETE** `/api/disciplinas/:id` - Remover disciplina
+
+### Relacionamentos
+- **GET** `/api/aluno-plano` - Listar relacionamentos aluno-plano
+- **POST** `/api/aluno-plano` - Associar aluno a plano
+- **DELETE** `/api/aluno-plano/:id` - Remover associação
+
+### Sprint Atual
+- **GET** `/api/sprint-atual` - Obter sprint atual do aluno
+- **POST** `/api/sprint-atual` - Definir sprint atual
+- **PUT** `/api/sprint-atual/:id` - Atualizar sprint atual
 
 ## Uso do Editor de Texto Rich Text
 
@@ -120,8 +371,14 @@ A reordenação de sprints serve para definir a sequência em que as sprints dev
 
 Para projetos que desejam utilizar esta funcionalidade, instale as bibliotecas necessárias:
 
+**Frontend (Drag and Drop):**
 ```bash
 npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities
+```
+
+**Backend (Autenticação):**
+```bash
+npm install jsonwebtoken bcryptjs cors dotenv
 ```
 
 ### Possíveis Novos Locais de Utilização
