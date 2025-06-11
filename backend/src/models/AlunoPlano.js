@@ -35,6 +35,7 @@ const AlunoPlano = sequelize.define('AlunoPlano', {
   IdUsuario: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    primaryKey: true,
     references: {
       model: 'usuario',
       key: 'idusuario'
@@ -45,6 +46,7 @@ const AlunoPlano = sequelize.define('AlunoPlano', {
   PlanoId: {
     type: DataTypes.INTEGER,
     allowNull: false,
+    primaryKey: true,
     references: {
       model: 'planos',
       key: 'id'

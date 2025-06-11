@@ -80,7 +80,7 @@ router.get('/:id', auth, ownProfileOnly('id'), alunoController.getAlunoById);
  * @param   {id} ID do aluno
  * @body    {nome, email, cpf}
  */
-router.put('/:id', auth, ownProfileOnly('id'), alunoController.updateAluno);
+router.put('/:id', auth, ownProfileOrAdmin('id'), alunoController.updateAluno);
 
 /**
  * @route   DELETE /api/alunos/:id

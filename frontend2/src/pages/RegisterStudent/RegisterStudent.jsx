@@ -425,6 +425,7 @@ export default function RegisterStudent() {
 
   // Função para salvar edição
   const handleSalvarEdicao = async (dadosEditados) => {
+    console.log('Dados enviados para edição:', dadosEditados);
     setSavingEdit(true);
     try {
       // Atualizar dados do aluno
@@ -433,7 +434,7 @@ export default function RegisterStudent() {
       if (dadosEditados.planoId) {
         await alunoPlanoService.atribuirPlano({
           idusuario: alunoEditando.id,
-          PlanoId: dadosEditados.planoId
+          planoId: Number(dadosEditados.planoId)
         });
       }
       setEditModalOpen(false);
