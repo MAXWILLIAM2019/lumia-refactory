@@ -37,9 +37,20 @@ export default function RegisterStudent() {
   });
   const [planos, setPlanos] = useState([]);
   
+  // Estado da associação com plano mestre
+  const [associarPlanoMestre, setAssociarPlanoMestre] = useState(false);
+  const [planoMestreData, setPlanoMestreData] = useState({
+    planoMestreId: '',
+    dataInicio: new Date().toISOString().split('T')[0],
+    status: 'não iniciado',
+    observacoes: ''
+  });
+  const [planosMestre, setPlanosMestre] = useState([]);
+  
   // Estados de controle da UI
   const [loading, setLoading] = useState(false);
   const [loadingPlanos, setLoadingPlanos] = useState(false);
+  const [loadingPlanosMestre, setLoadingPlanosMestre] = useState(false);
   const [loadingAlunos, setLoadingAlunos] = useState(false);
   const [error, setError] = useState('');
   const [showToast, setShowToast] = useState(false);
@@ -76,6 +87,15 @@ export default function RegisterStudent() {
       carregarPlanos();
     }
   }, [associarPlano]);
+
+  /**
+   * Efeito que carrega os planos mestre quando a opção de associar é ativada
+   */
+  useEffect(() => {
+    if (associarPlanoMestre) {
+      carregarPlanosMestre();
+    }
+  }, [associarPlanoMestre]);
 
   /**
    * Efeito que controla a exibição do toast de erro
@@ -173,6 +193,22 @@ export default function RegisterStudent() {
   };
 
   /**
+   * Carrega a lista de planos mestre disponíveis
+   */
+  const carregarPlanosMestre = async () => {
+    try {
+      setLoadingPlanosMestre(true);
+      const response = await api.get('/planos-mestre');
+      setPlanosMestre(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Erro ao carregar planos mestre:', error);
+      setError('Erro ao carregar planos mestre. Tente novamente.');
+    } finally {
+      setLoadingPlanosMestre(false);
+    }
+  };
+
+  /**
    * Aplica máscara para o CPF (formato 123.456.789-00)
    * @param {string} value - CPF sem formatação
    * @returns {string} CPF formatado
@@ -256,6 +292,18 @@ export default function RegisterStudent() {
   };
 
   /**
+   * Atualiza o estado do plano mestre quando o usuário digita
+   * @param {Event} e - Evento de mudança do input
+   */
+  const handlePlanoMestreChange = (e) => {
+    const { name, value } = e.target;
+    setPlanoMestreData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  /**
    * Atualiza o termo de busca quando o usuário digita
    * @param {Event} e - Evento de mudança do input
    */
@@ -316,6 +364,28 @@ export default function RegisterStudent() {
         }
       }
 
+      // Se for para criar plano a partir de plano mestre
+      if (associarPlanoMestre && planoMestreData.planoMestreId && idUsuario) {
+        console.log('Criando plano a partir do plano mestre:', {
+          planoMestreId: planoMestreData.planoMestreId,
+          idUsuario: idUsuario,
+          ...planoMestreData,
+        });
+        try {
+          const criarPlanoResponse = await api.post('/planos-mestre/criar-instancia', {
+            planoMestreId: planoMestreData.planoMestreId,
+            idUsuario: idUsuario,
+            dataInicio: planoMestreData.dataInicio,
+            status: planoMestreData.status,
+            observacoes: planoMestreData.observacoes
+          });
+          console.log('Resposta do servidor (criação de plano):', criarPlanoResponse.data);
+        } catch (criarPlanoError) {
+          console.error('Erro ao criar plano a partir do plano mestre:', criarPlanoError);
+          alert(`Aluno cadastrado com sucesso, mas não foi possível criar o plano personalizado. Motivo: ${criarPlanoError.response?.data?.message || criarPlanoError.message}`);
+        }
+      }
+
       // Depois do cadastro, abrir o modal de senha
       setAlunoParaSenha({
         id: idUsuario,
@@ -332,7 +402,14 @@ export default function RegisterStudent() {
         status: 'não iniciado',
         observacoes: ''
       });
+      setPlanoMestreData({
+        planoMestreId: '',
+        dataInicio: new Date().toISOString().split('T')[0],
+        status: 'não iniciado',
+        observacoes: ''
+      });
       setAssociarPlano(false);
+      setAssociarPlanoMestre(false);
 
     } catch (error) {
       console.error('Erro ao cadastrar aluno:', error);
@@ -551,15 +628,34 @@ export default function RegisterStudent() {
         
         {/* Seção de associação com plano */}
         <div className={styles.formSection}>
+          <h2>Associação de Plano</h2>
+          
           <div className={styles.planoCheck}>
             <input
               type="checkbox"
               id="associarPlano"
               checked={associarPlano}
-              onChange={() => setAssociarPlano(!associarPlano)}
+              onChange={() => {
+                setAssociarPlano(!associarPlano);
+                if (!associarPlano) setAssociarPlanoMestre(false);
+              }}
               disabled={loading}
             />
-            <label htmlFor="associarPlano">Associar aluno a um plano</label>
+            <label htmlFor="associarPlano">Associar aluno a um plano existente</label>
+          </div>
+          
+          <div className={styles.planoCheck}>
+            <input
+              type="checkbox"
+              id="associarPlanoMestre"
+              checked={associarPlanoMestre}
+              onChange={() => {
+                setAssociarPlanoMestre(!associarPlanoMestre);
+                if (!associarPlanoMestre) setAssociarPlano(false);
+              }}
+              disabled={loading}
+            />
+            <label htmlFor="associarPlanoMestre">Criar plano personalizado a partir de um plano mestre</label>
           </div>
           
           {associarPlano && (
@@ -623,6 +719,74 @@ export default function RegisterStudent() {
                   value={planoData.observacoes}
                   onChange={handlePlanoChange}
                   placeholder="Observações sobre o aluno ou o plano (opcional)"
+                  disabled={loading}
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          
+          {associarPlanoMestre && (
+            <div className={styles.planoForm}>
+              <div className={styles.formGroup}>
+                <label htmlFor="planoMestreId">Plano Mestre</label>
+                {loadingPlanosMestre ? (
+                  <div>Carregando planos mestre...</div>
+                ) : (
+                  <select
+                    id="planoMestreId"
+                    name="planoMestreId"
+                    value={planoMestreData.planoMestreId}
+                    onChange={handlePlanoMestreChange}
+                    required={associarPlanoMestre}
+                    disabled={loading}
+                  >
+                    <option value="">Selecione um plano mestre</option>
+                    {planosMestre.map(planoMestre => (
+                      <option key={planoMestre.id} value={planoMestre.id}>
+                        {planoMestre.nome} - {planoMestre.cargo}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="dataInicioMestre">Data de Início</label>
+                <input
+                  type="date"
+                  id="dataInicioMestre"
+                  name="dataInicio"
+                  value={planoMestreData.dataInicio}
+                  onChange={handlePlanoMestreChange}
+                  required={associarPlanoMestre}
+                  disabled={loading}
+                />
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="statusMestre">Status</label>
+                <select
+                  id="statusMestre"
+                  name="status"
+                  value={planoMestreData.status}
+                  onChange={handlePlanoMestreChange}
+                  required={associarPlanoMestre}
+                  disabled={loading}
+                >
+                  <option value="não iniciado">Não iniciado</option>
+                  <option value="em andamento">Em andamento</option>
+                </select>
+              </div>
+              
+              <div className={styles.formGroup}>
+                <label htmlFor="observacoesMestre">Observações</label>
+                <textarea
+                  id="observacoesMestre"
+                  name="observacoes"
+                  value={planoMestreData.observacoes}
+                  onChange={handlePlanoMestreChange}
+                  placeholder="Observações sobre o aluno ou o plano personalizado (opcional)"
                   disabled={loading}
                   rows={3}
                 />

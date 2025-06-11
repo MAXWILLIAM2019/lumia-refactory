@@ -394,28 +394,56 @@ exports.getAlunoPlanos = async (req, res) => {
 
 /**
  * Busca as sprints associadas ao aluno logado através de seu plano
+ * Se for administrador, retorna todas as sprints do sistema
  * 
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
- * @returns {Array} Lista de sprints associadas ao aluno
+ * @returns {Array} Lista de sprints associadas ao aluno ou todas as sprints (se admin)
  */
 exports.getAlunoSprints = async (req, res) => {
   try {
     // O middleware de autenticação já adicionou req.user com id e role
-    const alunoId = req.user.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
     
-    console.log(`===== INICIANDO BUSCA DE SPRINTS PARA ALUNO =====`);
-    console.log(`ID do aluno autenticado: ${alunoId}`);
+    console.log(`===== INICIANDO BUSCA DE SPRINTS =====`);
+    console.log(`ID do usuário autenticado: ${userId}, Role: ${userRole}`);
     console.log(`Dados do token:`, req.user);
     
     // Importa os modelos necessários
     const { AlunoPlano, Plano, Sprint, Meta } = require('../models');
     console.log(`Modelos importados com sucesso`);
     
+    // Se for administrador, retorna todas as sprints do sistema
+    if (userRole === 'administrador') {
+      console.log(`Usuário é administrador - buscando todas as sprints do sistema`);
+      
+      const todasSprints = await Sprint.findAll({
+        include: [
+          {
+            model: Meta,
+            as: 'metas'
+          },
+          {
+            model: Plano,
+            as: 'Plano'
+          }
+        ],
+        order: [
+          ['PlanoId', 'ASC'],
+          ['posicao', 'ASC'],
+          ['dataInicio', 'ASC']
+        ]
+      });
+      
+      console.log(`${todasSprints?.length || 0} sprints encontradas no sistema para administrador`);
+      return res.json(todasSprints || []);
+    }
+    
     // Busca as associações aluno-plano
-    console.log(`Buscando associações do aluno ID ${alunoId} com planos...`);
+    console.log(`Buscando associações do aluno ID ${userId} com planos...`);
     const associacoes = await AlunoPlano.findAll({
-      where: { IdUsuario: alunoId },
+      where: { IdUsuario: userId },
       include: [{
         model: Plano
       }]
@@ -427,7 +455,7 @@ exports.getAlunoSprints = async (req, res) => {
     }
     
     if (!associacoes || associacoes.length === 0) {
-      console.log(`Nenhum plano encontrado para o aluno ID ${alunoId}`);
+      console.log(`Nenhum plano encontrado para o aluno ID ${userId}`);
       return res.status(404).json({ 
         message: 'Aluno não possui planos de estudo atribuídos' 
       });
@@ -472,15 +500,15 @@ exports.getAlunoSprints = async (req, res) => {
       });
     }
     
-    console.log(`${sprints.length} sprints encontradas para o aluno ID ${alunoId}`);
-    console.log(`===== FINALIZANDO BUSCA DE SPRINTS PARA ALUNO =====`);
+    console.log(`${sprints.length} sprints encontradas para o aluno ID ${userId}`);
+    console.log(`===== FINALIZANDO BUSCA DE SPRINTS =====`);
     res.json(sprints);
   } catch (error) {
-    console.error('===== ERRO AO BUSCAR SPRINTS DO ALUNO =====');
-    console.error('Erro ao buscar sprints do aluno:', error);
+    console.error('===== ERRO AO BUSCAR SPRINTS =====');
+    console.error('Erro ao buscar sprints:', error);
     console.error('Stack trace:', error.stack);
     res.status(500).json({ 
-      message: 'Erro ao buscar sprints do aluno',
+      message: 'Erro ao buscar sprints',
       error: error.message 
     });
   }

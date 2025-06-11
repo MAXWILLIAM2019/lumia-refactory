@@ -68,6 +68,15 @@ const Meta = sequelize.define('Meta', {
   questoesCorretas: {
     type: DataTypes.INTEGER,
     defaultValue: 0
+  },
+  meta_mestre_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'MetasMestre',
+      key: 'id'
+    },
+    comment: 'Referência à meta mestre que originou esta meta'
   }
 });
 

@@ -47,6 +47,15 @@ const Sprint = sequelize.define('Sprint', {
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 0
+  },
+  sprint_mestre_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'SprintsMestre',
+      key: 'id'
+    },
+    comment: 'Referência ao sprint mestre que originou esta sprint'
   }
 }, {
   indexes: [

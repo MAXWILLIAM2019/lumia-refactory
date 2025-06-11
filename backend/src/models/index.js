@@ -17,6 +17,11 @@ const GrupoUsuario = require('./GrupoUsuario');
 const AlunoInfo = require('./AlunoInfo');
 const AdministradorInfo = require('./AdministradorInfo');
 
+// Modelos Mestre (Templates)
+const PlanoMestre = require('./PlanoMestre');
+const SprintMestre = require('./SprintMestre');
+const MetaMestre = require('./MetaMestre');
+
 // Garante que os relacionamentos são estabelecidos
 console.log('Configurando relacionamentos entre modelos...');
 
@@ -90,6 +95,41 @@ console.log('Configurando relacionamento Usuario -> AdministradorInfo');
 Usuario.hasOne(AdministradorInfo, { foreignKey: 'IdUsuario', as: 'adminInfo' });
 AdministradorInfo.belongsTo(Usuario, { foreignKey: 'IdUsuario', as: 'usuario' });
 
+// Relacionamentos dos Modelos Mestre
+console.log('Configurando relacionamentos dos modelos mestre...');
+
+// PlanoMestre -> SprintMestre
+PlanoMestre.hasMany(SprintMestre, {
+  foreignKey: 'PlanoMestreId',
+  as: 'sprintsMestre',
+  onDelete: 'CASCADE'
+});
+SprintMestre.belongsTo(PlanoMestre, {
+  foreignKey: 'PlanoMestreId',
+  as: 'planoMestre'
+});
+
+// SprintMestre -> MetaMestre
+SprintMestre.hasMany(MetaMestre, {
+  foreignKey: 'SprintMestreId',
+  as: 'metasMestre',
+  onDelete: 'CASCADE'
+});
+MetaMestre.belongsTo(SprintMestre, {
+  foreignKey: 'SprintMestreId',
+  as: 'sprintMestre'
+});
+
+// Relacionamentos de referência: PlanoMestre -> Planos (instâncias)
+PlanoMestre.hasMany(Plano, {
+  foreignKey: 'plano_mestre_id',
+  as: 'instancias'
+});
+Plano.belongsTo(PlanoMestre, {
+  foreignKey: 'plano_mestre_id',
+  as: 'planoMestre'
+});
+
 console.log('Relacionamentos configurados com sucesso!');
 
 // Exporte os modelos
@@ -105,5 +145,10 @@ module.exports = {
   Usuario,
   GrupoUsuario,
   AlunoInfo,
-  AdministradorInfo
+  AdministradorInfo,
+  
+  // Modelos Mestre
+  PlanoMestre,
+  SprintMestre,
+  MetaMestre
 }; 

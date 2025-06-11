@@ -36,6 +36,15 @@ const Plano = sequelize.define('Plano', {
     validate: {
       min: 1
     }
+  },
+  plano_mestre_id: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'PlanosMestre',
+      key: 'id'
+    },
+    comment: 'Referência ao plano mestre que originou este plano'
   }
 }, {
   timestamps: true // Adiciona createdAt e updatedAt

@@ -60,10 +60,10 @@ router.get('/planos', auth, alunoOnly, alunoController.getAlunoPlanos);
 
 /**
  * @route   GET /api/alunos/sprints
- * @desc    Busca as sprints do aluno logado
- * @access  Privado (apenas para o próprio aluno)
+ * @desc    Busca as sprints do aluno logado (ou todas as sprints se for admin)
+ * @access  Privado (aluno ou administrador)
  */
-router.get('/sprints', auth, alunoOnly, alunoController.getAlunoSprints);
+router.get('/sprints', auth, alunoController.getAlunoSprints);
 
 /**
  * @route   GET /api/alunos/:id
