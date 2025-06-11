@@ -415,7 +415,7 @@ exports.getAlunoSprints = async (req, res) => {
     // Busca as associações aluno-plano
     console.log(`Buscando associações do aluno ID ${alunoId} com planos...`);
     const associacoes = await AlunoPlano.findAll({
-      where: { alunoId },
+      where: { IdUsuario: alunoId },
       include: [{
         model: Plano
       }]

@@ -11,7 +11,7 @@ const Meta = require('../models/Meta');
 exports.getSprintAtual = async (req, res) => {
   try {
     console.log('========== BUSCANDO SPRINT ATUAL ==========');
-    const idusuario = req.aluno.id;
+    const idusuario = req.user.id;
     console.log('ID do usuário:', idusuario);
 
     // Primeiro, buscar o plano do usuário
@@ -82,7 +82,7 @@ exports.getSprintAtual = async (req, res) => {
  */
 exports.atualizarSprintAtual = async (req, res) => {
   try {
-    const idusuario = req.aluno.id;
+    const idusuario = req.user.id;
     const { sprintId } = req.body;
 
     if (!sprintId) {

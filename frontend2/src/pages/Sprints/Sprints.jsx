@@ -128,23 +128,23 @@ export default function Sprints() {
   );
 
   useEffect(() => {
-    fetchSprints();
+    fetchSprintsDoAluno();
   }, []);
 
   /**
-   * Busca todas as sprints do backend
+   * Busca as sprints do aluno logado
    */
-  const fetchSprints = async () => {
+  const fetchSprintsDoAluno = async () => {
     try {
       setLoading(true);
-      console.log('Buscando sprints...');
-      const data = await sprintService.listarSprints();
-      console.log('Sprints recebidas:', data);
+      console.log('Buscando sprints do aluno logado...');
+      const data = await sprintService.listarSprintsDoAluno();
+      console.log('Sprints do aluno recebidas:', data);
       setSprints(Array.isArray(data) ? data : []);
       setError('');
     } catch (error) {
-      console.error('Erro ao buscar sprints:', error);
-      setError(error.message || 'Erro ao carregar sprints');
+      console.error('Erro ao buscar sprints do aluno:', error);
+      setError(error.message || 'Erro ao carregar sprints do aluno');
       setSprints([]);
     } finally {
       setLoading(false);
@@ -224,7 +224,7 @@ export default function Sprints() {
       await sprintService.reordenarSprints(planoId, ordemSprints);
       
       // Atualizar sprints após reordenação
-      await fetchSprints();
+      await fetchSprintsDoAluno();
       
       // Sair do modo de reordenação
       setReordenandoPlanoId(null);
@@ -300,7 +300,7 @@ export default function Sprints() {
       {error && (
         <div className={styles.errorMessage}>
           <p>{error}</p>
-          <button onClick={fetchSprints}>Tentar novamente</button>
+          <button onClick={fetchSprintsDoAluno}>Tentar novamente</button>
         </div>
       )}
 

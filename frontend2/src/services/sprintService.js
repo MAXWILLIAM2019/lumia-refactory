@@ -76,5 +76,15 @@ export const sprintService = {
       console.error('Erro ao listar sprints do plano:', error);
       throw new Error(error.response?.data?.message || 'Erro ao listar sprints do plano');
     }
+  },
+
+  async listarSprintsDoAluno() {
+    try {
+      const response = await api.get('/alunos/sprints');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao listar sprints do aluno:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao listar sprints do aluno');
+    }
   }
 }; 

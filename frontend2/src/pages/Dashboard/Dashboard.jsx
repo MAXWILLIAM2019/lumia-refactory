@@ -12,7 +12,6 @@ import api from '../../services/api';
  */
 export default function Dashboard() {
   const [sprint, setSprint] = useState(null);
-  const [sprints, setSprints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAuthDebug, setShowAuthDebug] = useState(false);
@@ -24,69 +23,32 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    fetchSprints();
+    fetchSprintAtual();
   }, []);
 
-  const fetchSprints = async () => {
+  // Busca a sprint atual do aluno logado
+  const fetchSprintAtual = async () => {
     try {
       setLoading(true);
       setError('');
-      console.log('Buscando sprints...');
-      
-      const response = await api.get('/sprints');
-      console.log('Resposta recebida:', response.data);
-      
-      const data = response.data;
-      setSprints(data);
-      
-      // Ordenar sprints por data de início
-      const sortedSprints = [...data].sort((a, b) => 
-        new Date(b.dataInicio) - new Date(a.dataInicio)
-      );
-
-      if (sortedSprints.length > 0) {
-        // Buscar a sprint mais recente com suas metas detalhadas
-        fetchSprintById(sortedSprints[0].id);
-      }
+      console.log('Buscando sprint atual do aluno logado...');
+      const response = await api.get('/sprint-atual');
+      console.log('Sprint atual recebida:', response.data);
+      setSprint(response.data);
+      calculateStats(response.data);
     } catch (error) {
-      console.error('Erro ao carregar sprints:', error);
-      
-      // Verificar se é um erro de autenticação
+      console.error('Erro ao carregar sprint atual:', error);
       if (error.response?.status === 401) {
         setError('Erro de autenticação. Por favor, faça login novamente.');
         setShowAuthDebug(true);
+      } else if (error.response?.status === 404) {
+        setError('Você ainda não possui sprint atual. Solicite ao administrador a associação a um plano.');
       } else {
-        setError(`Erro ao carregar sprints: ${error.message || 'Erro desconhecido'}`);
+        setError(`Erro ao carregar sprint atual: ${error.message || 'Erro desconhecido'}`);
       }
+      setSprint(null);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Função para buscar uma sprint específica pelo ID
-  const fetchSprintById = async (sprintId) => {
-    try {
-      setLoading(true);
-      console.log(`Buscando detalhes da sprint ${sprintId}...`);
-      
-      const response = await api.get(`/sprints/${sprintId}`);
-      console.log('Detalhes da sprint recebida:', response.data);
-      
-      const sprintData = response.data;
-      setSprint(sprintData);
-      calculateStats(sprintData);
-    } catch (error) {
-      console.error(`Erro ao carregar detalhes da sprint ${sprintId}:`, error);
-      setError(`Erro ao carregar detalhes da sprint: ${error.message || 'Erro desconhecido'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Função para lidar com a mudança de sprint selecionada
-  const handleSprintChange = (sprintId) => {
-    if (sprintId) {
-      fetchSprintById(sprintId);
     }
   };
 
@@ -195,7 +157,7 @@ export default function Dashboard() {
       {error && (
         <div className={styles.error}>
           <p>{error}</p>
-          <button onClick={fetchSprints} className={styles.retryButton}>
+          <button onClick={fetchSprintAtual} className={styles.retryButton}>
             Tentar novamente
           </button>
         </div>
@@ -217,10 +179,9 @@ export default function Dashboard() {
             sprintTitle={sprint?.nome}
             progress={sprint ? (sprint.metas.filter(m => m.status === 'Concluída').length / sprint.metas.length) * 100 : 0}
             startDate={sprint?.dataInicio}
-            onSprintChange={handleSprintChange}
-            sprints={sprints}
+            sprints={sprint ? [sprint] : []}
             selectedSprintId={sprint?.id}
-            initialSprintId={sprints.length > 0 ? sprints[0].id : null}
+            initialSprintId={sprint?.id}
           >
             <SprintStats stats={stats} />
           </SprintHeader>
@@ -230,14 +191,8 @@ export default function Dashboard() {
         {sprint && (
           <ActivitiesTable 
             activities={formatActivities(sprint.metas)}
-            onFilterChange={(filter) => {
-              // Implementar filtro
-            }}
-            onRefresh={() => {
-              if (sprint) {
-                fetchSprintById(sprint.id);
-              }
-            }}
+            onFilterChange={() => {}}
+            onRefresh={fetchSprintAtual}
           />
         )}
       </div>
