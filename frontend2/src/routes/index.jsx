@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard/Dashboard';
+import AcompanharSprints from '../pages/AcompanharSprints/AcompanharSprints';
 import AlunoDashboard from '../pages/Aluno/Dashboard';
 import TodasSprints from '../pages/Aluno/TodasSprints';
 import RegisterPlan from '../pages/RegisterPlan/RegisterPlan';
@@ -70,6 +71,14 @@ const AppRoutes = () => {
           element={
             <AdminRoute>
               <Dashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/acompanhar-sprints"
+          element={
+            <AdminRoute>
+              <AcompanharSprints />
             </AdminRoute>
           }
         />

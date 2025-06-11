@@ -135,8 +135,69 @@ const loginUnificado = async (req, res) => {
  * @access Private
  */
 const me = async (req, res) => {
-  // (mantido para compatibilidade, pode ser ajustado depois)
-  res.status(501).json({ success: false, message: 'Não implementado para o novo fluxo.' });
+  try {
+    console.log('Buscando dados do usuário logado. Token decoded:', req.user);
+    
+    // O middleware de autenticação já validou o token e definiu req.user
+    const userId = req.user.id;
+    const userRole = req.user.role;
+    
+    // Busca o usuário completo com as informações específicas do seu tipo
+    const usuario = await Usuario.findOne({
+      where: { IdUsuario: userId, situacao: true },
+      include: [
+        { model: GrupoUsuario, as: 'grupoUsuario' },
+        { model: AlunoInfo, as: 'alunoInfo' },
+        { model: AdministradorInfo, as: 'adminInfo' }
+      ]
+    });
+
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuário não encontrado'
+      });
+    }
+
+    // Remove a senha do objeto de resposta
+    const usuarioSemSenha = usuario.toJSON();
+    delete usuarioSemSenha.senha;
+
+    // Monta a resposta baseada no tipo de usuário
+    let responseData = {
+      success: true,
+      usuario: usuarioSemSenha,
+      grupo: userRole
+    };
+
+    // Adiciona dados específicos do tipo de usuário para compatibilidade
+    if (userRole === 'aluno' && usuario.alunoInfo) {
+      responseData.aluno = {
+        id: usuario.IdUsuario,
+        nome: usuario.nome,
+        email: usuario.alunoInfo.email,
+        cpf: usuario.alunoInfo.cpf,
+        login: usuario.login
+      };
+    } else if (userRole === 'administrador' && usuario.adminInfo) {
+      responseData.administrador = {
+        id: usuario.IdUsuario,
+        nome: usuario.nome,
+        email: usuario.adminInfo.email,
+        cpf: usuario.adminInfo.cpf,
+        login: usuario.login
+      };
+    }
+
+    console.log('Dados do usuário retornados com sucesso para:', userRole);
+    res.json(responseData);
+  } catch (error) {
+    console.error('Erro ao buscar dados do usuário logado:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor'
+    });
+  }
 };
 
 module.exports = {

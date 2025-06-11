@@ -20,8 +20,12 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const handleSprintClick = () => {
+  const handleDashboardClick = () => {
     navigate('/dashboard');
+  };
+
+  const handleAcompanharSprintsClick = () => {
+    navigate('/acompanhar-sprints');
   };
 
   const handleRegisterStudentClick = () => {
@@ -52,11 +56,20 @@ export default function Sidebar() {
         <ul>
           <li 
             className={`${styles.menuItem} ${location.pathname === '/' || location.pathname === '/dashboard' ? styles.active : ''}`}
-            onClick={handleSprintClick}
+            onClick={handleDashboardClick}
           >
             <div className={styles.menuItemContent}>
               <img src={sprintIcon} alt="Dashboard" className={styles.icon} />
               <span>Dashboard</span>
+            </div>
+          </li>
+          <li 
+            className={`${styles.menuItem} ${location.pathname === '/acompanhar-sprints' ? styles.active : ''}`}
+            onClick={handleAcompanharSprintsClick}
+          >
+            <div className={styles.menuItemContent}>
+              <img src={sprintIcon} alt="Sprints" className={styles.icon} />
+              <span>Sprints</span>
             </div>
           </li>
           <li 

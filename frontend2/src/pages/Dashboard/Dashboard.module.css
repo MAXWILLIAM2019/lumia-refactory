@@ -260,4 +260,173 @@
   color: #555;
   margin-bottom: 20px;
   line-height: 1.5;
+}
+
+/* Estilos para Dashboard Administrativo */
+.welcomeHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.pageHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.pageHeader h1 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.pageHeader p {
+  font-size: 1rem;
+  color: #666;
+  margin: 0;
+}
+
+.welcomeHeader h1 {
+  font-size: 2.5rem;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.welcomeHeader p {
+  font-size: 1.2rem;
+  color: #666;
+  margin: 0;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.statIcon {
+  font-size: 2.5rem;
+  width: 60px;
+  height: 60px;
+  background: #f0f9ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statContent h3 {
+  font-size: 1rem;
+  color: #666;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
+}
+
+.statNumber {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin: 0;
+}
+
+.infoSection {
+  margin-bottom: 2rem;
+}
+
+.infoSection h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.infoCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.infoCard:hover {
+  transform: translateY(-2px);
+}
+
+.infoCard h3 {
+  font-size: 1.1rem;
+  color: #333;
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+.infoCard p {
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 0.5rem 0;
+}
+
+.infoCard p:last-child {
+  margin: 0;
+  font-style: italic;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .welcomeHeader h1 {
+    font-size: 2rem;
+  }
+  
+  .welcomeHeader p {
+    font-size: 1rem;
+  }
+  
+  .statsGrid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .statCard {
+    padding: 1rem;
+  }
+  
+  .statIcon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+  }
+  
+  .statNumber {
+    font-size: 1.5rem;
+  }
+  
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
 } 
