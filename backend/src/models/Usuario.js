@@ -8,6 +8,17 @@ const Usuario = sequelize.define('Usuario', {
     autoIncrement: true,
     field: 'idusuario'
   },
+  nome: {
+    type: DataTypes.STRING(100),
+    allowNull: false,
+    field: 'nome'
+  },
+  cpf: {
+    type: DataTypes.STRING(14),
+    allowNull: false,
+    unique: true,
+    field: 'cpf'
+  },
   login: {
     type: DataTypes.STRING(50),
     allowNull: false,
@@ -15,7 +26,7 @@ const Usuario = sequelize.define('Usuario', {
   },
   senha: {
     type: DataTypes.STRING(100),
-    allowNull: false
+    allowNull: true
   },
   grupo: {
     type: DataTypes.INTEGER,

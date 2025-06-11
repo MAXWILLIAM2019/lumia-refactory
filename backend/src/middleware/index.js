@@ -10,7 +10,8 @@ const {
   checkPermission, 
   adminOnly, 
   alunoOnly, 
-  ownProfileOnly 
+  ownProfileOnly, 
+  ownProfileOrAdmin 
 } = require('./checkPermission');
 
 module.exports = {
@@ -22,6 +23,7 @@ module.exports = {
   adminOnly,
   alunoOnly,
   ownProfileOnly,
+  ownProfileOrAdmin,
   
   // Atalhos para permissões comuns
   readOnly: checkPermission(['read:all', 'read:own_profile']),

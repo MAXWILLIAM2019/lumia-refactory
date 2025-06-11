@@ -15,14 +15,14 @@
  */
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
-const Aluno = require('./Aluno');
+const Usuario = require('./Usuario');
 const Plano = require('./Plano');
 
 /**
  * Definição do modelo AlunoPlano com os seguintes campos:
  * 
- * @property {number} alunoId - ID do aluno (chave estrangeira)
- * @property {number} planoId - ID do plano (chave estrangeira)
+ * @property {number} IdUsuario - ID do usuário/aluno (chave estrangeira para usuario)
+ * @property {number} PlanoId - ID do plano (chave estrangeira para planos)
  * @property {Date} dataInicio - Data de início do plano para o aluno
  * @property {Date} dataPrevisaoTermino - Data prevista para término
  * @property {Date} dataConclusao - Data efetiva de conclusão (null se não concluído)
@@ -32,6 +32,26 @@ const Plano = require('./Plano');
  * @property {Date} updatedAt - Data da última atualização (automático)
  */
 const AlunoPlano = sequelize.define('AlunoPlano', {
+  IdUsuario: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'usuario',
+      key: 'idusuario'
+    },
+    field: 'idusuario',
+    comment: 'ID do usuário/aluno (chave estrangeira para usuario)'
+  },
+  PlanoId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'planos',
+      key: 'id'
+    },
+    field: 'PlanoId',
+    comment: 'ID do plano (chave estrangeira para planos)'
+  },
   dataInicio: {
     type: DataTypes.DATE,
     allowNull: false,
@@ -71,11 +91,11 @@ const AlunoPlano = sequelize.define('AlunoPlano', {
   }
 }, {
   timestamps: true,
-  comment: 'Associação entre alunos e planos com dados de progresso'
+  comment: 'Associação entre alunos (usuario) e planos com dados de progresso'
 });
 
 // Adicionar relações diretas para facilitar queries
-AlunoPlano.belongsTo(Aluno);
-AlunoPlano.belongsTo(Plano);
+AlunoPlano.belongsTo(Usuario, { foreignKey: 'IdUsuario', as: 'usuario' });
+AlunoPlano.belongsTo(Plano, { foreignKey: 'PlanoId', as: 'plano' });
 
 module.exports = AlunoPlano; 

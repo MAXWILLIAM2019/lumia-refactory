@@ -4,6 +4,7 @@ import sprintIcon from '../../assets/icons/sprint.svg';
 import registerPlanIcon from '../../assets/icons/register-plan.svg';
 import registerStudentIcon from '../../assets/icons/register-student.svg';
 import disciplinasIcon from '../../assets/icons/disciplinas.svg';
+import authService from '../../services/authService';
 
 /**
  * Componente Sidebar
@@ -13,6 +14,7 @@ import disciplinasIcon from '../../assets/icons/disciplinas.svg';
  * - Navegação entre páginas
  * - Exibição de status ativo da página atual
  * - Botões de ação para cadastros e listagens
+ * - Logout do administrador
  */
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -32,6 +34,11 @@ export default function Sidebar() {
 
   const handleDisciplinasClick = () => {
     navigate('/disciplinas');
+  };
+
+  const handleLogout = () => {
+    authService.removeToken();
+    navigate('/login');
   };
 
   return (
@@ -77,6 +84,15 @@ export default function Sidebar() {
             <div className={styles.menuItemContent}>
               <img src={registerStudentIcon} alt="Alunos" className={styles.icon} />
               <span>Alunos</span>
+            </div>
+          </li>
+          <li 
+            className={styles.menuItem}
+            onClick={handleLogout}
+            style={{ marginTop: 'auto', marginBottom: '20px' }}
+          >
+            <div className={styles.menuItemContent}>
+              <span>Sair</span>
             </div>
           </li>
         </ul>

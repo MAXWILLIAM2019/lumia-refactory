@@ -10,6 +10,7 @@
 const AlunoPlano = require('../models/AlunoPlano');
 const Aluno = require('../models/Aluno');
 const Plano = require('../models/Plano');
+const Usuario = require('../models/Usuario');
 const { Op } = require('sequelize');
 const sequelize = require('../db');
 
@@ -18,7 +19,7 @@ const sequelize = require('../db');
  * 
  * @param {Object} req - Requisição HTTP
  * @param {Object} req.body - Corpo da requisição
- * @param {number} req.body.alunoId - ID do aluno
+ * @param {number} req.body.idusuario - ID do usuário
  * @param {number} req.body.planoId - ID do plano
  * @param {Date} [req.body.dataInicio] - Data de início (opcional, default: data atual)
  * @param {string} [req.body.status] - Status inicial (opcional, default: 'não iniciado')
@@ -30,13 +31,13 @@ exports.atribuirPlanoAluno = async (req, res) => {
   const transaction = await sequelize.transaction();
   
   try {
-    const { alunoId, planoId, dataInicio, dataPrevisaoTermino, status, observacoes } = req.body;
+    const { idusuario, planoId, dataInicio, dataPrevisaoTermino, status, observacoes } = req.body;
     
-    // Verificar se o aluno existe
-    const aluno = await Aluno.findByPk(alunoId, { transaction });
-    if (!aluno) {
+    // Verificar se o usuário existe
+    const usuario = await Usuario.findByPk(idusuario, { transaction });
+    if (!usuario) {
       await transaction.rollback();
-      return res.status(404).json({ message: 'Aluno não encontrado' });
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
     
     // Verificar se o plano existe
@@ -46,10 +47,10 @@ exports.atribuirPlanoAluno = async (req, res) => {
       return res.status(404).json({ message: 'Plano não encontrado' });
     }
     
-    // Verificar se o aluno já tem algum plano ativo (para relação 1:1)
+    // Verificar se o usuário já tem algum plano ativo (para relação 1:1)
     const planoExistente = await AlunoPlano.findOne({
       where: {
-        AlunoId: alunoId,
+        IdUsuario: idusuario,
         [Op.or]: [
           { status: 'não iniciado' },
           { status: 'em andamento' }
@@ -66,7 +67,20 @@ exports.atribuirPlanoAluno = async (req, res) => {
                     '\nPlano substituído por um novo em ' + new Date().toISOString().split('T')[0]
       }, { transaction });
       
-      console.log(`Aluno ${alunoId} já tinha um plano ativo que foi cancelado.`);
+      console.log(`Usuário ${idusuario} já tinha um plano ativo que foi cancelado.`);
+    }
+    
+    // Antes de criar a associação, verificar se já existe para o mesmo usuário/plano
+    const associacaoExistente = await AlunoPlano.findOne({
+      where: {
+        IdUsuario: idusuario,
+        PlanoId: planoId
+      },
+      transaction
+    });
+    if (associacaoExistente) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'Este usuário já está associado a este plano.' });
     }
     
     // Calcular a data prevista de término se não for fornecida
@@ -79,7 +93,7 @@ exports.atribuirPlanoAluno = async (req, res) => {
     
     // Criar a associação
     const alunoPlano = await AlunoPlano.create({
-      AlunoId: alunoId,
+      IdUsuario: idusuario,
       PlanoId: planoId,
       dataInicio: dataInicio || new Date(),
       dataPrevisaoTermino: dataFinal,
@@ -89,20 +103,24 @@ exports.atribuirPlanoAluno = async (req, res) => {
     
     await transaction.commit();
     
-    // Retornar a associação criada com dados do aluno e plano
-    const resultado = await AlunoPlano.findByPk(alunoPlano.id, {
+    // Retornar a associação criada com dados do usuário e plano
+    const resultado = await AlunoPlano.findOne({
+      where: {
+        IdUsuario: alunoPlano.IdUsuario,
+        PlanoId: alunoPlano.PlanoId
+      },
       include: [
-        { model: Aluno, as: 'Aluno' },
-        { model: Plano, as: 'Plano' }
+        { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] },
+        { model: Plano, as: 'plano' }
       ]
     });
     
     res.status(201).json(resultado);
   } catch (error) {
     await transaction.rollback();
-    console.error('Erro ao atribuir plano ao aluno:', error);
+    console.error('Erro ao atribuir plano ao usuário:', error);
     res.status(500).json({ 
-      message: 'Erro ao atribuir plano ao aluno',
+      message: 'Erro ao atribuir plano ao usuário',
       error: error.message 
     });
   }
@@ -124,55 +142,44 @@ exports.atribuirPlanoAluno = async (req, res) => {
  */
 exports.atualizarProgresso = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { progresso, status, dataConclusao, observacoes } = req.body;
-    
-    // Verificar se a associação existe
-    const alunoPlano = await AlunoPlano.findByPk(id);
+    const { idusuario, PlanoId } = req.body;
+    const { id } = req.params; // id não existe, mas mantido para compatibilidade de rota
+    if (!idusuario || !PlanoId) {
+      return res.status(400).json({ message: 'idusuario e PlanoId são obrigatórios' });
+    }
+    // Buscar pela chave composta
+    const alunoPlano = await AlunoPlano.findOne({
+      where: { IdUsuario: idusuario, PlanoId },
+    });
     if (!alunoPlano) {
       return res.status(404).json({ message: 'Associação aluno-plano não encontrada' });
     }
-    
-    // Preparar os dados da atualização
+    // Atualizar os campos
+    const { progresso, status, dataConclusao, observacoes } = req.body;
     const dadosAtualizacao = {};
-    
-    if (progresso !== undefined) {
-      dadosAtualizacao.progresso = progresso;
-    }
-    
+    if (progresso !== undefined) dadosAtualizacao.progresso = progresso;
     if (status) {
       dadosAtualizacao.status = status;
-      
-      // Se o status mudou para concluído e não foi fornecida uma data de conclusão, use a data atual
       if (status === 'concluído' && !dataConclusao && !alunoPlano.dataConclusao) {
         dadosAtualizacao.dataConclusao = new Date();
       }
     }
-    
     if (dataConclusao) {
       dadosAtualizacao.dataConclusao = dataConclusao;
-      
-      // Se foi fornecida uma data de conclusão mas o status não é concluído, atualize também o status
       if (alunoPlano.status !== 'concluído' && !status) {
         dadosAtualizacao.status = 'concluído';
       }
     }
-    
-    if (observacoes !== undefined) {
-      dadosAtualizacao.observacoes = observacoes;
-    }
-    
-    // Atualizar a associação
+    if (observacoes !== undefined) dadosAtualizacao.observacoes = observacoes;
     await alunoPlano.update(dadosAtualizacao);
-    
-    // Buscar os dados atualizados com informações do aluno e plano
-    const resultado = await AlunoPlano.findByPk(id, {
+    // Buscar os dados atualizados
+    const resultado = await AlunoPlano.findOne({
+      where: { IdUsuario: idusuario, PlanoId },
       include: [
-        { model: Aluno, as: 'Aluno' },
-        { model: Plano, as: 'Plano' }
+        { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] },
+        { model: Plano, as: 'plano' }
       ]
     });
-    
     res.status(200).json(resultado);
   } catch (error) {
     console.error('Erro ao atualizar progresso:', error);
@@ -194,17 +201,18 @@ exports.atualizarProgresso = async (req, res) => {
  */
 exports.removerAssociacao = async (req, res) => {
   try {
-    const { id } = req.params;
-    
-    // Verificar se a associação existe
-    const alunoPlano = await AlunoPlano.findByPk(id);
+    const { idusuario, PlanoId } = req.body;
+    if (!idusuario || !PlanoId) {
+      return res.status(400).json({ message: 'idusuario e PlanoId são obrigatórios' });
+    }
+    // Buscar pela chave composta
+    const alunoPlano = await AlunoPlano.findOne({
+      where: { IdUsuario: idusuario, PlanoId },
+    });
     if (!alunoPlano) {
       return res.status(404).json({ message: 'Associação aluno-plano não encontrada' });
     }
-    
-    // Remover a associação
     await alunoPlano.destroy();
-    
     res.status(200).json({ message: 'Associação aluno-plano removida com sucesso' });
   } catch (error) {
     console.error('Erro ao remover associação aluno-plano:', error);
@@ -228,13 +236,13 @@ exports.listarAssociacoes = async (req, res) => {
     const associacoes = await AlunoPlano.findAll({
       include: [
         { 
-          model: Aluno,
-          as: 'Aluno',
-          attributes: ['id', 'nome', 'email', 'cpf']
+          model: Usuario,
+          as: 'usuario',
+          attributes: ['idusuario', 'login']
         },
         { 
           model: Plano,
-          as: 'Plano',
+          as: 'plano',
           attributes: ['id', 'nome', 'cargo', 'duracao']
         }
       ],
@@ -244,7 +252,7 @@ exports.listarAssociacoes = async (req, res) => {
     // Formatar a resposta para ser mais fácil de usar no frontend
     const associacoesFormatadas = associacoes.map(assoc => ({
       id: assoc.id,
-      alunoId: assoc.AlunoId,
+      idusuario: assoc.IdUsuario,
       planoId: assoc.PlanoId,
       dataInicio: assoc.dataInicio,
       dataPrevisaoTermino: assoc.dataPrevisaoTermino,
@@ -252,8 +260,8 @@ exports.listarAssociacoes = async (req, res) => {
       progresso: assoc.progresso,
       status: assoc.status,
       observacoes: assoc.observacoes,
-      aluno: assoc.Aluno,
-      plano: assoc.Plano
+      usuario: assoc.usuario,
+      plano: assoc.plano
     }));
     
     console.log(`${associacoesFormatadas.length} associações encontradas.`);
@@ -272,27 +280,27 @@ exports.listarAssociacoes = async (req, res) => {
  * 
  * @param {Object} req - Requisição HTTP
  * @param {Object} req.params - Parâmetros da requisição
- * @param {number} req.params.alunoId - ID do aluno
+ * @param {number} req.params.idusuario - ID do usuário
  * @param {Object} res - Resposta HTTP
  * @returns {Array} Lista de planos do aluno com dados de progresso
  */
 exports.buscarPlanosPorAluno = async (req, res) => {
   try {
-    const { alunoId } = req.params;
-    console.log(`Buscando planos para o aluno ID: ${alunoId}`);
+    const { idusuario } = req.params;
+    console.log(`Buscando planos para o usuário ID: ${idusuario}`);
     
-    // Verificar se o aluno existe
-    const aluno = await Aluno.findByPk(alunoId);
-    if (!aluno) {
-      return res.status(404).json({ message: 'Aluno não encontrado' });
+    // Verificar se o usuário existe
+    const usuario = await Usuario.findByPk(idusuario);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
     
-    // Buscar as associações do aluno
+    // Buscar as associações do usuário
     const associacoes = await AlunoPlano.findAll({
-      where: { AlunoId: alunoId },
+      where: { IdUsuario: idusuario },
       include: [{ 
         model: Plano, 
-        as: 'Plano',
+        as: 'plano',
         attributes: ['id', 'nome', 'cargo', 'duracao', 'descricao']
       }],
       order: [['createdAt', 'DESC']]
@@ -301,7 +309,7 @@ exports.buscarPlanosPorAluno = async (req, res) => {
     // Formatar a resposta
     const planosFormatados = associacoes.map(assoc => ({
       id: assoc.id,
-      alunoId: assoc.AlunoId,
+      idusuario: assoc.IdUsuario,
       planoId: assoc.PlanoId,
       dataInicio: assoc.dataInicio,
       dataPrevisaoTermino: assoc.dataPrevisaoTermino,
@@ -309,15 +317,15 @@ exports.buscarPlanosPorAluno = async (req, res) => {
       progresso: assoc.progresso,
       status: assoc.status,
       observacoes: assoc.observacoes,
-      plano: assoc.Plano
+      plano: assoc.plano
     }));
     
-    console.log(`Encontradas ${planosFormatados.length} associações para o aluno ${alunoId}`);
+    console.log(`Encontradas ${planosFormatados.length} associações para o usuário ${idusuario}`);
     res.status(200).json(planosFormatados);
   } catch (error) {
-    console.error('Erro ao buscar planos do aluno:', error);
+    console.error('Erro ao buscar planos do usuário:', error);
     res.status(500).json({ 
-      message: 'Erro ao buscar planos do aluno',
+      message: 'Erro ao buscar planos do usuário',
       error: error.message 
     });
   }
@@ -346,7 +354,7 @@ exports.buscarAlunosPorPlano = async (req, res) => {
     // Buscar as associações do plano - Use PlanoId em vez de planoId
     const associacoes = await AlunoPlano.findAll({
       where: { PlanoId: planoId },
-      include: [{ model: Aluno, as: 'Aluno' }],
+      include: [{ model: Usuario, as: 'usuario' }],
       order: [['progresso', 'DESC']]
     });
     
@@ -369,20 +377,20 @@ exports.buscarAlunosPorPlano = async (req, res) => {
  */
 exports.getPlanoDoAlunoLogado = async (req, res) => {
   try {
-    const alunoId = req.user.id;
+    const idusuario = req.user.id;
     const associacao = await AlunoPlano.findOne({
-      where: { AlunoId: alunoId },
+      where: { IdUsuario: idusuario },
       include: [
-        { model: Aluno, as: 'Aluno', attributes: ['id', 'nome', 'email', 'cpf'] },
-        { model: Plano, as: 'Plano', attributes: ['id', 'nome', 'cargo', 'duracao', 'descricao'] }
+        { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] },
+        { model: Plano, as: 'plano', attributes: ['id', 'nome', 'cargo', 'duracao', 'descricao'] }
       ]
     });
     if (!associacao) {
-      return res.status(404).json({ message: 'Nenhum plano associado a este aluno.' });
+      return res.status(404).json({ message: 'Nenhum plano associado a este usuário.' });
     }
     res.status(200).json({
       id: associacao.id,
-      alunoId: associacao.AlunoId,
+      idusuario: associacao.IdUsuario,
       planoId: associacao.PlanoId,
       dataInicio: associacao.dataInicio,
       dataPrevisaoTermino: associacao.dataPrevisaoTermino,
@@ -390,11 +398,11 @@ exports.getPlanoDoAlunoLogado = async (req, res) => {
       progresso: associacao.progresso,
       status: associacao.status,
       observacoes: associacao.observacoes,
-      aluno: associacao.Aluno,
-      plano: associacao.Plano
+      usuario: associacao.usuario,
+      plano: associacao.plano
     });
   } catch (error) {
-    console.error('Erro ao buscar plano do aluno logado:', error);
-    res.status(500).json({ message: 'Erro ao buscar plano do aluno logado', error: error.message });
+    console.error('Erro ao buscar plano do usuário logado:', error);
+    res.status(500).json({ message: 'Erro ao buscar plano do usuário logado', error: error.message });
   }
 }; 

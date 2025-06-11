@@ -6,18 +6,18 @@ const sequelize = require('../db');
  * Armazena a sprint atual de cada aluno
  * 
  * Campos:
- * - AlunoId: ID do aluno
+ * - idusuario: ID do usuário/aluno
  * - SprintId: ID da sprint atual
  * - dataAtualizacao: Data da última atualização
  */
 const SprintAtual = sequelize.define('SprintAtual', {
-  AlunoId: {
+  idusuario: {
     type: DataTypes.INTEGER,
     allowNull: false,
     unique: true,
     references: {
-      model: 'Alunos',
-      key: 'id'
+      model: 'usuario',
+      key: 'idusuario'
     }
   },
   SprintId: {

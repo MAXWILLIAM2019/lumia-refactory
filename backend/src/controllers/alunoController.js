@@ -8,6 +8,9 @@
 const Aluno = require('../models/Aluno');
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
+const Usuario = require('../models/Usuario');
+const GrupoUsuario = require('../models/GrupoUsuario');
+const AlunoInfo = require('../models/AlunoInfo');
 
 /**
  * Cria um novo aluno
@@ -23,36 +26,63 @@ const bcrypt = require('bcryptjs');
  */
 exports.createAluno = async (req, res) => {
   try {
-    console.log('Dados recebidos:', req.body);
-    
-    // Cria uma cópia dos dados para não modificar o req.body diretamente
-    const dadosAluno = { ...req.body };
-    
-    // Se uma senha foi fornecida, criptografa antes de salvar
-    if (dadosAluno.senha) {
-      dadosAluno.senha = await bcrypt.hash(dadosAluno.senha, 10);
+    const { nome, email, cpf, senha } = req.body;
+    if (!nome || !email || !cpf) {
+      return res.status(400).json({ message: 'Preencha nome, email e CPF.' });
     }
-    
-    const aluno = await Aluno.create(dadosAluno);
-    
-    // Remove a senha do objeto de resposta por segurança
-    const alunoResponse = aluno.toJSON();
-    delete alunoResponse.senha;
-    
-    console.log('Aluno criado:', alunoResponse);
-    res.status(201).json(alunoResponse);
+
+    // Verifica se já existe usuário com o mesmo email (login)
+    const usuarioExistente = await Usuario.findOne({ where: { login: email } });
+    if (usuarioExistente) {
+      return res.status(400).json({ message: 'Já existe um usuário com este email.' });
+    }
+
+    // Verifica se já existe usuário com o mesmo CPF
+    const cpfExistente = await Usuario.findOne({ where: { cpf } });
+    if (cpfExistente) {
+      return res.status(400).json({ message: 'Já existe um usuário com este CPF.' });
+    }
+
+    // Busca o grupo "aluno"
+    const grupoObj = await GrupoUsuario.findOne({ where: { nome: 'aluno' } });
+    if (!grupoObj) {
+      return res.status(400).json({ message: 'Grupo de usuário "aluno" não encontrado.' });
+    }
+
+    // Criptografa a senha se enviada, senão deixa nulo
+    let senhaCriptografada = null;
+    if (senha) {
+      senhaCriptografada = await bcrypt.hash(senha, 10);
+    }
+
+    // Cria o usuário
+    const novoUsuario = await Usuario.create({
+      login: email,
+      senha: senhaCriptografada,
+      grupo: grupoObj.IdGrupo,
+      situacao: true,
+      nome: nome,
+      cpf: cpf
+    });
+
+    // Cria info complementar
+    const novoAlunoInfo = await AlunoInfo.create({
+      IdUsuario: novoUsuario.IdUsuario,
+      email
+    });
+
+    // Monta resposta (sem senha)
+    const usuarioSemSenha = novoUsuario.toJSON();
+    delete usuarioSemSenha.senha;
+    const alunoInfo = novoAlunoInfo.toJSON();
+
+    res.status(201).json({ usuario: usuarioSemSenha, alunoInfo });
   } catch (error) {
     console.error('Erro ao cadastrar aluno:', error);
-    // Tratamento específico para violação de chave única (email ou CPF duplicado)
     if (error.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ 
-        message: 'Já existe um aluno cadastrado com este email ou CPF' 
-      });
+      return res.status(400).json({ message: 'Já existe um aluno cadastrado com este email ou CPF.' });
     }
-    res.status(500).json({ 
-      message: 'Erro ao cadastrar aluno',
-      error: error.message 
-    });
+    res.status(500).json({ message: 'Erro ao cadastrar aluno', error: error.message });
   }
 };
 
@@ -65,31 +95,34 @@ exports.createAluno = async (req, res) => {
  */
 exports.getAllAlunos = async (req, res) => {
   try {
-    console.log('Buscando todos os alunos...');
-    
-    // Verificando se a tabela existe
-    try {
-      await Aluno.findAll({ limit: 1 });
-    } catch (tableError) {
-      console.error('Erro ao acessar tabela de alunos:', tableError);
-      return res.status(500).json({ 
-        message: 'Erro ao acessar tabela de alunos. Verifique se a tabela foi criada corretamente.',
-        error: tableError.message 
-      });
-    }
-    
-    const alunos = await Aluno.findAll({
-      attributes: { exclude: ['senha'] } // Exclui o campo senha da lista
+    console.log('Buscando todos os alunos (nova estrutura)...');
+    // Busca todos os usuários do grupo aluno, incluindo info complementar
+    const alunos = await Usuario.findAll({
+      include: [
+        {
+          model: GrupoUsuario,
+          as: 'grupoUsuario',
+          where: { nome: 'aluno' },
+          attributes: []
+        },
+        {
+          model: AlunoInfo,
+          as: 'alunoInfo',
+        }
+      ],
+      attributes: ['IdUsuario', 'login', 'situacao', 'nome', 'cpf'],
+      order: [['IdUsuario', 'ASC']]
     });
-    console.log(`${alunos.length} alunos encontrados`);
-    
-    // Se a lista estiver vazia, retorna um array vazio em vez de erro
-    if (!alunos || alunos.length === 0) {
-      console.log('Nenhum aluno encontrado, retornando array vazio');
-      return res.json([]);
-    }
-    
-    res.json(alunos);
+    // Formatar resposta
+    const alunosFormatados = alunos.map(u => ({
+      id: u.IdUsuario,
+      email: u.login,
+      situacao: u.situacao,
+      nome: u.nome || '',
+      cpf: u.cpf || '',
+      info: u.alunoInfo || {}
+    }));
+    res.json(alunosFormatados);
   } catch (error) {
     console.error('Erro ao listar alunos:', error);
     res.status(500).json({ 
@@ -126,53 +159,97 @@ exports.getAlunoById = async (req, res) => {
 };
 
 /**
- * Atualiza um aluno
+ * Atualiza os dados de um aluno
  * 
  * @param {Object} req - Requisição HTTP
- * @param {string} req.params.id - ID do aluno
- * @param {Object} req.body - Dados atualizados do aluno
- * @param {string} [req.body.nome] - Novo nome do aluno
- * @param {string} [req.body.email] - Novo email do aluno
- * @param {string} [req.body.cpf] - Novo CPF do aluno
- * @param {string} [req.body.senha] - Nova senha do aluno
+ * @param {Object} req.params - Parâmetros da requisição
+ * @param {number} req.params.id - ID do aluno
+ * @param {Object} req.body - Corpo da requisição contendo dados do aluno
+ * @param {string} [req.body.nome] - Nome do aluno
+ * @param {string} [req.body.email] - Email do aluno
+ * @param {string} [req.body.cpf] - CPF do aluno
  * @param {Object} res - Resposta HTTP
- * @returns {Object} Dados do aluno atualizado ou mensagem de erro
+ * @returns {Object} Aluno atualizado ou mensagem de erro
  */
 exports.updateAluno = async (req, res) => {
   try {
-    // Cria uma cópia dos dados para não modificar o req.body diretamente
-    const { nome, email, cpf, senha } = req.body;
-    
-    // Verifica se o aluno existe
-    const aluno = await Aluno.findByPk(req.params.id);
-    if (!aluno) {
-      return res.status(404).json({ message: 'Aluno não encontrado' });
+    const { id } = req.params;
+    const { nome, email, cpf } = req.body;
+
+    // Busca o usuário
+    const usuario = await Usuario.findOne({
+      where: { IdUsuario: id },
+      include: [
+        {
+          model: GrupoUsuario,
+          as: 'grupoUsuario',
+          where: { nome: 'aluno' },
+          attributes: []
+        }
+      ]
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Aluno não encontrado.' });
     }
 
-    // Prepara o objeto de atualização
-    const dadosAtualizados = {
-      nome,
-      email,
-      cpf
+    // Verifica se o novo CPF já existe em outro usuário
+    if (cpf && cpf !== usuario.cpf) {
+      const cpfExistente = await Usuario.findOne({ where: { cpf } });
+      if (cpfExistente) {
+        return res.status(400).json({ message: 'Já existe um usuário com este CPF.' });
+      }
+    }
+
+    // Verifica se o novo email já existe em outro usuário
+    if (email && email !== usuario.login) {
+      const emailExistente = await Usuario.findOne({ where: { login: email } });
+      if (emailExistente) {
+        return res.status(400).json({ message: 'Já existe um usuário com este email.' });
+      }
+    }
+
+    // Atualiza o usuário
+    await usuario.update({
+      nome: nome || usuario.nome,
+      login: email || usuario.login,
+      cpf: cpf || usuario.cpf
+    });
+
+    // Atualiza o email no AlunoInfo
+    if (email) {
+      await AlunoInfo.update(
+        { email },
+        { where: { IdUsuario: id } }
+      );
+    }
+
+    // Busca o usuário atualizado
+    const usuarioAtualizado = await Usuario.findOne({
+      where: { IdUsuario: id },
+      include: [
+        {
+          model: AlunoInfo,
+          as: 'alunoInfo'
+        }
+      ],
+      attributes: ['IdUsuario', 'login', 'situacao', 'nome', 'cpf']
+    });
+
+    // Monta resposta
+    const resposta = {
+      id: usuarioAtualizado.IdUsuario,
+      email: usuarioAtualizado.login,
+      situacao: usuarioAtualizado.situacao,
+      nome: usuarioAtualizado.nome,
+      cpf: usuarioAtualizado.cpf,
+      info: usuarioAtualizado.alunoInfo
     };
-    
-    // Se uma nova senha foi fornecida, criptografa antes de salvar
-    if (senha) {
-      dadosAtualizados.senha = await bcrypt.hash(senha, 10);
-    }
 
-    // Atualiza os dados
-    await aluno.update(dadosAtualizados);
-
-    // Remove a senha do objeto de resposta por segurança
-    const alunoResponse = aluno.toJSON();
-    delete alunoResponse.senha;
-
-    res.json(alunoResponse);
+    res.json(resposta);
   } catch (error) {
     console.error('Erro ao atualizar aluno:', error);
-    // Aqui poderíamos adicionar tratamento específico para campos duplicados
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: 'Erro ao atualizar aluno', error: error.message });
   }
 };
 
@@ -215,22 +292,16 @@ exports.definirSenha = async (req, res) => {
   try {
     const { id } = req.params;
     const { senha } = req.body;
-    
-    // Valida a entrada
     if (!senha) {
       return res.status(400).json({ message: 'A senha é obrigatória' });
     }
-    
-    // Verifica se o aluno existe
-    const aluno = await Aluno.findByPk(id);
-    if (!aluno) {
-      return res.status(404).json({ message: 'Aluno não encontrado' });
+    // Busca o usuário na tabela usuario
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
-    
-    // Criptografa e salva a senha
     const senhaCriptografada = await bcrypt.hash(senha, 10);
-    await aluno.update({ senha: senhaCriptografada });
-    
+    await usuario.update({ senha: senhaCriptografada });
     res.json({ message: 'Senha definida com sucesso' });
   } catch (error) {
     console.error('Erro ao definir senha:', error);
@@ -249,25 +320,15 @@ exports.definirSenha = async (req, res) => {
 exports.gerarSenha = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    // Verifica se o aluno existe
-    const aluno = await Aluno.findByPk(id);
-    if (!aluno) {
-      return res.status(404).json({ message: 'Aluno não encontrado' });
+    // Busca o usuário na tabela usuario
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
     }
-    
-    // Gera uma senha aleatória de 8 caracteres
     const senhaGerada = Math.random().toString(36).slice(-8);
-    
-    // Criptografa e salva a senha
     const senhaCriptografada = await bcrypt.hash(senhaGerada, 10);
-    await aluno.update({ senha: senhaCriptografada });
-    
-    // Retorna a senha gerada (em texto plano) para exibição única
-    res.json({ 
-      message: 'Senha gerada com sucesso',
-      senha: senhaGerada
-    });
+    await usuario.update({ senha: senhaCriptografada });
+    res.json({ message: 'Senha gerada com sucesso', senha: senhaGerada });
   } catch (error) {
     console.error('Erro ao gerar senha:', error);
     res.status(500).json({ message: 'Erro ao gerar senha', error: error.message });

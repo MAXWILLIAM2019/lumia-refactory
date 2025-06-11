@@ -11,14 +11,15 @@ const Meta = require('../models/Meta');
 exports.getSprintAtual = async (req, res) => {
   try {
     console.log('========== BUSCANDO SPRINT ATUAL ==========');
-    const alunoId = req.aluno.id;
-    console.log('ID do aluno:', alunoId);
+    const idusuario = req.aluno.id;
+    console.log('ID do usuário:', idusuario);
 
-    // Primeiro, buscar o plano do aluno
+    // Primeiro, buscar o plano do usuário
     const alunoPlano = await AlunoPlano.findOne({
-      where: { AlunoId: alunoId },
+      where: { IdUsuario: idusuario },
       include: [{
         model: Plano,
+        as: 'plano',
         include: [{
           model: Sprint,
           as: 'sprints',
@@ -30,17 +31,17 @@ exports.getSprintAtual = async (req, res) => {
       }]
     });
 
-    if (!alunoPlano || !alunoPlano.Plano || !alunoPlano.Plano.sprints || alunoPlano.Plano.sprints.length === 0) {
-      return res.status(404).json({ message: 'Aluno não possui plano de estudo com sprints' });
+    if (!alunoPlano || !alunoPlano.plano || !alunoPlano.plano.sprints || alunoPlano.plano.sprints.length === 0) {
+      return res.status(404).json({ message: 'Usuário não possui plano de estudo com sprints' });
     }
 
     // Ordenar as sprints por posição
-    const sprintsOrdenadas = alunoPlano.Plano.sprints.sort((a, b) => a.posicao - b.posicao);
+    const sprintsOrdenadas = alunoPlano.plano.sprints.sort((a, b) => a.posicao - b.posicao);
     const primeiraSprint = sprintsOrdenadas[0];
 
-    // Buscar a sprint atual do aluno
+    // Buscar a sprint atual do usuário
     let sprintAtual = await SprintAtual.findOne({
-      where: { AlunoId: alunoId },
+      where: { idusuario },
       include: [{
         model: Sprint,
         include: [{
@@ -53,7 +54,7 @@ exports.getSprintAtual = async (req, res) => {
     // Se não existir sprint atual, criar com a primeira sprint do plano
     if (!sprintAtual) {
       sprintAtual = await SprintAtual.create({
-        AlunoId: alunoId,
+        idusuario,
         SprintId: primeiraSprint.id
       });
 
@@ -81,7 +82,7 @@ exports.getSprintAtual = async (req, res) => {
  */
 exports.atualizarSprintAtual = async (req, res) => {
   try {
-    const alunoId = req.aluno.id;
+    const idusuario = req.aluno.id;
     const { sprintId } = req.body;
 
     if (!sprintId) {
@@ -94,8 +95,8 @@ exports.atualizarSprintAtual = async (req, res) => {
       return res.status(404).json({ message: 'Sprint não encontrada' });
     }
 
-    // Verificar se a sprint pertence ao plano do aluno
-    const aluno = await Aluno.findByPk(alunoId, {
+    // Verificar se a sprint pertence ao plano do usuário
+    const aluno = await Aluno.findByPk(idusuario, {
       include: [{
         model: Plano,
         as: 'planos',
@@ -111,12 +112,12 @@ exports.atualizarSprintAtual = async (req, res) => {
     );
 
     if (!sprintPertenceAoPlano) {
-      return res.status(403).json({ message: 'Sprint não pertence ao plano do aluno' });
+      return res.status(403).json({ message: 'Sprint não pertence ao plano do usuário' });
     }
 
     // Atualizar ou criar o registro da sprint atual
     const [sprintAtual, created] = await SprintAtual.findOrCreate({
-      where: { AlunoId: alunoId },
+      where: { idusuario },
       defaults: {
         SprintId: sprintId
       }
@@ -150,24 +151,25 @@ exports.atualizarSprintAtual = async (req, res) => {
 exports.inicializarSprintAtual = async (req, res) => {
   try {
     console.log('========== INICIALIZANDO SPRINT ATUAL ==========');
-    const alunoId = req.user.aluno.id;
-    console.log('ID do aluno:', alunoId);
+    const idusuario = req.user.aluno.id;
+    console.log('ID do usuário:', idusuario);
 
     // Verificar se já existe uma sprint atual
     const sprintAtualExistente = await SprintAtual.findOne({
-      where: { AlunoId: alunoId }
+      where: { idusuario }
     });
 
     if (sprintAtualExistente) {
-      console.log('Aluno já possui sprint atual');
-      return res.status(400).json({ message: 'Aluno já possui sprint atual' });
+      console.log('Usuário já possui sprint atual');
+      return res.status(400).json({ message: 'Usuário já possui sprint atual' });
     }
 
-    // Buscar o plano do aluno
+    // Buscar o plano do usuário
     const alunoPlano = await AlunoPlano.findOne({
-      where: { AlunoId: alunoId },
+      where: { IdUsuario: idusuario },
       include: [{
         model: Plano,
+        as: 'plano',
         include: [{
           model: Sprint,
           as: 'sprints',
@@ -179,17 +181,17 @@ exports.inicializarSprintAtual = async (req, res) => {
       }]
     });
 
-    if (!alunoPlano || !alunoPlano.Plano || !alunoPlano.Plano.sprints || alunoPlano.Plano.sprints.length === 0) {
-      return res.status(404).json({ message: 'Aluno não possui plano de estudo com sprints' });
+    if (!alunoPlano || !alunoPlano.plano || !alunoPlano.plano.sprints || alunoPlano.plano.sprints.length === 0) {
+      return res.status(404).json({ message: 'Usuário não possui plano de estudo com sprints' });
     }
 
     // Ordenar as sprints por posição
-    const sprintsOrdenadas = alunoPlano.Plano.sprints.sort((a, b) => a.posicao - b.posicao);
+    const sprintsOrdenadas = alunoPlano.plano.sprints.sort((a, b) => a.posicao - b.posicao);
     const primeiraSprint = sprintsOrdenadas[0];
     
     // Criar o registro da sprint atual
     const sprintAtual = await SprintAtual.create({
-      AlunoId: alunoId,
+      idusuario,
       SprintId: primeiraSprint.id
     });
 

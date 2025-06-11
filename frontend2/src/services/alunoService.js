@@ -96,5 +96,21 @@ export const alunoService = {
       console.error('Erro ao gerar senha:', error);
       throw new Error(error.response?.data?.message || 'Erro ao gerar senha para o aluno');
     }
+  },
+
+  /**
+   * Atualiza os dados de um aluno
+   * @param {number|string} id - ID do aluno
+   * @param {Object} dados - Dados a serem atualizados
+   * @returns {Promise<Object>} Dados do aluno atualizado
+   */
+  async atualizarAluno(id, dados) {
+    try {
+      const response = await api.put(`/alunos/${id}`, dados);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao atualizar aluno:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao atualizar aluno');
+    }
   }
 }; 

@@ -15,7 +15,8 @@ const {
   adminOnly, 
   alunoOnly, 
   ownProfileOnly, 
-  checkPermission 
+  checkPermission,
+  ownProfileOrAdmin
 } = require('../middleware');
 
 /**
@@ -96,7 +97,7 @@ router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
  * @param   {id} ID do aluno
  * @body    {senha} Nova senha do aluno
  */
-router.post('/:id/definir-senha', auth, ownProfileOnly('id'), alunoController.definirSenha);
+router.post('/:id/definir-senha', auth, ownProfileOrAdmin('id'), alunoController.definirSenha);
 
 /**
  * @route   POST /api/alunos/:id/gerar-senha

@@ -15,6 +15,7 @@ import { alunoPlanoService } from '../../services/alunoPlanoService';
 import api from '../../services/api';
 import styles from './RegisterStudent.module.css';
 import SenhaModal from '../../components/SenhaModal';
+import AlunoEditModal from '../../components/AlunoEditModal';
 
 export default function RegisterStudent() {
   const navigate = useNavigate();
@@ -53,6 +54,10 @@ export default function RegisterStudent() {
   // Estado para modal de senha
   const [showSenhaModal, setShowSenhaModal] = useState(false);
   const [alunoParaSenha, setAlunoParaSenha] = useState(null);
+
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [alunoEditando, setAlunoEditando] = useState(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   /**
    * Efeito que carrega os alunos quando a lista é exibida
@@ -272,29 +277,35 @@ export default function RegisterStudent() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       // Prepara os dados para envio, removendo formatação do CPF
       const dadosEnvio = {
         ...formData,
         cpf: stripCPF(formData.cpf)
       };
-      
+
       console.log('Enviando dados:', dadosEnvio);
-      const alunoResponse = await alunoService.cadastrarAluno(dadosEnvio);
-      console.log('Resposta do servidor (aluno):', alunoResponse);
-      
+      const response = await alunoService.cadastrarAluno(dadosEnvio);
+      console.log('Resposta do servidor (aluno):', response);
+
+      // Extrai os dados do novo fluxo
+      const usuario = response.usuario;
+      const alunoInfo = response.alunoInfo;
+      const idUsuario = usuario?.IdUsuario;
+
       // Se for para associar a um plano, faz isso após cadastrar o aluno
-      if (associarPlano && planoData.planoId) {
+      if (associarPlano && planoData.planoId && idUsuario) {
         console.log('Associando aluno ao plano:', {
-          alunoId: alunoResponse.id,
-          ...planoData
+          idusuario: idUsuario,
+          PlanoId: planoData.planoId,
+          ...planoData,
         });
-        
         try {
           const associacaoResponse = await alunoPlanoService.atribuirPlano({
-            alunoId: alunoResponse.id,
-            ...planoData
+            idusuario: idUsuario,
+            PlanoId: planoData.planoId,
+            ...planoData,
           });
           console.log('Resposta do servidor (associação):', associacaoResponse);
         } catch (associacaoError) {
@@ -302,11 +313,15 @@ export default function RegisterStudent() {
           alert(`Aluno cadastrado com sucesso, mas não foi possível associá-lo ao plano. Motivo: ${associacaoError.message}`);
         }
       }
-      
+
       // Depois do cadastro, abrir o modal de senha
-      setAlunoParaSenha(alunoResponse);
+      setAlunoParaSenha({
+        id: idUsuario,
+        nome: usuario.nome,
+        email: usuario.login
+      });
       setShowSenhaModal(true);
-      
+
       // Limpa o formulário
       setFormData({ nome: '', email: '', cpf: '' });
       setPlanoData({
@@ -316,14 +331,21 @@ export default function RegisterStudent() {
         observacoes: ''
       });
       setAssociarPlano(false);
-      
-      // Atualiza a lista de alunos se estiver visível
-      if (showList) {
-        carregarAlunos();
-      }
+
     } catch (error) {
-      console.error('Erro detalhado:', error);
-      setError(error.message || 'Erro ao cadastrar aluno. Tente novamente.');
+      console.error('Erro ao cadastrar aluno:', error);
+      if (error.message.includes('Já existe um usuário com este email') || 
+          error.message.includes('Já existe um usuário com este CPF')) {
+        setShowToast(true);
+        if (toastTimeout.current) {
+          clearTimeout(toastTimeout.current);
+        }
+        toastTimeout.current = setTimeout(() => {
+          setShowToast(false);
+        }, 3000);
+      } else {
+        setError(error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -392,6 +414,36 @@ export default function RegisterStudent() {
     
     const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
     return text.replace(regex, '<mark class="' + styles.highlight + '">$1</mark>');
+  };
+
+  // Função para abrir modal de edição
+  const handleEditarAluno = (aluno) => {
+    setAlunoEditando(aluno);
+    setEditModalOpen(true);
+    carregarPlanos();
+  };
+
+  // Função para salvar edição
+  const handleSalvarEdicao = async (dadosEditados) => {
+    setSavingEdit(true);
+    try {
+      // Atualizar dados do aluno
+      await alunoService.atualizarAluno(alunoEditando.id, dadosEditados);
+      // Se plano foi alterado, associar plano
+      if (dadosEditados.planoId) {
+        await alunoPlanoService.atribuirPlano({
+          idusuario: alunoEditando.id,
+          PlanoId: dadosEditados.planoId
+        });
+      }
+      setEditModalOpen(false);
+      setAlunoEditando(null);
+      carregarAlunos();
+    } catch (error) {
+      alert('Erro ao salvar edição: ' + (error.message || 'Erro desconhecido'));
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   return (
@@ -665,6 +717,7 @@ export default function RegisterStudent() {
                     <th>E-mail</th>
                     <th>CPF</th>
                     <th>Plano</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -697,6 +750,11 @@ export default function RegisterStudent() {
                         ) : (
                           <span className={styles.semPlano}>Sem plano</span>
                         )}
+                      </td>
+                      <td>
+                        <button onClick={() => handleEditarAluno(aluno)} className={styles.editBtn}>
+                          Editar
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -731,6 +789,15 @@ export default function RegisterStudent() {
           )}
         </div>
       )}
+      {/* Modal de edição de aluno */}
+      <AlunoEditModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        aluno={alunoEditando}
+        planos={planos}
+        onSave={handleSalvarEdicao}
+        loading={savingEdit}
+      />
     </div>
   );
 }

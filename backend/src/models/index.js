@@ -62,19 +62,13 @@ Meta.belongsTo(Sprint);
 
 // Relacionamento Aluno -> Plano (via AlunoPlano)
 console.log('Configurando relacionamento Aluno -> Plano');
-Aluno.belongsToMany(Plano, { 
-  through: AlunoPlano, 
-  as: 'planos' 
-});
-Plano.belongsToMany(Aluno, { 
-  through: AlunoPlano, 
-  as: 'alunos' 
-});
+// Aluno.belongsToMany(Plano, { through: AlunoPlano, as: 'planos' });
+// Plano.belongsToMany(Aluno, { through: AlunoPlano, as: 'alunos' });
 
 // Relacionamento Aluno -> SprintAtual
 console.log('Configurando relacionamento Aluno -> SprintAtual');
-Aluno.hasOne(SprintAtual, { foreignKey: 'AlunoId' });
-SprintAtual.belongsTo(Aluno, { foreignKey: 'AlunoId' });
+// Aluno.hasOne(SprintAtual, { foreignKey: 'AlunoId' });
+// SprintAtual.belongsTo(Aluno, { foreignKey: 'AlunoId' });
 
 // Relacionamento Sprint -> SprintAtual
 console.log('Configurando relacionamento Sprint -> SprintAtual');

@@ -112,9 +112,33 @@ const ownProfileOnly = (paramName = 'id') => {
   };
 };
 
+/**
+ * Middleware para permitir acesso ao próprio perfil OU a administradores
+ * Útil para permitir que admins gerenciem perfis de outros usuários
+ */
+const ownProfileOrAdmin = (paramName = 'id') => {
+  return (req, res, next) => {
+    const paramId = parseInt(req.params[paramName]);
+    const userId = req.user?.id;
+    // Permite se for admin
+    if (req.user?.role === 'administrador') {
+      return next();
+    }
+    // Permite se for o próprio perfil
+    if (userId && paramId === userId) {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      message: 'Você só pode acessar seu próprio perfil ou ser administrador para esta ação'
+    });
+  };
+};
+
 module.exports = {
   checkPermission,
   adminOnly,
   alunoOnly,
-  ownProfileOnly
+  ownProfileOnly,
+  ownProfileOrAdmin
 }; 
