@@ -162,7 +162,11 @@ exports.criarInstancia = async (req, res) => {
         
         // Calcular data de fim baseada na duração em dias
         const dataFimAtual = new Date(dataInicioAtual);
-        dataFimAtual.setDate(dataFimAtual.getDate() + (sprintMestre.duracao_dias || 7));
+        // Calcular duração baseada nas datas da sprint mestre ou usar 7 dias como padrão
+        const duracaoDias = sprintMestre.dataInicio && sprintMestre.dataFim 
+          ? Math.ceil((new Date(sprintMestre.dataFim) - new Date(sprintMestre.dataInicio)) / (1000 * 60 * 60 * 24))
+          : 7;
+        dataFimAtual.setDate(dataFimAtual.getDate() + duracaoDias);
         
         const novaSprint = await Sprint.create({
           nome: sprintMestre.nome,

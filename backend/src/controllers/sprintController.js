@@ -1,29 +1,25 @@
-const Sprint = require('../models/Sprint');
-const Meta = require('../models/Meta');
-const Plano = require('../models/Plano');
+const { SprintMestre, MetaMestre, PlanoMestre, Sprint, Meta, Plano } = require('../models');
 const sequelize = require('../db');
 const { Op } = require('sequelize');
 
 /**
- * Controller de Sprint
- * Gerencia todas as operações relacionadas a sprints e suas metas
+ * Controller de SprintMestre
+ * Gerencia todas as operações relacionadas a sprints mestre e suas metas mestre
  */
 
 /**
- * Cria uma nova sprint com suas metas
+ * Cria uma nova sprint mestre com suas metas mestre
  * @param {Object} req - Requisição HTTP
  * @param {Object} req.body - Corpo da requisição contendo dados da sprint
  * @param {string} req.body.nome - Nome da sprint
- * @param {string} req.body.dataInicio - Data de início
- * @param {string} req.body.dataFim - Data de término
- * @param {number} req.body.planoId - ID do plano associado
+ * @param {number} req.body.planoId - ID do plano mestre associado
  * @param {Array} req.body.metas - Lista de metas da sprint
  * @param {Object} res - Resposta HTTP
  */
 exports.createSprint = async (req, res) => {
   try {
     // Log do header Authorization
-    console.log('Authorization header recebido (cadastrar sprint):', req.header('Authorization'));
+    console.log('Authorization header recebido (cadastrar sprint mestre):', req.header('Authorization'));
     const { nome, dataInicio, dataFim, planoId, metas } = req.body;
 
     // Verificar se o planoId foi fornecido
@@ -31,176 +27,265 @@ exports.createSprint = async (req, res) => {
       return res.status(400).json({ message: 'É necessário associar a sprint a um plano de estudo' });
     }
 
-    // Verificar se o plano existe
-    const plano = await Plano.findByPk(planoId);
-    if (!plano) {
+    // Verificar se o plano mestre existe
+    const planoMestre = await PlanoMestre.findByPk(planoId);
+    if (!planoMestre) {
       return res.status(404).json({ message: 'Plano de estudo não encontrado' });
     }
 
-    // Determinar a próxima posição disponível para este plano
-    const ultimaSprint = await Sprint.findOne({
-      where: { PlanoId: planoId },
+    // Determinar a próxima posição disponível para este plano mestre
+    const ultimaSprintMestre = await SprintMestre.findOne({
+      where: { PlanoMestreId: planoId },
       order: [['posicao', 'DESC']]
     });
     
-    const proximaPosicao = ultimaSprint ? ultimaSprint.posicao + 1 : 1;
+    const proximaPosicao = ultimaSprintMestre ? ultimaSprintMestre.posicao + 1 : 1;
 
-    // Criar a sprint
-    const sprint = await Sprint.create({
+    // Criar a sprint mestre
+    const sprintMestre = await SprintMestre.create({
       nome,
-      dataInicio,
-      dataFim,
-      PlanoId: planoId,
+      dataInicio: dataInicio || null,
+      dataFim: dataFim || null,
+      PlanoMestreId: planoId,
       posicao: proximaPosicao
     });
 
-    // Criar as metas associadas à sprint
+    // Criar as metas mestre associadas à sprint mestre
     if (metas && metas.length > 0) {
-      const metasCriadas = await Promise.all(
+      const metasMestresCriadas = await Promise.all(
         metas.map(meta => 
-          Meta.create({
-            ...meta,
-            SprintId: sprint.id
+          MetaMestre.create({
+            disciplina: meta.disciplina,
+            tipo: meta.tipo,
+            titulo: meta.titulo,
+            comandos: meta.comandos,
+            link: meta.link,
+            relevancia: meta.relevancia,
+            tempoEstudado: meta.tempoEstudado || '00:00',
+            desempenho: meta.desempenho || 0,
+            status: meta.status || 'Pendente',
+            totalQuestoes: meta.totalQuestoes || 0,
+            questoesCorretas: meta.questoesCorretas || 0,
+            SprintMestreId: sprintMestre.id
           })
         )
       );
-      sprint.metas = metasCriadas;
+      
+      // Adicionar as metas ao objeto de resposta para compatibilidade
+      sprintMestre.metas = metasMestresCriadas.map(metaMestre => ({
+        id: metaMestre.id,
+        disciplina: metaMestre.disciplina,
+        tipo: metaMestre.tipo,
+        titulo: metaMestre.titulo,
+        comandos: metaMestre.comandos,
+        link: metaMestre.link,
+        relevancia: metaMestre.relevancia,
+        tempoEstudado: metaMestre.tempoEstudado,
+        desempenho: metaMestre.desempenho,
+        status: metaMestre.status,
+        totalQuestoes: metaMestre.totalQuestoes,
+        questoesCorretas: metaMestre.questoesCorretas,
+        SprintId: sprintMestre.id // Para compatibilidade com frontend
+      }));
     }
 
-    res.status(201).json(sprint);
+    // Transformar para formato esperado pelo frontend
+    const sprintFormatada = {
+      id: sprintMestre.id,
+      nome: sprintMestre.nome,
+      PlanoId: planoId, // Para compatibilidade com frontend
+      posicao: sprintMestre.posicao,
+      dataInicio: sprintMestre.dataInicio, // Agora aceita datas diretamente
+      dataFim: sprintMestre.dataFim,
+      metas: sprintMestre.metas || [],
+      createdAt: sprintMestre.createdAt,
+      updatedAt: sprintMestre.updatedAt
+    };
+
+    res.status(201).json(sprintFormatada);
   } catch (error) {
-    console.error('Erro ao criar sprint:', error);
+    console.error('Erro ao criar sprint mestre:', error);
     res.status(400).json({ message: error.message });
   }
 };
 
 /**
- * Busca todas as sprints com suas metas
+ * Busca todas as sprints mestre com suas metas mestre
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
  */
 exports.getAllSprints = async (req, res) => {
   try {
-    const sprints = await Sprint.findAll({
+    const sprintsMestre = await SprintMestre.findAll({
       include: [
         {
-          model: Meta,
-          as: 'metas'
+          model: MetaMestre,
+          as: 'metasMestre'
         },
         {
-          model: Plano,
+          model: PlanoMestre,
+          as: 'planoMestre',
           attributes: ['id', 'nome', 'cargo', 'duracao']
         }
       ],
       order: [
-        ['PlanoId', 'ASC'],
+        ['PlanoMestreId', 'ASC'],
         ['posicao', 'ASC']
       ]
     });
-    res.json(sprints);
+
+    // Transformar para formato esperado pelo frontend
+    const sprintsFormatadas = sprintsMestre.map(sprintMestre => ({
+      id: sprintMestre.id,
+      nome: sprintMestre.nome,
+      PlanoId: sprintMestre.PlanoMestreId, // Para compatibilidade
+      posicao: sprintMestre.posicao,
+      dataInicio: sprintMestre.dataInicio,
+      dataFim: sprintMestre.dataFim,
+      metas: sprintMestre.metasMestre?.map(metaMestre => ({
+        id: metaMestre.id,
+        disciplina: metaMestre.disciplina,
+        tipo: metaMestre.tipo,
+        titulo: metaMestre.titulo,
+        comandos: metaMestre.comandos,
+        link: metaMestre.link,
+        relevancia: metaMestre.relevancia,
+        tempoEstudado: metaMestre.tempoEstudado,
+        desempenho: metaMestre.desempenho,
+        status: metaMestre.status,
+        totalQuestoes: metaMestre.totalQuestoes,
+        questoesCorretas: metaMestre.questoesCorretas,
+        SprintId: sprintMestre.id
+      })) || [],
+      Plano: sprintMestre.planoMestre ? {
+        id: sprintMestre.planoMestre.id,
+        nome: sprintMestre.planoMestre.nome,
+        cargo: sprintMestre.planoMestre.cargo,
+        duracao: sprintMestre.planoMestre.duracao
+      } : null,
+      createdAt: sprintMestre.createdAt,
+      updatedAt: sprintMestre.updatedAt
+    }));
+    
+    res.json(sprintsFormatadas);
   } catch (error) {
-    console.error('Erro ao buscar sprints:', error);
+    console.error('Erro ao buscar sprints mestre:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 /**
- * Busca uma sprint específica com suas metas
+ * Busca uma sprint mestre específica com suas metas mestre
  * @param {Object} req - Requisição HTTP
- * @param {string} req.params.id - ID da sprint
+ * @param {string} req.params.id - ID da sprint mestre
  * @param {Object} res - Resposta HTTP
  */
 exports.getSprintById = async (req, res) => {
   try {
-    const sprint = await Sprint.findByPk(req.params.id, {
+    const sprintMestre = await SprintMestre.findByPk(req.params.id, {
       include: [
         {
-          model: Meta,
-          as: 'metas',
+          model: MetaMestre,
+          as: 'metasMestre',
           order: [['id', 'ASC']]
         },
         {
-          model: Plano,
+          model: PlanoMestre,
+          as: 'planoMestre',
           attributes: ['id', 'nome', 'cargo', 'duracao']
         }
       ]
     });
     
-    if (!sprint) {
+    if (!sprintMestre) {
       return res.status(404).json({ message: 'Sprint não encontrada' });
     }
     
-    res.json(sprint);
+    // Transformar para formato esperado pelo frontend
+    const sprintFormatada = {
+      id: sprintMestre.id,
+      nome: sprintMestre.nome,
+             PlanoId: sprintMestre.PlanoMestreId,
+       posicao: sprintMestre.posicao,
+       dataInicio: sprintMestre.dataInicio,
+       dataFim: sprintMestre.dataFim,
+      metas: sprintMestre.metasMestre?.map(metaMestre => ({
+        id: metaMestre.id,
+        disciplina: metaMestre.disciplina,
+        tipo: metaMestre.tipo,
+        titulo: metaMestre.titulo,
+        comandos: metaMestre.comandos,
+        link: metaMestre.link,
+        relevancia: metaMestre.relevancia,
+        tempoEstudado: metaMestre.tempoEstudado,
+        desempenho: metaMestre.desempenho,
+        status: metaMestre.status,
+        totalQuestoes: metaMestre.totalQuestoes,
+        questoesCorretas: metaMestre.questoesCorretas,
+        SprintId: sprintMestre.id
+      })) || [],
+      Plano: sprintMestre.planoMestre ? {
+        id: sprintMestre.planoMestre.id,
+        nome: sprintMestre.planoMestre.nome,
+        cargo: sprintMestre.planoMestre.cargo,
+        duracao: sprintMestre.planoMestre.duracao
+      } : null,
+      createdAt: sprintMestre.createdAt,
+      updatedAt: sprintMestre.updatedAt
+    };
+    
+    res.json(sprintFormatada);
   } catch (error) {
-    console.error('Erro ao buscar sprint:', error);
+    console.error('Erro ao buscar sprint mestre:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 /**
- * Atualiza o status da sprint baseado no status das metas
- * @param {number} sprintId - ID da sprint
+ * Função removida: atualizarStatusSprint
+ * 
+ * Esta função não se aplica aos templates (sprints mestre),
+ * pois os templates não têm status de progresso.
+ * 
+ * O status será calculado apenas nas instâncias de sprint do aluno (feature futura).
  */
-const atualizarStatusSprint = async (sprintId) => {
-  const sprint = await Sprint.findByPk(sprintId, {
-    include: [{ model: Meta, as: 'metas' }]
-  });
 
-  if (!sprint || !sprint.metas) return;
-
-  const totalMetas = sprint.metas.length;
-  const metasConcluidas = sprint.metas.filter(meta => meta.status === 'Concluída').length;
-
-  let novoStatus;
-  if (metasConcluidas === 0) {
-    novoStatus = 'Pendente';
-  } else if (metasConcluidas === totalMetas) {
-    novoStatus = 'Concluída';
-  } else {
-    novoStatus = 'Em Andamento';
-  }
-
-  if (sprint.status !== novoStatus) {
-    await sprint.update({ status: novoStatus });
-  }
-};
-
-// Atualizar uma sprint e suas metas
+// Atualizar uma sprint mestre e suas metas mestre
 exports.updateSprint = async (req, res) => {
   try {
     const { nome, dataInicio, dataFim, planoId, metas } = req.body;
     
-    const sprint = await Sprint.findByPk(req.params.id);
-    if (!sprint) {
+    const sprintMestre = await SprintMestre.findByPk(req.params.id);
+    if (!sprintMestre) {
       return res.status(404).json({ message: 'Sprint não encontrada' });
     }
 
-    // Verificar se o plano existe, se um ID foi fornecido
+    // Verificar se o plano mestre existe, se um ID foi fornecido
     if (planoId) {
-      const plano = await Plano.findByPk(planoId);
-      if (!plano) {
+      const planoMestre = await PlanoMestre.findByPk(planoId);
+      if (!planoMestre) {
         return res.status(404).json({ message: 'Plano de estudo não encontrado' });
       }
     }
 
-    // Atualizar dados da sprint
-    await sprint.update({
+    // Atualizar dados da sprint mestre
+    await sprintMestre.update({
       nome,
-      dataInicio,
-      dataFim,
-      PlanoId: planoId || sprint.PlanoId
+      dataInicio: dataInicio !== undefined ? dataInicio : sprintMestre.dataInicio,
+      dataFim: dataFim !== undefined ? dataFim : sprintMestre.dataFim,
+      PlanoMestreId: planoId || sprintMestre.PlanoMestreId
     });
 
-    // Atualizar metas
+    // Atualizar metas mestre (simplificado para templates)
     if (metas) {
-      // Buscar metas existentes para preservar dados de evolução
-      const metasExistentes = await Meta.findAll({
-        where: { SprintId: sprint.id }
+      // Buscar metas mestre existentes
+      const metasMestreExistentes = await MetaMestre.findAll({
+        where: { SprintMestreId: sprintMestre.id }
       });
 
       // Mapear metas existentes por ID para fácil acesso
       const metasExistentesMap = new Map(
-        metasExistentes.map(meta => [meta.id, meta])
+        metasMestreExistentes.map(meta => [meta.id, meta])
       );
 
       // Array para armazenar os IDs das metas que serão mantidas
@@ -209,44 +294,47 @@ exports.updateSprint = async (req, res) => {
       // Processar cada meta da requisição
       for (const meta of metas) {
         if (meta.id && metasExistentesMap.has(meta.id)) {
-          // Se a meta já existe, atualizar preservando dados de evolução
+          // Se a meta mestre já existe, atualizar
           const metaExistente = metasExistentesMap.get(meta.id);
           await metaExistente.update({
             disciplina: meta.disciplina,
             tipo: meta.tipo,
             titulo: meta.titulo,
-            descricao: meta.descricao,
-            relevancia: meta.relevancia,
-            comando: meta.comando,
+            comandos: meta.comandos,
             link: meta.link,
-            // Preservar dados de evolução
-            status: metaExistente.status,
-            tempoEstudado: metaExistente.tempoEstudado,
-            desempenho: metaExistente.desempenho,
-            totalQuestoes: metaExistente.totalQuestoes,
-            questoesCorretas: metaExistente.questoesCorretas
+            relevancia: meta.relevancia,
+            tempoEstudado: meta.tempoEstudado !== undefined ? meta.tempoEstudado : metaExistente.tempoEstudado,
+            desempenho: meta.desempenho !== undefined ? meta.desempenho : metaExistente.desempenho,
+            status: meta.status !== undefined ? meta.status : metaExistente.status,
+            totalQuestoes: meta.totalQuestoes !== undefined ? meta.totalQuestoes : metaExistente.totalQuestoes,
+            questoesCorretas: meta.questoesCorretas !== undefined ? meta.questoesCorretas : metaExistente.questoesCorretas
           });
           idsMetasManter.push(meta.id);
         } else if (!meta.id) {
-          // Se é uma nova meta (sem ID), criar
-          const novaMeta = await Meta.create({
-            ...meta,
-            SprintId: sprint.id,
-            status: 'Pendente',
-            tempoEstudado: '00:00',
-            desempenho: 0,
-            totalQuestoes: 0,
-            questoesCorretas: 0
+          // Se é uma nova meta mestre (sem ID), criar
+          const novaMetaMestre = await MetaMestre.create({
+            disciplina: meta.disciplina,
+            tipo: meta.tipo,
+            titulo: meta.titulo,
+            comandos: meta.comandos,
+            link: meta.link,
+            relevancia: meta.relevancia,
+            tempoEstudado: meta.tempoEstudado || '00:00',
+            desempenho: meta.desempenho || 0,
+            status: meta.status || 'Pendente',
+            totalQuestoes: meta.totalQuestoes || 0,
+            questoesCorretas: meta.questoesCorretas || 0,
+            SprintMestreId: sprintMestre.id
           });
-          idsMetasManter.push(novaMeta.id);
+          idsMetasManter.push(novaMetaMestre.id);
         }
       }
 
       // Remover apenas as metas que não estão mais presentes na requisição
       if (idsMetasManter.length > 0) {
-        await Meta.destroy({
+        await MetaMestre.destroy({
           where: {
-            SprintId: sprint.id,
+            SprintMestreId: sprintMestre.id,
             id: {
               [Op.notIn]: idsMetasManter
             }
@@ -255,59 +343,91 @@ exports.updateSprint = async (req, res) => {
       }
     }
 
-    // Buscar sprint atualizada com metas
-    const sprintAtualizada = await Sprint.findByPk(sprint.id, {
+    // Buscar sprint mestre atualizada com metas mestre
+    const sprintMestreAtualizada = await SprintMestre.findByPk(sprintMestre.id, {
       include: [
         {
-          model: Meta,
-          as: 'metas'
+          model: MetaMestre,
+          as: 'metasMestre'
         },
         {
-          model: Plano,
+          model: PlanoMestre,
+          as: 'planoMestre',
           attributes: ['id', 'nome', 'cargo', 'duracao']
         }
       ]
     });
 
-    // Atualizar status da sprint após atualizar as metas
-    await atualizarStatusSprint(sprint.id);
+    // Transformar para formato esperado pelo frontend
+    const sprintFormatada = {
+      id: sprintMestreAtualizada.id,
+      nome: sprintMestreAtualizada.nome,
+      PlanoId: sprintMestreAtualizada.PlanoMestreId,
+      posicao: sprintMestreAtualizada.posicao,
+      dataInicio: sprintMestreAtualizada.dataInicio,
+      dataFim: sprintMestreAtualizada.dataFim,
+      metas: sprintMestreAtualizada.metasMestre?.map(metaMestre => ({
+        id: metaMestre.id,
+        disciplina: metaMestre.disciplina,
+        tipo: metaMestre.tipo,
+        titulo: metaMestre.titulo,
+        comandos: metaMestre.comandos,
+        link: metaMestre.link,
+        relevancia: metaMestre.relevancia,
+        tempoEstudado: metaMestre.tempoEstudado,
+        desempenho: metaMestre.desempenho,
+        status: metaMestre.status,
+        totalQuestoes: metaMestre.totalQuestoes,
+        questoesCorretas: metaMestre.questoesCorretas,
+        SprintId: sprintMestreAtualizada.id
+      })) || [],
+      Plano: sprintMestreAtualizada.planoMestre ? {
+        id: sprintMestreAtualizada.planoMestre.id,
+        nome: sprintMestreAtualizada.planoMestre.nome,
+        cargo: sprintMestreAtualizada.planoMestre.cargo,
+        duracao: sprintMestreAtualizada.planoMestre.duracao
+      } : null,
+      createdAt: sprintMestreAtualizada.createdAt,
+      updatedAt: sprintMestreAtualizada.updatedAt
+    };
 
-    res.json(sprintAtualizada);
+    res.json(sprintFormatada);
   } catch (error) {
     console.error('Erro ao atualizar sprint:', error);
     res.status(400).json({ message: error.message });
   }
 };
 
-// Deletar uma sprint e suas metas
+// Deletar uma sprint mestre e suas metas mestre
 exports.deleteSprint = async (req, res) => {
   try {
-    const sprint = await Sprint.findByPk(req.params.id);
-    if (!sprint) {
+    const sprintMestre = await SprintMestre.findByPk(req.params.id);
+    if (!sprintMestre) {
       return res.status(404).json({ message: 'Sprint não encontrada' });
     }
 
-    // Deletar metas associadas
-    await Meta.destroy({
-      where: { SprintId: sprint.id }
+    // Deletar metas mestre associadas
+    await MetaMestre.destroy({
+      where: { SprintMestreId: sprintMestre.id }
     });
 
-    // Deletar sprint
-    await sprint.destroy();
+    // Deletar sprint mestre
+    await sprintMestre.destroy();
 
     res.json({ message: 'Sprint deletada com sucesso' });
   }
   catch (error) {
+    console.error('Erro ao deletar sprint mestre:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
 /**
- * Reordena as sprints de um plano
+ * Reordena as sprints mestre de um plano mestre
  * @param {Object} req - Requisição HTTP
  * @param {Object} req.body - Corpo da requisição
- * @param {number} req.body.planoId - ID do plano
- * @param {Array<number>} req.body.ordemSprints - Array com IDs das sprints na nova ordem
+ * @param {number} req.body.planoId - ID do plano mestre
+ * @param {Array<number>} req.body.ordemSprints - Array com IDs das sprints mestre na nova ordem
  * @param {Object} res - Resposta HTTP
  */
 exports.reordenarSprints = async (req, res) => {
@@ -318,28 +438,28 @@ exports.reordenarSprints = async (req, res) => {
   }
   
   try {
-    const plano = await Plano.findByPk(planoId);
-    if (!plano) {
+    const planoMestre = await PlanoMestre.findByPk(planoId);
+    if (!planoMestre) {
       return res.status(404).json({ message: 'Plano não encontrado' });
     }
     
-    // Verificar se todas as sprints pertencem ao plano
-    const sprints = await Sprint.findAll({
-      where: { PlanoId: planoId }
+    // Verificar se todas as sprints mestre pertencem ao plano mestre
+    const sprintsMestre = await SprintMestre.findAll({
+      where: { PlanoMestreId: planoId }
     });
     
-    const sprintIds = sprints.map(s => s.id);
+    const sprintMestreIds = sprintsMestre.map(s => s.id);
     
     for (const id of ordemSprints) {
-      if (!sprintIds.includes(id)) {
+      if (!sprintMestreIds.includes(id)) {
         return res.status(400).json({ 
           message: `Sprint com ID ${id} não pertence ao plano ${planoId}` 
         });
       }
     }
     
-    // Verificar se todos os IDs de sprints do plano estão na ordemSprints
-    if (new Set([...sprintIds]).size !== new Set([...ordemSprints]).size) {
+    // Verificar se todos os IDs de sprints mestre do plano estão na ordemSprints
+    if (new Set([...sprintMestreIds]).size !== new Set([...ordemSprints]).size) {
       return res.status(400).json({ 
         message: 'A lista de sprints fornecida não contém todas as sprints do plano'
       });
@@ -348,7 +468,7 @@ exports.reordenarSprints = async (req, res) => {
     // Atualizar posições em uma transação para garantir consistência
     await sequelize.transaction(async (t) => {
       for (let i = 0; i < ordemSprints.length; i++) {
-        await Sprint.update(
+        await SprintMestre.update(
           { posicao: i + 1 },
           { 
             where: { id: ordemSprints[i] },
@@ -358,53 +478,109 @@ exports.reordenarSprints = async (req, res) => {
       }
     });
     
-    // Retornar as sprints reordenadas
-    const sprintsAtualizadas = await Sprint.findAll({
-      where: { PlanoId: planoId },
+    // Retornar as sprints mestre reordenadas (formatadas para frontend)
+    const sprintsMestreAtualizadas = await SprintMestre.findAll({
+      where: { PlanoMestreId: planoId },
       order: [['posicao', 'ASC']],
       include: [
         {
-          model: Meta,
-          as: 'metas'
+          model: MetaMestre,
+          as: 'metasMestre'
         },
         {
-          model: Plano,
+          model: PlanoMestre,
+          as: 'planoMestre',
           attributes: ['id', 'nome', 'cargo', 'duracao']
         }
       ]
     });
+
+    // Transformar para formato esperado pelo frontend
+    const sprintsFormatadas = sprintsMestreAtualizadas.map(sprintMestre => ({
+      id: sprintMestre.id,
+      nome: sprintMestre.nome,
+      PlanoId: sprintMestre.PlanoMestreId,
+      posicao: sprintMestre.posicao,
+      dataInicio: sprintMestre.dataInicio,
+      dataFim: sprintMestre.dataFim,
+      metas: sprintMestre.metasMestre?.map(metaMestre => ({
+        id: metaMestre.id,
+        disciplina: metaMestre.disciplina,
+        tipo: metaMestre.tipo,
+        titulo: metaMestre.titulo,
+        comandos: metaMestre.comandos,
+        link: metaMestre.link,
+        relevancia: metaMestre.relevancia,
+        tempoEstudado: metaMestre.tempoEstudado,
+        desempenho: metaMestre.desempenho,
+        status: metaMestre.status,
+        totalQuestoes: metaMestre.totalQuestoes,
+        questoesCorretas: metaMestre.questoesCorretas,
+        SprintId: sprintMestre.id
+      })) || [],
+      Plano: sprintMestre.planoMestre ? {
+        id: sprintMestre.planoMestre.id,
+        nome: sprintMestre.planoMestre.nome,
+        cargo: sprintMestre.planoMestre.cargo,
+        duracao: sprintMestre.planoMestre.duracao
+      } : null,
+      createdAt: sprintMestre.createdAt,
+      updatedAt: sprintMestre.updatedAt
+    }));
     
-    res.json(sprintsAtualizadas);
+    res.json(sprintsFormatadas);
   } catch (error) {
-    console.error('Erro ao reordenar sprints:', error);
+    console.error('Erro ao reordenar sprints mestre:', error);
     res.status(500).json({ message: error.message });
   }
 };
 
-// Atualizar uma meta
+// Atualizar uma meta mestre
 exports.updateMeta = async (req, res) => {
   try {
-    const meta = await Meta.findByPk(req.params.id);
-    if (!meta) {
+    const metaMestre = await MetaMestre.findByPk(req.params.id);
+    if (!metaMestre) {
       return res.status(404).json({ message: 'Meta não encontrada' });
     }
 
-    const { status, tempoEstudado, desempenho, totalQuestoes, questoesCorretas } = req.body;
+    const { disciplina, tipo, titulo, comandos, link, relevancia, tempoEstudado, desempenho, status, totalQuestoes, questoesCorretas } = req.body;
 
-    await meta.update({
-      status,
-      tempoEstudado,
-      desempenho,
-      totalQuestoes,
-      questoesCorretas
+    await metaMestre.update({
+      disciplina,
+      tipo,
+      titulo,
+      comandos,
+      link,
+      relevancia,
+      tempoEstudado: tempoEstudado !== undefined ? tempoEstudado : metaMestre.tempoEstudado,
+      desempenho: desempenho !== undefined ? desempenho : metaMestre.desempenho,
+      status: status !== undefined ? status : metaMestre.status,
+      totalQuestoes: totalQuestoes !== undefined ? totalQuestoes : metaMestre.totalQuestoes,
+      questoesCorretas: questoesCorretas !== undefined ? questoesCorretas : metaMestre.questoesCorretas
     });
 
-    // Atualizar status da sprint após atualizar a meta
-    await atualizarStatusSprint(meta.SprintId);
+    // Transformar para formato esperado pelo frontend
+    const metaFormatada = {
+      id: metaMestre.id,
+      disciplina: metaMestre.disciplina,
+      tipo: metaMestre.tipo,
+      titulo: metaMestre.titulo,
+      comandos: metaMestre.comandos,
+      link: metaMestre.link,
+      relevancia: metaMestre.relevancia,
+      tempoEstudado: metaMestre.tempoEstudado,
+      desempenho: metaMestre.desempenho,
+      status: metaMestre.status,
+      totalQuestoes: metaMestre.totalQuestoes,
+      questoesCorretas: metaMestre.questoesCorretas,
+      SprintId: metaMestre.SprintMestreId, // Para compatibilidade com frontend
+      createdAt: metaMestre.createdAt,
+      updatedAt: metaMestre.updatedAt
+    };
 
-    res.json(meta);
+    res.json(metaFormatada);
   } catch (error) {
-    console.error('Erro ao atualizar meta:', error);
+    console.error('Erro ao atualizar meta mestre:', error);
     res.status(400).json({ message: error.message });
   }
 }; 
