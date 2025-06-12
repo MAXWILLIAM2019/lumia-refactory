@@ -1,6 +1,40 @@
 # Sistema de Mentoria - Frontend
 
-Este é o frontend do Sistema de Mentoria, desenvolvido com React + Vite.
+Este é o frontend do Sistema de Mentoria, desenvolvido com React + Vite, que utiliza uma **arquitetura de templates reutilizáveis** para criar planos de estudo escaláveis.
+
+## 🏗️ Nova Arquitetura de Templates
+
+### Conceito Principal
+O frontend foi adaptado para trabalhar com uma arquitetura em duas camadas:
+
+#### 🎯 **Interface do Administrador**
+- Trabalha com **templates (PlanoMestre, SprintMestre, MetaMestre)**
+- Mesmo layout e funcionalidades de antes
+- Zero mudanças na experiência do usuário
+
+#### 👥 **Sistema de Alunos** 
+- Recebe **instâncias automáticas** baseadas nos templates
+- Cronogramas personalizados com datas reais
+- Acompanhamento de progresso individual
+
+### Componentes Atualizados
+
+#### Principais Telas
+- **`RegisterPlan.jsx`**: Criação de PlanosMestre (transparente ao admin)
+- **`RegisterSprint.jsx`**: Criação de SprintsMestre + MetasMestre
+- **`PlanSprints.jsx`**: Visualização de templates com reordenação
+- **`Sprints.jsx`**: Listagem de templates de sprints
+
+#### Funcionalidades Mantidas
+- ✅ **Editor Rich Text (React Quill)**: Formatação completa nos campos comandos
+- ✅ **Drag & Drop (@dnd-kit)**: Reordenação visual de sprints
+- ✅ **Paginação (React Paginate)**: Navegação em listas grandes
+- ✅ **Gráficos (Recharts)**: Visualizações de progresso e estatísticas
+
+### Transparência ao Usuário
+- **Zero breaking changes**: Admins não percebem diferença
+- **Mesma experiência**: Layouts e fluxos idênticos
+- **Compatibilidade total**: Todas as funcionalidades preservadas
 
 ## Tecnologias Utilizadas
 
