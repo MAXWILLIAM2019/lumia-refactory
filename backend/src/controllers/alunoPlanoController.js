@@ -54,26 +54,38 @@ const sequelize = require('../db');
  * @returns {Object} Dados da associação criada ou mensagem de erro
  */
 exports.atribuirPlanoAluno = async (req, res) => {
+  console.log('=== INÍCIO DA ATRIBUIÇÃO DE PLANO (BACKEND) ===');
+  console.log('Dados recebidos:', req.body);
+  
   const transaction = await sequelize.transaction();
+  console.log('Transação iniciada');
   
   try {
-    const { idusuario, planoId, dataInicio, dataPrevisaoTermino, status, observacoes } = req.body;
+    const { idusuario, PlanoId, dataInicio, dataPrevisaoTermino, status, observacoes } = req.body;
+    console.log('Dados extraídos:', { idusuario, PlanoId, dataInicio, dataPrevisaoTermino, status });
     
     // Verificar se o usuário existe
+    console.log('1. Verificando usuário...');
     const usuario = await Usuario.findByPk(idusuario, { transaction });
     if (!usuario) {
+      console.log('✗ Usuário não encontrado:', idusuario);
       await transaction.rollback();
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
+    console.log('✓ Usuário encontrado:', usuario.nome);
     
     // Verificar se o plano existe
-    const plano = await Plano.findByPk(planoId, { transaction });
+    console.log('2. Verificando plano...');
+    const plano = await Plano.findByPk(PlanoId, { transaction });
     if (!plano) {
+      console.log('✗ Plano não encontrado:', PlanoId);
       await transaction.rollback();
       return res.status(404).json({ message: 'Plano não encontrado' });
     }
+    console.log('✓ Plano encontrado:', plano.nome);
     
-    // Verificar se o usuário já tem algum plano ativo (para relação 1:1)
+    // Verificar se o usuário já tem algum plano ativo
+    console.log('3. Verificando planos ativos do usuário...');
     const planoExistente = await AlunoPlano.findOne({
       where: {
         IdUsuario: idusuario,
@@ -86,49 +98,58 @@ exports.atribuirPlanoAluno = async (req, res) => {
     });
     
     if (planoExistente) {
-      // Para relação 1:1, inativar o plano existente antes de criar o novo
+      console.log('! Encontrado plano ativo, cancelando...');
       await planoExistente.update({ 
         status: 'cancelado',
         observacoes: (planoExistente.observacoes || '') + 
                     '\nPlano substituído por um novo em ' + new Date().toISOString().split('T')[0]
       }, { transaction });
-      
-      console.log(`Usuário ${idusuario} já tinha um plano ativo que foi cancelado.`);
+      console.log('✓ Plano anterior cancelado');
     }
     
-    // Antes de criar a associação, verificar se já existe para o mesmo usuário/plano
+    // Verificar associação existente
+    console.log('4. Verificando associação existente...');
     const associacaoExistente = await AlunoPlano.findOne({
       where: {
         IdUsuario: idusuario,
-        PlanoId: planoId
+        PlanoId: PlanoId
       },
       transaction
     });
     if (associacaoExistente) {
+      console.log('✗ Associação já existe');
       await transaction.rollback();
       return res.status(400).json({ message: 'Este usuário já está associado a este plano.' });
     }
     
-    // Calcular a data prevista de término se não for fornecida
+    // Calcular data prevista de término
+    console.log('5. Calculando data de término...');
     let dataFinal = dataPrevisaoTermino;
     if (!dataFinal && plano.duracao) {
       const dataBase = dataInicio ? new Date(dataInicio) : new Date();
       dataFinal = new Date(dataBase);
       dataFinal.setMonth(dataFinal.getMonth() + plano.duracao);
+      console.log('Data de término calculada:', dataFinal);
     }
     
     // Criar a associação
-    const alunoPlano = await AlunoPlano.create({
+    console.log('6. Criando nova associação...');
+    const dadosCriacao = {
       IdUsuario: idusuario,
-      PlanoId: planoId,
+      PlanoId: PlanoId,
       dataInicio: dataInicio || new Date(),
       dataPrevisaoTermino: dataFinal,
       status: status || 'não iniciado',
       observacoes,
-      ativo: true // Definir como ativo por padrão
-    }, { transaction });
+      ativo: true
+    };
+    console.log('Dados para criação:', dadosCriacao);
+    
+    const alunoPlano = await AlunoPlano.create(dadosCriacao, { transaction });
+    console.log('✓ Associação criada com sucesso');
     
     await transaction.commit();
+    console.log('✓ Transação confirmada');
     
     // Retornar a associação criada com dados do usuário e plano
     const resultado = await AlunoPlano.findOne({
@@ -142,10 +163,15 @@ exports.atribuirPlanoAluno = async (req, res) => {
       ]
     });
     
+    console.log('=== ATRIBUIÇÃO DE PLANO CONCLUÍDA COM SUCESSO ===');
     res.status(201).json(resultado);
   } catch (error) {
+    console.error('=== ERRO NA ATRIBUIÇÃO DE PLANO ===', {
+      message: error.message,
+      stack: error.stack
+    });
     await transaction.rollback();
-    console.error('Erro ao atribuir plano ao usuário:', error);
+    console.log('✗ Transação revertida devido a erro');
     res.status(500).json({ 
       message: 'Erro ao atribuir plano ao usuário',
       error: error.message 

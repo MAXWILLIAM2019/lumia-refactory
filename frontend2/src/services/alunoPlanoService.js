@@ -12,21 +12,51 @@ import api from './api';
 /**
  * Atribui um plano a um aluno
  * @param {Object} dados - Dados da associação
- * @param {number} dados.alunoId - ID do aluno
- * @param {number} dados.planoId - ID do plano
+ * @param {number} dados.idusuario - ID do aluno
+ * @param {number} dados.PlanoId - ID do plano (IMPORTANTE: deve ser maiúsculo)
  * @param {string} [dados.dataInicio] - Data de início (opcional)
  * @param {string} [dados.status] - Status inicial (opcional)
  * @param {string} [dados.observacoes] - Observações (opcional)
  * @returns {Promise} Promessa com a associação criada
  */
 const atribuirPlano = async (dados) => {
+  console.log('=== INÍCIO DA ATRIBUIÇÃO DE PLANO (SERVICE) ===');
+  console.log('Dados originais recebidos:', dados);
+  
   try {
-    console.log('Atribuindo plano ao aluno:', dados);
-    const response = await api.post('/aluno-plano', dados);
-    return response.data;
+    // Garantir que o PlanoId está com P maiúsculo
+    const dadosFormatados = {
+      ...dados,
+      PlanoId: dados.PlanoId || dados.planoId // aceita ambos mas envia com P maiúsculo
+    };
+    delete dadosFormatados.planoId; // remove versão minúscula se existir
+    
+    console.log('Dados formatados para envio:', dadosFormatados);
+    console.log('URL da requisição:', '/aluno-plano');
+    
+    try {
+      const response = await api.post('/aluno-plano', dadosFormatados);
+      console.log('✓ Resposta do servidor:', {
+        status: response.status,
+        data: response.data
+      });
+      console.log('=== ATRIBUIÇÃO DE PLANO CONCLUÍDA COM SUCESSO ===');
+      return response.data;
+    } catch (apiError) {
+      console.error('✗ Erro na chamada da API:', {
+        status: apiError.response?.status,
+        data: apiError.response?.data,
+        message: apiError.message
+      });
+      throw apiError;
+    }
   } catch (error) {
-    console.error('Erro ao atribuir plano:', error);
-    throw new Error(error.response?.data?.message || 'Erro ao atribuir plano ao aluno');
+    console.error('=== ERRO NA ATRIBUIÇÃO DE PLANO ===', {
+      message: error.message,
+      response: error.response?.data,
+      stack: error.stack
+    });
+    throw error;
   }
 };
 

@@ -497,23 +497,55 @@ export default function RegisterStudent() {
 
   // Função para salvar edição
   const handleSalvarEdicao = async (dadosEditados) => {
-    console.log('Dados enviados para edição:', dadosEditados);
+    console.log('=== INÍCIO DA EDIÇÃO DO ALUNO ===');
+    console.log('Dados completos recebidos para edição:', dadosEditados);
+    console.log('ID do aluno sendo editado:', alunoEditando.id);
+    
     setSavingEdit(true);
     try {
       // Atualizar dados do aluno
+      console.log('1. Atualizando dados básicos do aluno...');
       await alunoService.atualizarAluno(alunoEditando.id, dadosEditados);
-      // Se plano foi alterado, associar plano
+      console.log('✓ Dados básicos do aluno atualizados com sucesso');
+
+      // Se plano foi alterado, criar instância e associar
       if (dadosEditados.planoId) {
-        await alunoPlanoService.atribuirPlano({
-          idusuario: alunoEditando.id,
-          planoId: Number(dadosEditados.planoId)
-        });
+        console.log('2. Iniciando processo de plano...');
+        console.log('Verificando se é plano mestre:', dadosEditados.planoId);
+        
+        try {
+          // Primeiro tentar criar uma instância do plano mestre
+          console.log('2.1 Tentando criar instância do plano mestre...');
+          const criarPlanoResponse = await api.post('/planos-mestre/criar-instancia', {
+            planoMestreId: Number(dadosEditados.planoId),
+            idUsuario: alunoEditando.id,
+            dataInicio: new Date().toISOString().split('T')[0],
+            status: 'não iniciado'
+          });
+          
+          console.log('✓ Instância do plano criada com sucesso:', criarPlanoResponse.data);
+        } catch (planoError) {
+          console.error('✗ Erro na criação/atribuição do plano:', {
+            message: planoError.message,
+            response: planoError.response?.data,
+            status: planoError.response?.status
+          });
+          throw new Error(planoError.response?.data?.message || 'Erro ao criar/atribuir plano');
+        }
       }
+
+      console.log('3. Finalizando edição...');
       setEditModalOpen(false);
       setAlunoEditando(null);
       carregarAlunos();
+      console.log('=== EDIÇÃO CONCLUÍDA COM SUCESSO ===');
     } catch (error) {
-      alert('Erro ao salvar edição: ' + (error.message || 'Erro desconhecido'));
+      console.error('=== ERRO NA EDIÇÃO ===', {
+        message: error.message,
+        response: error.response?.data,
+        stack: error.stack
+      });
+      alert('Erro ao salvar edição: ' + (error.response?.data?.message || error.message || 'Erro desconhecido'));
     } finally {
       setSavingEdit(false);
     }
