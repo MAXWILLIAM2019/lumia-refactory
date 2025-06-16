@@ -89,6 +89,12 @@ const AlunoPlano = sequelize.define('AlunoPlano', {
     type: DataTypes.TEXT,
     allowNull: true,
     comment: 'Observações adicionais sobre o progresso do aluno'
+  },
+  ativo: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+    comment: 'Indica se a associação está ativa'
   }
 }, {
   timestamps: true,

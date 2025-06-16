@@ -1,11 +1,27 @@
 /**
  * Controller de AlunoPlano
  * 
- * Este módulo gerencia todas as operações relacionadas às associações entre alunos e planos,
- * incluindo atribuição de planos a alunos, atualização de progresso e consultas.
+ * ATENÇÃO: FUNCIONALIDADE TESTADA E FUNCIONAL - NÃO ALTERAR SEM CONSULTA!
  * 
- * NOTA: Implementa relacionamento 1:1 (um aluno tem um plano) com possibilidade
- * de expansão futura para relacionamento N:N.
+ * Este módulo gerencia todas as operações relacionadas às associações entre alunos e planos.
+ * Implementa dois fluxos principais de atribuição de planos:
+ * 
+ * 1. Atribuição Direta (via atribuirPlanoAluno):
+ *    - Associa um plano já existente a um aluno
+ *    - Usado principalmente para planos personalizados ou reatribuições
+ *    - Define automaticamente ativo = true para o novo plano
+ *    - Cancela automaticamente qualquer plano ativo existente do aluno
+ * 
+ * 2. Atribuição via Template (via planoMestreController.criarInstancia):
+ *    - Cria uma nova instância de plano a partir de um PlanoMestre
+ *    - Copia toda a estrutura: plano, sprints e metas
+ *    - Também define ativo = true e gerencia planos existentes
+ * 
+ * IMPORTANTE:
+ * - Um aluno só pode ter um plano ativo por vez
+ * - Ao atribuir um novo plano, o anterior é automaticamente cancelado
+ * - O campo 'ativo' é usado para filtrar planos nas consultas
+ * - Nunca delete registros, apenas marque como inativos
  */
 const AlunoPlano = require('../models/AlunoPlano');
 const Aluno = require('../models/Aluno');
@@ -16,6 +32,16 @@ const sequelize = require('../db');
 
 /**
  * Atribui um plano a um aluno
+ * 
+ * ATENÇÃO: Método testado e funcional - Não alterar sem consulta!
+ * 
+ * Fluxo de execução:
+ * 1. Valida existência do usuário e plano
+ * 2. Verifica se o usuário já tem plano ativo
+ *    - Se sim, cancela o plano existente antes de prosseguir
+ * 3. Verifica se já existe associação para este par usuário/plano
+ * 4. Calcula data prevista de término baseada na duração do plano
+ * 5. Cria nova associação com ativo = true
  * 
  * @param {Object} req - Requisição HTTP
  * @param {Object} req.body - Corpo da requisição
@@ -98,7 +124,8 @@ exports.atribuirPlanoAluno = async (req, res) => {
       dataInicio: dataInicio || new Date(),
       dataPrevisaoTermino: dataFinal,
       status: status || 'não iniciado',
-      observacoes
+      observacoes,
+      ativo: true // Definir como ativo por padrão
     }, { transaction });
     
     await transaction.commit();
@@ -129,16 +156,19 @@ exports.atribuirPlanoAluno = async (req, res) => {
 /**
  * Atualiza o progresso de um aluno em um plano
  * 
- * @param {Object} req - Requisição HTTP
- * @param {Object} req.params - Parâmetros da requisição
- * @param {number} req.params.id - ID da associação AlunoPlano
- * @param {Object} req.body - Corpo da requisição
- * @param {number} [req.body.progresso] - Percentual de progresso (0-100)
- * @param {string} [req.body.status] - Novo status
- * @param {Date} [req.body.dataConclusao] - Data de conclusão (se concluído)
- * @param {string} [req.body.observacoes] - Observações atualizadas
- * @param {Object} res - Resposta HTTP
- * @returns {Object} Dados atualizados ou mensagem de erro
+ * ATENÇÃO: Método testado e funcional - Não alterar sem consulta!
+ * 
+ * Fluxo de execução:
+ * 1. Busca a associação aluno-plano pela chave composta (IdUsuario, PlanoId)
+ * 2. Atualiza campos conforme solicitado:
+ *    - progresso: percentual de conclusão (0-100)
+ *    - status: estado atual do plano
+ *    - dataConclusao: preenchida automaticamente ao concluir
+ *    - observacoes: notas sobre o progresso
+ * 3. Se status muda para 'concluído', define data de conclusão
+ * 
+ * IMPORTANTE: Este método não altera o campo 'ativo'
+ * A ativação/inativação deve ser feita via atribuição de planos
  */
 exports.atualizarProgresso = async (req, res) => {
   try {
@@ -193,11 +223,16 @@ exports.atualizarProgresso = async (req, res) => {
 /**
  * Remove a associação entre um aluno e um plano
  * 
- * @param {Object} req - Requisição HTTP
- * @param {Object} req.params - Parâmetros da requisição
- * @param {number} req.params.id - ID da associação AlunoPlano
- * @param {Object} res - Resposta HTTP
- * @returns {Object} Mensagem de sucesso ou erro
+ * ATENÇÃO: Método testado e funcional - Não alterar sem consulta!
+ * 
+ * IMPORTANTE: 
+ * - Este método realiza exclusão física do registro
+ * - Para inativar um plano, use atribuirPlanoAluno com um novo plano
+ * - Só use este método em casos específicos de correção de dados
+ * 
+ * Fluxo:
+ * 1. Busca associação pela chave composta
+ * 2. Remove o registro se encontrado
  */
 exports.removerAssociacao = async (req, res) => {
   try {
@@ -226,9 +261,16 @@ exports.removerAssociacao = async (req, res) => {
 /**
  * Lista todas as associações entre alunos e planos
  * 
- * @param {Object} req - Requisição HTTP
- * @param {Object} res - Resposta HTTP
- * @returns {Array} Lista de associações com dados dos alunos e planos
+ * ATENÇÃO: Método testado e funcional - Não alterar sem consulta!
+ * 
+ * Retorna:
+ * - Dados do usuário (ID, login)
+ * - Dados do plano (ID, nome, cargo, duração)
+ * - Dados da associação (datas, progresso, status)
+ * 
+ * IMPORTANTE: 
+ * - Use os includes e attributes para otimizar a query
+ * - Mantenha a ordenação por data de criação
  */
 exports.listarAssociacoes = async (req, res) => {
   try {

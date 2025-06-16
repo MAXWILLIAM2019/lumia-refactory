@@ -1,12 +1,34 @@
 const { PlanoMestre, SprintMestre, MetaMestre, Plano, Sprint, Meta, AlunoPlano } = require('../models');
 
 /**
- * Controller para gerenciamento de Planos Mestre
- * Responsável pelas operações CRUD dos templates de planos
+ * Controller para gerenciamento de Planos Mestre (Templates)
+ * 
+ * ATENÇÃO: FUNCIONALIDADE TESTADA E FUNCIONAL - NÃO ALTERAR SEM CONSULTA!
+ * 
+ * Este módulo implementa o conceito de templates (PlanoMestre) e instâncias (Plano).
+ * Os templates são mantidos pelos administradores e usados para gerar planos
+ * personalizados para cada aluno.
+ * 
+ * Hierarquia de Templates:
+ * - PlanoMestre (template principal)
+ *   └─ SprintMestre (templates de sprints)
+ *      └─ MetaMestre (templates de metas)
+ * 
+ * Ao criar uma instância, toda essa estrutura é copiada e personalizada
+ * para o aluno, mantendo referência ao template original.
  */
 
 /**
  * Lista todos os planos mestre ativos
+ * 
+ * ATENÇÃO: Método testado e funcional - Não alterar sem consulta!
+ * 
+ * Retorna apenas planos mestre ativos com sua estrutura completa:
+ * - Dados do plano mestre
+ * - Sprints mestre associadas
+ * - Metas mestre de cada sprint
+ * 
+ * IMPORTANTE: Mantenha a ordenação das sprints por posição
  */
 exports.listarPlanosMestre = async (req, res) => {
   try {
@@ -103,6 +125,52 @@ exports.criarPlanoMestre = async (req, res) => {
 
 /**
  * Cria uma instância personalizada de um plano mestre para um aluno
+ * 
+ * ATENÇÃO: MÉTODO CRÍTICO - TESTADO E FUNCIONAL - NÃO ALTERAR SEM CONSULTA!
+ * 
+ * Este é um dos métodos mais importantes do sistema, responsável por:
+ * 1. Criar uma cópia personalizada de um plano mestre
+ * 2. Copiar toda a estrutura de sprints e metas
+ * 3. Associar o plano ao aluno
+ * 
+ * Fluxo detalhado:
+ * 1. Validação inicial:
+ *    - Verifica dados obrigatórios (planoMestreId, idUsuario)
+ *    - Busca o plano mestre com sua estrutura completa
+ * 
+ * 2. Criação do Plano:
+ *    - Copia dados básicos do plano mestre
+ *    - Mantém referência ao template via plano_mestre_id
+ * 
+ * 3. Criação das Sprints:
+ *    - Para cada sprint do template:
+ *      - Copia dados da sprint
+ *      - Calcula datas com base na duração
+ *      - Mantém referência via sprint_mestre_id
+ * 
+ * 4. Criação das Metas:
+ *    - Para cada meta do template:
+ *      - Copia dados da meta
+ *      - Associa à sprint correta
+ *      - Mantém referência via meta_mestre_id
+ * 
+ * 5. Associação com Aluno:
+ *    - Cria registro em AlunoPlano
+ *    - Define ativo = true
+ *    - Configura datas e status inicial
+ * 
+ * IMPORTANTE:
+ * - Todo o processo é executado em uma transação
+ * - Se qualquer etapa falhar, todas as alterações são revertidas
+ * - Mantém rastreabilidade completa ao template original
+ * - Define ativo = true na associação com o aluno
+ * 
+ * @param {Object} req.body
+ * @param {number} req.body.planoMestreId - ID do template a ser instanciado
+ * @param {number} req.body.idUsuario - ID do aluno que receberá o plano
+ * @param {Date} [req.body.dataInicio] - Data de início (opcional)
+ * @param {string} [req.body.status] - Status inicial (opcional)
+ * @param {string} [req.body.observacoes] - Observações iniciais (opcional)
  */
 exports.criarInstancia = async (req, res) => {
   try {
@@ -211,7 +279,8 @@ exports.criarInstancia = async (req, res) => {
         PlanoId: novoPlano.id,
         dataInicio: dataInicio || new Date(),
         status: status || 'não iniciado',
-        observacoes: observacoes || ''
+        observacoes: observacoes || '',
+        ativo: true
       }, { transaction });
 
       // Confirmar a transação
