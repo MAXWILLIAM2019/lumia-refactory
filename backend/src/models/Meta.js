@@ -69,6 +69,11 @@ const Meta = sequelize.define('Meta', {
     type: DataTypes.INTEGER,
     defaultValue: 0
   },
+  posicao: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
   meta_mestre_id: {
     type: DataTypes.INTEGER,
     allowNull: true,
@@ -78,6 +83,14 @@ const Meta = sequelize.define('Meta', {
     },
     comment: 'Referência à meta mestre que originou esta meta'
   }
+}, {
+  indexes: [
+    {
+      unique: true,
+      fields: ['SprintId', 'posicao'],
+      name: 'sprint_posicao_unique'
+    }
+  ]
 });
 
 // Nota: A definição de relacionamentos foi movida para o arquivo index.js

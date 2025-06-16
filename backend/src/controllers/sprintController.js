@@ -53,8 +53,11 @@ exports.createSprint = async (req, res) => {
     // Criar as metas mestre associadas à sprint mestre
     if (metas && metas.length > 0) {
       const metasMestresCriadas = await Promise.all(
-        metas.map(meta => 
-          MetaMestre.create({
+        metas.map(async (meta, index) => {
+          // Usar o índice + 1 como posição
+          const posicao = index + 1;
+
+          return MetaMestre.create({
             disciplina: meta.disciplina,
             tipo: meta.tipo,
             titulo: meta.titulo,
@@ -66,9 +69,10 @@ exports.createSprint = async (req, res) => {
             status: meta.status || 'Pendente',
             totalQuestoes: meta.totalQuestoes || 0,
             questoesCorretas: meta.questoesCorretas || 0,
-            SprintMestreId: sprintMestre.id
-          })
-        )
+            SprintMestreId: sprintMestre.id,
+            posicao: posicao
+          });
+        })
       );
       
       // Adicionar as metas ao objeto de resposta para compatibilidade
@@ -291,6 +295,14 @@ exports.updateSprint = async (req, res) => {
       // Array para armazenar os IDs das metas que serão mantidas
       const idsMetasManter = [];
 
+      // Primeiro, vamos encontrar a maior posição atual
+      const ultimaMetaMestre = await MetaMestre.findOne({
+        where: { SprintMestreId: sprintMestre.id },
+        order: [['posicao', 'DESC']]
+      });
+      
+      let proximaPosicao = ultimaMetaMestre ? ultimaMetaMestre.posicao + 1 : 1;
+
       // Processar cada meta da requisição
       for (const meta of metas) {
         if (meta.id && metasExistentesMap.has(meta.id)) {
@@ -324,7 +336,8 @@ exports.updateSprint = async (req, res) => {
             status: meta.status || 'Pendente',
             totalQuestoes: meta.totalQuestoes || 0,
             questoesCorretas: meta.questoesCorretas || 0,
-            SprintMestreId: sprintMestre.id
+            SprintMestreId: sprintMestre.id,
+            posicao: proximaPosicao++
           });
           idsMetasManter.push(novaMetaMestre.id);
         }
@@ -463,7 +476,7 @@ exports.reordenarSprints = async (req, res) => {
       }
     }
     
-    // Verificar se todos os IDs de sprints mestre do plano estão na ordemSprints
+    // Verificar se todos os IDs de sprints mestres do plano estão na ordemSprints
     if (new Set([...sprintMestreIds]).size !== new Set([...ordemSprints]).size) {
       return res.status(400).json({ 
         message: 'A lista de sprints fornecida não contém todas as sprints do plano'

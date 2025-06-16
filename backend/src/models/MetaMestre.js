@@ -17,6 +17,7 @@ const sequelize = require('../db');
  * - status: Status do template (para compatibilidade com frontend)
  * - totalQuestoes: Total de questões planejadas (para compatibilidade com frontend)
  * - questoesCorretas: Meta de questões corretas (para compatibilidade com frontend)
+ * - posicao: Posição do template na lista de metas
  * - SprintMestreId: ID da sprint mestre à qual pertence
  * 
  * Relacionamentos:
@@ -79,6 +80,11 @@ const MetaMestre = sequelize.define('MetaMestre', {
     allowNull: true,
     comment: 'Meta de questões corretas para esta meta - usado para compatibilidade com frontend'
   },
+  posicao: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
   SprintMestreId: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -86,7 +92,14 @@ const MetaMestre = sequelize.define('MetaMestre', {
   }
 }, {
   tableName: 'MetasMestre',
-  timestamps: true
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['SprintMestreId', 'posicao'],
+      name: 'sprint_mestre_posicao_unique'
+    }
+  ]
 });
 
 module.exports = MetaMestre; 

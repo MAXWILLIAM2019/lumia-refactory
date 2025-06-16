@@ -259,6 +259,15 @@ exports.criarInstancia = async (req, res) => {
           if (!tiposValidos.includes(tipoMeta)) {
             tipoMeta = 'teoria'; // Valor padrão se o tipo não for válido
           }
+
+          // Determinar a próxima posição disponível para esta sprint
+          const ultimaMeta = await Meta.findOne({
+            where: { SprintId: novaSprint.id },
+            order: [['posicao', 'DESC']],
+            transaction
+          });
+          
+          const proximaPosicao = ultimaMeta ? ultimaMeta.posicao + 1 : 1;
           
           await Meta.create({
             disciplina: metaMestre.disciplina,
@@ -268,7 +277,8 @@ exports.criarInstancia = async (req, res) => {
             link: metaMestre.link,
             relevancia: metaMestre.relevancia,
             SprintId: novaSprint.id,
-            meta_mestre_id: metaMestre.id
+            meta_mestre_id: metaMestre.id,
+            posicao: proximaPosicao
           }, { transaction });
         }
       }
