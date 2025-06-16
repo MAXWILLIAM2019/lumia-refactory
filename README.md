@@ -485,3 +485,260 @@ Este projeto está licenciado sob a [MIT License](LICENSE).
 ---
 
 **Para dúvidas ou suporte, consulte a documentação técnica ou entre em contato com a equipe de desenvolvimento.** 
+
+## 📝 Padronização de Terminologia
+
+### Nomenclatura Unificada
+Para manter consistência e clareza no sistema, adotamos os seguintes termos padrão:
+
+#### Frontend (Interface do Aluno)
+- **Metas**: Representa as tarefas/objetivos que o aluno precisa completar
+  - Anteriormente chamadas de "Atividades"
+  - Alteração feita para alinhar com a terminologia do backend
+  - Reflete melhor o conceito de objetivos a serem alcançados
+
+#### Arquivos Atualizados
+- `SprintHeader.jsx`: Exibição do total de metas
+- `Dashboard.jsx`: Estatísticas de metas concluídas e totais
+- `TodasSprints.jsx`: Contagem de metas por sprint
+
+#### Benefícios da Padronização
+✅ **Consistência**: Mesma terminologia em todo o sistema
+✅ **Clareza**: Evita confusão entre diferentes termos
+✅ **Manutenção**: Facilita futuras atualizações
+✅ **UX**: Melhora a experiência do usuário com termos consistentes 
+
+## 📚 Diretrizes de Desenvolvimento
+
+### 🎯 Objetivo
+Este documento estabelece as diretrizes fundamentais para o desenvolvimento do Sistema de Mentoria, visando criar um código educacional, limpo, compreensível e sustentável, priorizando o uso do idioma português.
+
+### 🧹 Fundamentos Gerais
+
+#### 1. Código Limpo e Legível
+- Escreva código pensando na compreensão de outros desenvolvedores
+- Use nomes descritivos em português para:
+  ```javascript
+  ✅ Bom exemplo:
+  function calcularMediaFinal() { ... }
+  const alunoAprovado = true;
+  const mensagemErro = "Dados inválidos";
+
+  ❌ Evitar:
+  function calcAvg() { ... }
+  const x1 = true;
+  const flagOk = "invalid";
+  ```
+- Mantenha funções curtas e com responsabilidade única
+- Evite duplicação de código (princípio DRY)
+- Priorize soluções simples e claras
+
+#### 2. Uso do Português no Código
+- Utilize português para:
+  - Nomes de variáveis, funções e classes
+  - Comentários e documentação
+  - Mensagens de erro e logs
+- Exceções permitidas:
+  - Palavras-chave da linguagem (if, return, function)
+  - Termos técnicos consagrados sem boa tradução
+
+#### 3. Comentários Significativos
+```javascript
+// ✅ Bom exemplo:
+// Calcula o percentual de progresso considerando apenas metas ativas
+function calcularProgressoMetas(metas) { ... }
+
+// ❌ Evitar:
+// Função que calcula
+function calc() { ... }
+```
+
+#### 4. Organização do Projeto
+- Estrutura de diretórios clara e lógica
+- Separação de responsabilidades
+- Modularização adequada do código
+
+#### 5. Gestão de Dependências
+- Priorize recursos nativos
+- Adicione bibliotecas apenas quando necessário
+- Documente o motivo de cada dependência
+
+### 🧱 Princípios SOLID
+
+#### S - Princípio da Responsabilidade Única
+```javascript
+// ✅ Bom exemplo:
+class GerenciadorMetas {
+    async buscarMeta(id) { ... }
+    async salvarMeta(meta) { ... }
+}
+
+class CalculadoraProgresso {
+    calcularPercentualConcluido(metas) { ... }
+}
+
+// ❌ Evitar:
+class Meta {
+    buscarDoBanco() { ... }
+    calcularProgresso() { ... }
+    enviarEmail() { ... }
+}
+```
+
+#### O - Princípio Aberto/Fechado
+```javascript
+// ✅ Bom exemplo:
+class ValidadorMeta {
+    validar(meta) {
+        // Lógica base de validação
+    }
+}
+
+class ValidadorMetaAvancada extends ValidadorMeta {
+    validar(meta) {
+        super.validar(meta);
+        // Validações adicionais
+    }
+}
+```
+
+#### L - Princípio da Substituição de Liskov
+```javascript
+// ✅ Bom exemplo:
+class Meta {
+    async concluir() { ... }
+}
+
+class MetaComPrazo extends Meta {
+    async concluir() {
+        // Mantém o comportamento base
+        await super.concluir();
+        // Adiciona verificação de prazo
+    }
+}
+```
+
+#### I - Princípio da Segregação de Interface
+```javascript
+// ✅ Bom exemplo:
+interface GerenciadorMetas {
+    buscarMeta(id: number): Promise<Meta>;
+    salvarMeta(meta: Meta): Promise<void>;
+}
+
+interface RelatorioMetas {
+    gerarRelatorioProgresso(): Promise<Relatorio>;
+}
+```
+
+#### D - Princípio da Inversão de Dependência
+```javascript
+// ✅ Bom exemplo:
+interface RepositorioMetas {
+    buscar(id: number): Promise<Meta>;
+}
+
+class ServicoMetas {
+    constructor(private repositorio: RepositorioMetas) {}
+}
+```
+
+### 📝 Convenções de Código
+
+#### Nomenclatura
+- Classes: substantivos no singular, primeira letra maiúscula
+  - `class PlanoMentoria {}`
+- Interfaces: prefixo I + substantivo
+  - `interface IGerenciadorMetas {}`
+- Métodos: verbos no infinitivo
+  - `calcularProgresso()`
+- Variáveis: substantivos descritivos
+  - `const totalMetasConcluidas = 0`
+
+#### Estrutura de Arquivos
+```
+src/
+  dominio/
+    entidades/
+      Meta.ts
+      Plano.ts
+    servicos/
+      GerenciadorMetas.ts
+  infraestrutura/
+    repositorios/
+      RepositorioMetas.ts
+  interfaces/
+    controllers/
+      MetasController.ts
+```
+
+### 🔍 Revisão de Código
+Antes de cada commit, verifique:
+- ✅ Código está em português (exceto exceções definidas)
+- ✅ Funções têm responsabilidade única
+- ✅ Nomes são claros e descritivos
+- ✅ Comentários são relevantes
+- ✅ Princípios SOLID foram aplicados
+- ✅ Não há duplicação de código
+
+## 🤝 Contribuindo
+
+1. Fork o projeto
+2. Crie sua feature branch (`git checkout -b feature/nova-funcionalidade`)
+3. Commit suas mudanças (`git commit -am 'Adiciona nova funcionalidade'`)
+4. Push para a branch (`git push origin feature/nova-funcionalidade`)  
+5. Abra um Pull Request
+
+## 📄 Licença
+
+Este projeto está licenciado sob a [MIT License](LICENSE).
+
+---
+
+## 🎯 Status do Projeto
+
+### ✅ Implementado
+- [x] **Arquitetura de Templates completa**
+- [x] **Sistema de autenticação centralizado**
+- [x] **APIs para criação de templates**
+- [x] **Criação automática de instâncias**  
+- [x] **Frontend compatível (zero breaking changes)**
+- [x] **Banco harmonizado e otimizado**
+
+### 🚧 Em Desenvolvimento
+- [ ] **Dashboard de progresso avançado**
+- [ ] **Relatórios e analytics**  
+- [ ] **Sistema de notificações**
+- [ ] **Mobile responsivo**
+
+### 🔮 Roadmap Futuro
+- [ ] **Integração com SSO corporativo**
+- [ ] **Sistema de certificações**
+- [ ] **Gamificação e badges**
+- [ ] **IA para recomendações personalizadas**
+
+---
+
+**Para dúvidas ou suporte, consulte a documentação técnica ou entre em contato com a equipe de desenvolvimento.** 
+
+## 📝 Padronização de Terminologia
+
+### Nomenclatura Unificada
+Para manter consistência e clareza no sistema, adotamos os seguintes termos padrão:
+
+#### Frontend (Interface do Aluno)
+- **Metas**: Representa as tarefas/objetivos que o aluno precisa completar
+  - Anteriormente chamadas de "Atividades"
+  - Alteração feita para alinhar com a terminologia do backend
+  - Reflete melhor o conceito de objetivos a serem alcançados
+
+#### Arquivos Atualizados
+- `SprintHeader.jsx`: Exibição do total de metas
+- `Dashboard.jsx`: Estatísticas de metas concluídas e totais
+- `TodasSprints.jsx`: Contagem de metas por sprint
+
+#### Benefícios da Padronização
+✅ **Consistência**: Mesma terminologia em todo o sistema
+✅ **Clareza**: Evita confusão entre diferentes termos
+✅ **Manutenção**: Facilita futuras atualizações
+✅ **UX**: Melhora a experiência do usuário com termos consistentes 

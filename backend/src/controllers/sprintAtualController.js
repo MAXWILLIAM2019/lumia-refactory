@@ -25,7 +25,12 @@ exports.getSprintAtual = async (req, res) => {
           as: 'sprints',
           include: [{
             model: Meta,
-            as: 'metas'
+            as: 'metas',
+            attributes: [
+              'id', 'disciplina', 'tipo', 'titulo', 'comandos', 'link', 
+              'relevancia', 'tempoEstudado', 'desempenho', 'status',
+              'totalQuestoes', 'questoesCorretas', 'SprintId'
+            ]
           }]
         }]
       }]
@@ -39,14 +44,19 @@ exports.getSprintAtual = async (req, res) => {
     const sprintsOrdenadas = alunoPlano.plano.sprints.sort((a, b) => a.posicao - b.posicao);
     const primeiraSprint = sprintsOrdenadas[0];
 
-    // Buscar a sprint atual do usuário
+    // Buscar a sprint atual do usuário com todas as metas instanciadas
     let sprintAtual = await SprintAtual.findOne({
       where: { idusuario },
       include: [{
         model: Sprint,
         include: [{
           model: Meta,
-          as: 'metas'
+          as: 'metas',
+          attributes: [
+            'id', 'disciplina', 'tipo', 'titulo', 'comandos', 'link', 
+            'relevancia', 'tempoEstudado', 'desempenho', 'status',
+            'totalQuestoes', 'questoesCorretas', 'SprintId'
+          ]
         }]
       }]
     });
@@ -58,19 +68,73 @@ exports.getSprintAtual = async (req, res) => {
         SprintId: primeiraSprint.id
       });
 
-      // Buscar a sprint completa com suas metas
+      // Buscar a sprint completa com suas metas instanciadas
       const sprintCompleta = await Sprint.findByPk(primeiraSprint.id, {
         include: [{
           model: Meta,
-          as: 'metas'
+          as: 'metas',
+          attributes: [
+            'id', 'disciplina', 'tipo', 'titulo', 'comandos', 'link', 
+            'relevancia', 'tempoEstudado', 'desempenho', 'status',
+            'totalQuestoes', 'questoesCorretas', 'SprintId'
+          ]
         }]
       });
 
-      return res.json(sprintCompleta);
+      // Formatar a resposta
+      const sprintFormatada = {
+        id: sprintCompleta.id,
+        nome: sprintCompleta.nome,
+        posicao: sprintCompleta.posicao,
+        dataInicio: sprintCompleta.dataInicio,
+        dataFim: sprintCompleta.dataFim,
+        PlanoId: sprintCompleta.PlanoId,
+        metas: sprintCompleta.metas.map(meta => ({
+          id: meta.id,
+          disciplina: meta.disciplina,
+          tipo: meta.tipo,
+          titulo: meta.titulo,
+          comandos: meta.comandos,
+          link: meta.link,
+          relevancia: meta.relevancia,
+          tempoEstudado: meta.tempoEstudado || '00:00',
+          desempenho: meta.desempenho || 0,
+          status: meta.status || 'Pendente',
+          totalQuestoes: meta.totalQuestoes || 0,
+          questoesCorretas: meta.questoesCorretas || 0,
+          SprintId: meta.SprintId
+        }))
+      };
+
+      return res.json(sprintFormatada);
     }
 
-    // Se já existe sprint atual, retornar ela
-    return res.json(sprintAtual.Sprint);
+    // Se já existe sprint atual, formatar e retornar
+    const sprintFormatada = {
+      id: sprintAtual.Sprint.id,
+      nome: sprintAtual.Sprint.nome,
+      posicao: sprintAtual.Sprint.posicao,
+      dataInicio: sprintAtual.Sprint.dataInicio,
+      dataFim: sprintAtual.Sprint.dataFim,
+      PlanoId: sprintAtual.Sprint.PlanoId,
+      metas: sprintAtual.Sprint.metas.map(meta => ({
+        id: meta.id,
+        disciplina: meta.disciplina,
+        tipo: meta.tipo,
+        titulo: meta.titulo,
+        comandos: meta.comandos,
+        link: meta.link,
+        relevancia: meta.relevancia,
+        tempoEstudado: meta.tempoEstudado || '00:00',
+        desempenho: meta.desempenho || 0,
+        status: meta.status || 'Pendente',
+        totalQuestoes: meta.totalQuestoes || 0,
+        questoesCorretas: meta.questoesCorretas || 0,
+        SprintId: meta.SprintId
+      }))
+    };
+
+    return res.json(sprintFormatada);
   } catch (error) {
     console.error('Erro ao buscar sprint atual:', error);
     res.status(500).json({ message: error.message });

@@ -20,7 +20,8 @@ export default function AlunoDashboard() {
     performance: '0%',
     hoursStudied: '0h00m',
     questionsSolved: 0,
-    dailyAvg: '0h00m'
+    dailyAvg: '0h00m',
+    uniqueDisciplines: 0
   });
   const [usuario, setUsuario] = useState(null);
   const [planoInfo, setPlanoInfo] = useState(null);
@@ -87,15 +88,34 @@ export default function AlunoDashboard() {
       setError('');
       console.log('========== BUSCANDO SPRINT ATUAL ==========');
       
+      // Primeiro, buscar o plano do aluno para ter acesso às instâncias
+      const planoResp = await api.get('/aluno-plano/meu-plano');
+      if (!planoResp.data || !planoResp.data.planoId) {
+        setError('Você não possui planos de estudo atribuídos.');
+        setLoading(false);
+        return;
+      }
+
+      // Buscar a sprint atual instanciada do aluno
       const response = await api.get('/sprint-atual');
       console.log('Sprint atual recebida:', response.data);
       
       if (response.data) {
         const sprintData = response.data;
         setSprint(sprintData);
-        setTotalMetas(sprintData.metas?.length || 0);
-        setMetasConcluidas(contarMetasConcluidas(sprintData.metas || []));
+
+        // Calcular estatísticas baseadas nas metas instanciadas
+        const metasInstanciadas = sprintData.metas || [];
+        setTotalMetas(metasInstanciadas.length);
+        setMetasConcluidas(contarMetasConcluidas(metasInstanciadas));
         calculateStats(sprintData);
+
+        // Buscar disciplinas únicas das metas instanciadas
+        const disciplinasUnicas = new Set(metasInstanciadas.map(meta => meta.disciplina));
+        setStats(prevStats => ({
+          ...prevStats,
+          uniqueDisciplines: disciplinasUnicas.size
+        }));
       } else {
         setError('Não foi possível carregar a sprint atual');
       }
@@ -107,7 +127,7 @@ export default function AlunoDashboard() {
     }
   };
 
-  // Função para contar metas concluídas
+  // Função para contar metas concluídas das instâncias
   const contarMetasConcluidas = (metas) => {
     if (!metas) return 0;
     return metas.filter(meta => meta.status === 'Concluída').length;
@@ -116,20 +136,21 @@ export default function AlunoDashboard() {
   const calculateStats = (currentSprint) => {
     if (!currentSprint || !currentSprint.metas) return;
 
-    const totalMetas = currentSprint.metas.length;
-    const completedMetas = currentSprint.metas.filter(m => m.status === 'Concluída').length;
+    const metasInstanciadas = currentSprint.metas;
+    const totalMetas = metasInstanciadas.length;
+    const metasConcluidas = metasInstanciadas.filter(m => m.status === 'Concluída').length;
     
-    // Calcular horas totais
-    const totalHours = currentSprint.metas.reduce((acc, curr) => {
+    // Calcular horas totais das metas instanciadas
+    const totalHours = metasInstanciadas.reduce((acc, curr) => {
       const [hours, minutes] = (curr.tempoEstudado || '00:00').split(':').map(Number);
       return acc + hours + (minutes / 60);
     }, 0);
     
-    // Filtrar apenas metas que:
+    // Filtrar apenas metas instanciadas que:
     // 1. Foram concluídas
     // 2. Têm questões resolvidas (totalQuestoes > 0)
     // 3. Têm um desempenho válido
-    const metasComDesempenho = currentSprint.metas.filter(m => 
+    const metasComDesempenho = metasInstanciadas.filter(m => 
       m.status === 'Concluída' && 
       m.totalQuestoes > 0 && 
       m.desempenho !== undefined && 
@@ -137,7 +158,7 @@ export default function AlunoDashboard() {
       !isNaN(parseFloat(m.desempenho))
     );
     
-    // Calcular desempenho médio apenas das metas que têm questões resolvidas
+    // Calcular desempenho médio apenas das metas instanciadas que têm questões resolvidas
     let desempenhoMedio = 0;
     if (metasComDesempenho.length > 0) {
       const somaDesempenhos = metasComDesempenho.reduce((acc, meta) => 
@@ -146,8 +167,8 @@ export default function AlunoDashboard() {
       desempenhoMedio = somaDesempenhos / metasComDesempenho.length;
     }
     
-    // Calcular total de questões resolvidas (soma de totalQuestoes de todas as metas concluídas)
-    const questionsSolved = currentSprint.metas
+    // Calcular total de questões resolvidas das metas instanciadas
+    const questionsSolved = metasInstanciadas
       .filter(m => m.status === 'Concluída')
       .reduce((acc, meta) => acc + (meta.totalQuestoes || 0), 0);
     
@@ -160,11 +181,17 @@ export default function AlunoDashboard() {
     // Formatar desempenho com duas casas decimais
     const performanceFormatada = `${desempenhoMedio.toFixed(2).replace('.', ',')}%`;
 
+    // Buscar disciplinas únicas das metas instanciadas
+    const disciplinasUnicas = new Set(metasInstanciadas.map(meta => meta.disciplina));
+
     setStats({
       performance: performanceFormatada,
       hoursStudied: `${Math.floor(totalHours)}h${Math.round((totalHours % 1) * 60)}m`,
       questionsSolved,
-      dailyAvg: `${Math.floor(dailyAvg)}h${Math.round((dailyAvg % 1) * 60)}m`
+      dailyAvg: `${Math.floor(dailyAvg)}h${Math.round((dailyAvg % 1) * 60)}m`,
+      uniqueDisciplines: disciplinasUnicas.size,
+      totalMetas,
+      metasConcluidas
     });
   };
 
@@ -308,11 +335,12 @@ export default function AlunoDashboard() {
           )}
           <SprintHeader 
             sprintTitle={sprint?.nome}
-            progress={sprint ? (metasConcluidas / totalMetas) * 100 : 0}
+            progress={sprint ? (stats.metasConcluidas / stats.totalMetas) * 100 : 0}
             startDate={sprint?.dataInicio}
             disableSprintChange={true}
             sprints={[sprint].filter(Boolean)}
             selectedSprintId={sprint?.id}
+            stats={stats}
           >
             <SprintStats stats={stats} />
           </SprintHeader>

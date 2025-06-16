@@ -4,7 +4,13 @@ import api from '../../services/api';
 
 /**
  * Componente TodasSprints
- * Exibe a lista de todas as sprints associadas ao aluno
+ * ATENÇÃO: Este componente é específico para a interface do aluno e utiliza apenas
+ * as rotas de instâncias (não os templates). NÃO alterar a lógica de busca
+ * sem consultar o time de desenvolvimento.
+ * 
+ * Exibe a lista de todas as sprints instanciadas associadas ao aluno.
+ * Utiliza a rota /planos/:id/sprints-instancia para buscar as sprints,
+ * que retorna as instâncias específicas do aluno (não os templates).
  */
 export default function TodasSprints() {
   const [sprints, setSprints] = useState([]);
@@ -17,6 +23,10 @@ export default function TodasSprints() {
     fetchUsuarioInfo();
   }, []);
 
+  /**
+   * Busca as informações do usuário logado
+   * ATENÇÃO: Função necessária para identificar o aluno e seu plano associado
+   */
   const fetchUsuarioInfo = async () => {
     try {
       const response = await api.get('/auth/me');
@@ -31,6 +41,10 @@ export default function TodasSprints() {
     }
   };
 
+  /**
+   * Busca o plano associado ao aluno
+   * ATENÇÃO: Função necessária para obter o ID do plano instanciado do aluno
+   */
   const fetchAlunoPlano = async () => {
     try {
       const planoResp = await api.get('/aluno-plano/meu-plano');
@@ -48,26 +62,18 @@ export default function TodasSprints() {
     }
   };
 
+  /**
+   * Busca as sprints instanciadas do plano do aluno
+   * ATENÇÃO: Esta função utiliza a rota específica para instâncias
+   * NÃO alterar para usar a rota de templates sem consultar o time
+   */
   const fetchSprintsDoPlano = async (planoId) => {
     try {
       setLoading(true);
-      const response = await api.get(`/planos/${planoId}/sprints`);
-      
-      // Buscar detalhes completos de cada sprint
-      const sprintsComDetalhes = await Promise.all(
-        response.data.map(async (sprint) => {
-          try {
-            const sprintDetalhes = await api.get(`/sprints/${sprint.id}`);
-            return sprintDetalhes.data;
-          } catch (error) {
-            console.error(`Erro ao buscar detalhes da sprint ${sprint.id}:`, error);
-            return sprint;
-          }
-        })
-      );
+      const response = await api.get(`/planos/${planoId}/sprints-instancia`);
       
       // Ordenar sprints por posição ou data de início
-      const sortedSprints = [...sprintsComDetalhes].sort((a, b) => {
+      const sortedSprints = [...response.data].sort((a, b) => {
         if (a.posicao !== undefined && b.posicao !== undefined) {
           return a.posicao - b.posicao;
         }
@@ -83,11 +89,18 @@ export default function TodasSprints() {
     }
   };
 
+  /**
+   * Formata uma data para exibição
+   */
   const formatDate = (dateString) => {
     if (!dateString) return 'Não definido';
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  /**
+   * Calcula estatísticas de uma sprint
+   * ATENÇÃO: Função que processa dados específicos das instâncias
+   */
   const calculateStats = (metas) => {
     if (!metas || metas.length === 0) return {
       performance: '0%',
@@ -201,7 +214,7 @@ export default function TodasSprints() {
                 </div>
                 <div className={styles.detail}>
                   <span className={styles.label}>Metas:</span>
-                  <span>{sprint.metas?.length || 0} atividades</span>
+                  <span>{sprint.metas?.length || 0} metas</span>
                 </div>
                 <div className={styles.detail}>
                   <span className={styles.label}>Concluídas:</span>

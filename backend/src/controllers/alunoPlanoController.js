@@ -371,6 +371,7 @@ exports.buscarAlunosPorPlano = async (req, res) => {
 
 /**
  * Retorna o plano associado ao aluno logado
+ * ATENÇÃO: Retorna apenas planos ativos (ativo = true)
  * @param {Object} req - Requisição HTTP
  * @param {Object} res - Resposta HTTP
  * @returns {Object} Associação aluno-plano do aluno autenticado
@@ -379,14 +380,17 @@ exports.getPlanoDoAlunoLogado = async (req, res) => {
   try {
     const idusuario = req.user.id;
     const associacao = await AlunoPlano.findOne({
-      where: { IdUsuario: idusuario },
+      where: { 
+        IdUsuario: idusuario,
+        ativo: true // Adiciona filtro para buscar apenas planos ativos
+      },
       include: [
         { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] },
         { model: Plano, as: 'plano', attributes: ['id', 'nome', 'cargo', 'duracao', 'descricao'] }
       ]
     });
     if (!associacao) {
-      return res.status(404).json({ message: 'Nenhum plano associado a este usuário.' });
+      return res.status(404).json({ message: 'Nenhum plano ativo associado a este usuário.' });
     }
     res.status(200).json({
       id: associacao.id,
@@ -399,7 +403,8 @@ exports.getPlanoDoAlunoLogado = async (req, res) => {
       status: associacao.status,
       observacoes: associacao.observacoes,
       usuario: associacao.usuario,
-      plano: associacao.plano
+      plano: associacao.plano,
+      ativo: associacao.ativo
     });
   } catch (error) {
     console.error('Erro ao buscar plano do usuário logado:', error);

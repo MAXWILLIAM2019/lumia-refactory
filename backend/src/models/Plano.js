@@ -1,22 +1,25 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../db');
-
 /**
  * Modelo Plano
- * Representa um plano de estudos com suas disciplinas e assuntos
+ * Representa uma instância de plano de estudos gerada a partir de um PlanoMestre (template)
  * 
  * Campos:
- * - nome: Nome do plano
- * - cargo: Cargo alvo do plano
- * - descricao: Descrição detalhada do plano
- * - duracao: Duração em meses
+ * - nome: Nome do plano (herdado do template)
+ * - cargo: Cargo alvo do plano (herdado do template)
+ * - descricao: Descrição detalhada do plano (herdado do template)
+ * - duracao: Duração em meses (herdado do template)
+ * - plano_mestre_id: Referência ao template que originou esta instância
  * 
  * Relacionamentos:
- * - hasMany Disciplina: Um plano pode ter várias disciplinas
+ * - belongsTo PlanoMestre: Uma instância pertence a um template
+ * - hasMany Sprint: Uma instância pode ter várias sprints
+ * - belongsToMany Disciplina: Mantém as disciplinas associadas à instância
  * 
  * Nota: Os relacionamentos são definidos no arquivo index.js para evitar
  * problemas de referência circular e duplicação.
  */
+const { DataTypes } = require('sequelize');
+const sequelize = require('../db');
+
 const Plano = sequelize.define('Plano', {
   nome: {
     type: DataTypes.STRING,
@@ -44,7 +47,7 @@ const Plano = sequelize.define('Plano', {
       model: 'PlanosMestre',
       key: 'id'
     },
-    comment: 'Referência ao plano mestre que originou este plano'
+    comment: 'Referência ao plano mestre (template) que originou esta instância'
   }
 }, {
   timestamps: true // Adiciona createdAt e updatedAt

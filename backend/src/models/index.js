@@ -2,7 +2,22 @@
  * Arquivo de índice para modelos
  * 
  * Este arquivo centraliza a exportação de todos os modelos
- * e garante que os relacionamentos sejam estabelecidos corretamente.
+ * e estabelece os relacionamentos da nova arquitetura de templates.
+ * 
+ * Arquitetura:
+ * 1. Templates (Modelos Mestre):
+ *    - PlanoMestre -> SprintMestre -> MetaMestre
+ *    - Servem como base para criar instâncias personalizadas
+ * 
+ * 2. Instâncias:
+ *    - Plano -> Sprint -> Meta
+ *    - Cada instância mantém referência ao seu template
+ *    - Permite customização individual sem afetar o template
+ * 
+ * 3. Disciplinas e Assuntos:
+ *    - Vinculados diretamente às metas
+ *    - Não seguem o padrão de templates
+ *    - Suporte para importação via planilha
  */
 const Plano = require('./Plano');
 const Disciplina = require('./Disciplina');

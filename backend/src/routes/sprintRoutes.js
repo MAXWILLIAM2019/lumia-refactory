@@ -29,7 +29,10 @@ router.put('/:id', sprintController.updateSprint);
 // Excluir uma sprint
 router.delete('/:id', sprintController.deleteSprint);
 
-// Atualizar uma meta
-router.put('/metas/:id', sprintController.updateMeta);
+// Atualizar uma meta mestre (template)
+router.put('/metas/mestre/:id', sprintController.updateMetaMestre);
+
+// Atualizar uma meta instanciada
+router.put('/metas/instancia/:id', sprintController.updateMetaInstancia);
 
 module.exports = router; 

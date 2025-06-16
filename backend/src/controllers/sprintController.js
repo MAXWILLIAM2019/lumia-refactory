@@ -3,18 +3,18 @@ const sequelize = require('../db');
 const { Op } = require('sequelize');
 
 /**
- * Controller de SprintMestre
- * Gerencia todas as operações relacionadas a sprints mestre e suas metas mestre
+ * Controller de SprintMestre e Sprint
+ * ATENÇÃO: Este controller gerencia tanto templates (mestre) quanto instâncias.
+ * Algumas funções são específicas para módulos do sistema e NÃO devem ser alteradas
+ * sem consulta prévia ao time de desenvolvimento.
  */
 
 /**
+ * ATENÇÃO: Função utilizada no módulo de administração (Cadastro de Planos)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
  * Cria uma nova sprint mestre com suas metas mestre
- * @param {Object} req - Requisição HTTP
- * @param {Object} req.body - Corpo da requisição contendo dados da sprint
- * @param {string} req.body.nome - Nome da sprint
- * @param {number} req.body.planoId - ID do plano mestre associado
- * @param {Array} req.body.metas - Lista de metas da sprint
- * @param {Object} res - Resposta HTTP
+ * Esta função é específica para o template de plano e é usada apenas na interface do administrador
  */
 exports.createSprint = async (req, res) => {
   try {
@@ -110,9 +110,11 @@ exports.createSprint = async (req, res) => {
 };
 
 /**
+ * ATENÇÃO: Função utilizada no módulo de administração (Cadastro de Planos)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
  * Busca todas as sprints mestre com suas metas mestre
- * @param {Object} req - Requisição HTTP
- * @param {Object} res - Resposta HTTP
+ * Esta função é específica para templates e é usada apenas na interface do administrador
  */
 exports.getAllSprints = async (req, res) => {
   try {
@@ -175,10 +177,11 @@ exports.getAllSprints = async (req, res) => {
 };
 
 /**
+ * ATENÇÃO: Função utilizada no módulo de administração (Cadastro de Planos)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
  * Busca uma sprint mestre específica com suas metas mestre
- * @param {Object} req - Requisição HTTP
- * @param {string} req.params.id - ID da sprint mestre
- * @param {Object} res - Resposta HTTP
+ * Esta função é específica para templates e é usada apenas na interface do administrador
  */
 exports.getSprintById = async (req, res) => {
   try {
@@ -242,15 +245,12 @@ exports.getSprintById = async (req, res) => {
 };
 
 /**
- * Função removida: atualizarStatusSprint
+ * ATENÇÃO: Função utilizada no módulo de administração (Cadastro de Planos)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
  * 
- * Esta função não se aplica aos templates (sprints mestre),
- * pois os templates não têm status de progresso.
- * 
- * O status será calculado apenas nas instâncias de sprint do aluno (feature futura).
+ * Atualiza uma sprint mestre e suas metas mestre
+ * Esta função é específica para templates e é usada apenas na interface do administrador
  */
-
-// Atualizar uma sprint mestre e suas metas mestre
 exports.updateSprint = async (req, res) => {
   try {
     const { nome, dataInicio, dataFim, planoId, metas } = req.body;
@@ -398,7 +398,13 @@ exports.updateSprint = async (req, res) => {
   }
 };
 
-// Deletar uma sprint mestre e suas metas mestre
+/**
+ * ATENÇÃO: Função utilizada no módulo de administração (Cadastro de Planos)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
+ * Deleta uma sprint mestre e suas metas mestre
+ * Esta função é específica para templates e é usada apenas na interface do administrador
+ */
 exports.deleteSprint = async (req, res) => {
   try {
     const sprintMestre = await SprintMestre.findByPk(req.params.id);
@@ -423,12 +429,11 @@ exports.deleteSprint = async (req, res) => {
 };
 
 /**
+ * ATENÇÃO: Função utilizada no módulo de administração (Cadastro de Planos)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
  * Reordena as sprints mestre de um plano mestre
- * @param {Object} req - Requisição HTTP
- * @param {Object} req.body - Corpo da requisição
- * @param {number} req.body.planoId - ID do plano mestre
- * @param {Array<number>} req.body.ordemSprints - Array com IDs das sprints mestre na nova ordem
- * @param {Object} res - Resposta HTTP
+ * Esta função é específica para templates e é usada apenas na interface do administrador
  */
 exports.reordenarSprints = async (req, res) => {
   const { planoId, ordemSprints } = req.body;
@@ -478,7 +483,7 @@ exports.reordenarSprints = async (req, res) => {
       }
     });
     
-    // Retornar as sprints mestre reordenadas (formatadas para frontend)
+    // Retornar as sprints mestres reordenadas (formatadas para frontend)
     const sprintsMestreAtualizadas = await SprintMestre.findAll({
       where: { PlanoMestreId: planoId },
       order: [['posicao', 'ASC']],
@@ -535,12 +540,18 @@ exports.reordenarSprints = async (req, res) => {
   }
 };
 
-// Atualizar uma meta mestre
-exports.updateMeta = async (req, res) => {
+/**
+ * ATENÇÃO: Função utilizada no módulo de administração (Cadastro de Planos)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
+ * Atualiza uma meta mestre (template)
+ * Esta função é específica para templates e é usada apenas na interface do administrador
+ */
+exports.updateMetaMestre = async (req, res) => {
   try {
     const metaMestre = await MetaMestre.findByPk(req.params.id);
     if (!metaMestre) {
-      return res.status(404).json({ message: 'Meta não encontrada' });
+      return res.status(404).json({ message: 'Meta mestre não encontrada' });
     }
 
     const { disciplina, tipo, titulo, comandos, link, relevancia, tempoEstudado, desempenho, status, totalQuestoes, questoesCorretas } = req.body;
@@ -573,7 +584,7 @@ exports.updateMeta = async (req, res) => {
       status: metaMestre.status,
       totalQuestoes: metaMestre.totalQuestoes,
       questoesCorretas: metaMestre.questoesCorretas,
-      SprintId: metaMestre.SprintMestreId, // Para compatibilidade com frontend
+      SprintId: metaMestre.SprintMestreId,
       createdAt: metaMestre.createdAt,
       updatedAt: metaMestre.updatedAt
     };
@@ -582,5 +593,104 @@ exports.updateMeta = async (req, res) => {
   } catch (error) {
     console.error('Erro ao atualizar meta mestre:', error);
     res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * ATENÇÃO: Função utilizada no módulo do aluno (Visualização de Metas)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
+ * Atualiza uma meta instanciada
+ * Esta função é específica para instâncias e é usada apenas na interface do aluno
+ */
+exports.updateMetaInstancia = async (req, res) => {
+  try {
+    const meta = await Meta.findByPk(req.params.id);
+    if (!meta) {
+      return res.status(404).json({ message: 'Meta instanciada não encontrada' });
+    }
+
+    const { tempoEstudado, desempenho, status, totalQuestoes, questoesCorretas } = req.body;
+
+    await meta.update({
+      tempoEstudado: tempoEstudado !== undefined ? tempoEstudado : meta.tempoEstudado,
+      desempenho: desempenho !== undefined ? desempenho : meta.desempenho,
+      status: status !== undefined ? status : meta.status,
+      totalQuestoes: totalQuestoes !== undefined ? totalQuestoes : meta.totalQuestoes,
+      questoesCorretas: questoesCorretas !== undefined ? questoesCorretas : meta.questoesCorretas
+    });
+
+    // Transformar para formato esperado pelo frontend
+    const metaFormatada = {
+      id: meta.id,
+      disciplina: meta.disciplina,
+      tipo: meta.tipo,
+      titulo: meta.titulo,
+      comandos: meta.comandos,
+      link: meta.link,
+      relevancia: meta.relevancia,
+      tempoEstudado: meta.tempoEstudado,
+      desempenho: meta.desempenho,
+      status: meta.status,
+      totalQuestoes: meta.totalQuestoes,
+      questoesCorretas: meta.questoesCorretas,
+      SprintId: meta.SprintId,
+      createdAt: meta.createdAt,
+      updatedAt: meta.updatedAt
+    };
+
+    res.json(metaFormatada);
+  } catch (error) {
+    console.error('Erro ao atualizar meta instanciada:', error);
+    res.status(400).json({ message: error.message });
+  }
+};
+
+/**
+ * ATENÇÃO: Função utilizada no módulo do aluno (Visualização de Sprints)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
+ * Busca sprints instanciadas de um plano
+ * Esta função é específica para instâncias e é usada apenas na interface do aluno
+ * para visualizar suas sprints e metas
+ */
+exports.buscarSprintsInstanciadasPorPlano = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    console.log(`Buscando sprints instanciadas do plano ID ${id}`);
+    
+    // Verificar se o plano existe
+    const plano = await Plano.findByPk(id);
+    if (!plano) {
+      return res.status(404).json({ error: 'Plano não encontrado' });
+    }
+    
+    // Buscar sprints do plano com suas metas
+    const sprints = await Sprint.findAll({
+      where: { PlanoId: id },
+      include: [
+        {
+          model: Meta,
+          as: 'metas',
+          order: [['id', 'ASC']]
+        }
+      ],
+      order: [
+        ['posicao', 'ASC'],
+        ['nome', 'ASC']
+      ]
+    });
+    
+    console.log(`${sprints.length} sprints encontradas para o plano ID ${id}`);
+    
+    res.json(sprints);
+  } catch (error) {
+    console.error('Erro ao buscar sprints do plano:', error);
+    console.error('Stack trace:', error.stack);
+    res.status(500).json({ 
+      error: 'Erro ao buscar sprints do plano', 
+      details: error.message 
+    });
   }
 }; 

@@ -16,6 +16,7 @@ import api from '../../services/api';
  * @param {Array} props.sprints - Lista de sprints disponíveis
  * @param {string} props.selectedSprintId - ID da sprint selecionada
  * @param {string} props.initialSprintId - ID da sprint inicial
+ * @param {Object} props.stats - Estatísticas da sprint
  */
 export default function SprintHeader({ 
   children, 
@@ -26,26 +27,11 @@ export default function SprintHeader({
   disableSprintChange = false,
   sprints = [],
   selectedSprintId = null,
-  initialSprintId = null
+  initialSprintId = null,
+  stats = {}
 }) {
   const [loading, setLoading] = useState(false);
   const [sprintData, setSprintData] = useState(null);
-  const [completedActivities, setCompletedActivities] = useState(0);
-  const [totalActivities, setTotalActivities] = useState(0);
-  const [uniqueDisciplines, setUniqueDisciplines] = useState(0);
-
-  // Efeito para atualizar os contadores quando o progresso muda
-  useEffect(() => {
-    if (sprintData?.metas) {
-      const completed = sprintData.metas.filter(m => m.status === 'Concluída').length;
-      const total = sprintData.metas.length;
-      const disciplines = [...new Set(sprintData.metas.map(m => m.disciplina))].length;
-      
-      setCompletedActivities(completed);
-      setTotalActivities(total);
-      setUniqueDisciplines(disciplines);
-    }
-  }, [sprintData]);
 
   // Efeito para buscar dados da sprint quando o ID muda
   useEffect(() => {
@@ -120,8 +106,8 @@ export default function SprintHeader({
             <div className={styles.sprintMetaContainer}>
               <div className={styles.metaTitle}>{sprintTitle}</div>
               <div className={styles.progressCounter}>
-                <span className={styles.completedCount}>✔️ {completedActivities} Metas Concluídas</span>
-                <span className={styles.totalIndicator}>{totalActivities > 0 ? Math.round(progress) : 0}%</span>
+                <span className={styles.completedCount}>✔️ {stats.metasConcluidas || 0} Metas Concluídas</span>
+                <span className={styles.totalIndicator}>{progress > 0 ? Math.round(progress) : 0}%</span>
               </div>
               <div className={styles.progressBarWrapper}>
                 <div className={styles.progressBarBg}>
@@ -133,8 +119,8 @@ export default function SprintHeader({
               </div>
               <div className={styles.metaFooter}>
                 <div className={styles.sprintDetails}>
-                  <span>{uniqueDisciplines} Disciplinas</span>
-                  <span>{totalActivities} Atividades</span>
+                  <span>{stats.uniqueDisciplines || 0} Disciplinas</span>
+                  <span>{stats.totalMetas || 0} Metas</span>
                 </div>
                 <div className={styles.sprintStart}>Iniciada: {formatDate(startDate)}</div>
               </div>

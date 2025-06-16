@@ -275,8 +275,8 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
         updateData.questoesCorretas = formData.questoesCorretas;
       }
       
-      // Enviar para o backend
-      await api.put(`/sprints/metas/${selectedActivity.codigo}`, updateData);
+      // Enviar para o backend usando a rota de meta instanciada
+      await api.put(`/sprints/metas/instancia/${selectedActivity.codigo}`, updateData);
       
       // Fechar o modal e atualizar os dados
       handleModalClose();

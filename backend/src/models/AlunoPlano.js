@@ -1,17 +1,16 @@
 /**
  * Modelo AlunoPlano
  * 
- * Representa a associação entre um aluno e um plano de estudos.
+ * Representa a associação entre um aluno e uma instância de plano de estudos.
  * Armazena informações sobre o progresso do aluno no plano.
  * 
  * NOTA DE IMPLEMENTAÇÃO:
- * Embora este modelo use uma estrutura many-to-many (belongsToMany), 
- * a lógica de negócio atual implementa uma relação 1:1, onde:
- * - Um aluno tem no máximo um plano ativo
- * - Um plano pode estar associado a vários alunos
- * 
- * Para expansão futura para N:N completo, basta remover as validações
- * que limitam um aluno a ter apenas um plano ativo no controlador.
+ * Este modelo implementa a nova arquitetura de templates, onde:
+ * - Um plano é uma instância gerada a partir de um PlanoMestre (template)
+ * - Cada aluno recebe sua própria instância customizável do plano
+ * - O plano instanciado mantém referência ao template original via plano_mestre_id
+ * - Permite escalabilidade, pois um mesmo template pode gerar N instâncias
+ * - Cada instância pode ser personalizada sem afetar o template ou outras instâncias
  */
 const { DataTypes } = require('sequelize');
 const sequelize = require('../db');
@@ -22,7 +21,7 @@ const Plano = require('./Plano');
  * Definição do modelo AlunoPlano com os seguintes campos:
  * 
  * @property {number} IdUsuario - ID do usuário/aluno (chave estrangeira para usuario)
- * @property {number} PlanoId - ID do plano (chave estrangeira para planos)
+ * @property {number} PlanoId - ID do plano instanciado (chave estrangeira para planos)
  * @property {Date} dataInicio - Data de início do plano para o aluno
  * @property {Date} dataPrevisaoTermino - Data prevista para término
  * @property {Date} dataConclusao - Data efetiva de conclusão (null se não concluído)
@@ -52,7 +51,7 @@ const AlunoPlano = sequelize.define('AlunoPlano', {
       key: 'id'
     },
     field: 'PlanoId',
-    comment: 'ID do plano (chave estrangeira para planos)'
+    comment: 'ID do plano instanciado (chave estrangeira para planos)'
   },
   dataInicio: {
     type: DataTypes.DATE,
