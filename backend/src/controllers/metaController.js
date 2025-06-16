@@ -15,6 +15,21 @@ const { Op } = require('sequelize');
  * 
  * Cria uma nova meta mestre
  * Esta função é específica para o template de plano e é usada apenas na interface do administrador
+ * 
+ * Gerenciamento de Posições:
+ * - Ao criar uma única meta, busca a última posição na sprint e incrementa
+ * - Diferente da criação em lote (createSprint), aqui é seguro consultar o banco
+ *   pois estamos criando apenas uma meta por vez
+ * - Se não houver metas na sprint, começa com posição 1
+ * 
+ * Exemplo:
+ * Estado Inicial:
+ * - Meta A (pos: 1)
+ * - Meta B (pos: 2)
+ * 
+ * Nova Meta:
+ * - Consulta última posição (2)
+ * - Nova meta recebe posição 3
  */
 exports.createMeta = async (req, res) => {
   try {
@@ -58,6 +73,29 @@ exports.createMeta = async (req, res) => {
  * 
  * Reordena as metas mestre de uma sprint mestre
  * Esta função é específica para templates e é usada apenas na interface do administrador
+ * 
+ * Gerenciamento de Posições:
+ * - Recebe um array com a nova ordem dos IDs das metas
+ * - Atualiza as posições em uma única transação para garantir consistência
+ * - Posições são atribuídas sequencialmente (1, 2, 3, etc.) baseado na ordem do array
+ * 
+ * Validações:
+ * - Verifica se todas as metas pertencem à sprint informada
+ * - Garante que todas as metas da sprint estão presentes no array
+ * 
+ * Exemplo:
+ * Estado Inicial:
+ * - Meta A (id: 1, pos: 1)
+ * - Meta B (id: 2, pos: 2)
+ * - Meta C (id: 3, pos: 3)
+ * 
+ * Requisição:
+ * ordemMetas = [2, 3, 1]
+ * 
+ * Resultado:
+ * - Meta B (id: 2, pos: 1)
+ * - Meta C (id: 3, pos: 2)
+ * - Meta A (id: 1, pos: 3)
  */
 exports.reordenarMetasMestre = async (req, res) => {
   const { sprintId, ordemMetas } = req.body;

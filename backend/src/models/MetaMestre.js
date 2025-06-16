@@ -17,8 +17,16 @@ const sequelize = require('../db');
  * - status: Status do template (para compatibilidade com frontend)
  * - totalQuestoes: Total de questões planejadas (para compatibilidade com frontend)
  * - questoesCorretas: Meta de questões corretas (para compatibilidade com frontend)
- * - posicao: Posição do template na lista de metas
+ * - posicao: Posição da meta na sprint (usado para ordenação)
+ *           Cada meta deve ter uma posição única dentro da sua sprint
+ *           A posição é gerenciada automaticamente pelos controllers:
+ *           - Na criação em lote (createSprint): posição = índice + 1
+ *           - Na criação individual (createMeta): próxima posição disponível
+ *           - Na atualização (updateSprint): mantém posição existente ou próxima disponível
  * - SprintMestreId: ID da sprint mestre à qual pertence
+ * 
+ * Restrições:
+ * - Não pode existir duas metas com a mesma posição na mesma sprint (constraint: sprint_mestre_posicao_unique)
  * 
  * Relacionamentos:
  * - belongsTo SprintMestre: Uma meta mestre pertence a uma sprint mestre

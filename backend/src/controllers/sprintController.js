@@ -15,6 +15,19 @@ const { Op } = require('sequelize');
  * 
  * Cria uma nova sprint mestre com suas metas mestre
  * Esta função é específica para o template de plano e é usada apenas na interface do administrador
+ * 
+ * Gerenciamento de Posições:
+ * - Para evitar problemas de race condition ao criar múltiplas metas simultaneamente,
+ *   usamos o índice do array + 1 como posição, garantindo posições únicas (1, 2, 3, etc.)
+ * - Este método NÃO consulta o banco para determinar posições, evitando conflitos
+ * - As posições são atribuídas sequencialmente na ordem em que as metas aparecem no array
+ * 
+ * Exemplo:
+ * metas = [
+ *   { titulo: "Meta 1" }, // receberá posição 1
+ *   { titulo: "Meta 2" }, // receberá posição 2
+ *   { titulo: "Meta 3" }  // receberá posição 3
+ * ]
  */
 exports.createSprint = async (req, res) => {
   try {
@@ -254,6 +267,26 @@ exports.getSprintById = async (req, res) => {
  * 
  * Atualiza uma sprint mestre e suas metas mestre
  * Esta função é específica para templates e é usada apenas na interface do administrador
+ * 
+ * Gerenciamento de Posições:
+ * - Ao atualizar metas existentes: mantém a posição original
+ * - Ao criar novas metas: 
+ *   1. Busca a maior posição atual uma única vez
+ *   2. Incrementa a partir dessa posição para cada nova meta
+ *   3. Usa um contador (proximaPosicao++) para garantir posições únicas
+ * 
+ * Exemplo de Atualização:
+ * Estado Inicial:
+ * - Meta A (id: 1, pos: 1)
+ * - Meta B (id: 2, pos: 2)
+ * 
+ * Requisição:
+ * metas = [
+ *   { id: 1, titulo: "Meta A" },     // mantém posição 1
+ *   { id: 2, titulo: "Meta B" },     // mantém posição 2
+ *   { titulo: "Nova Meta C" },       // recebe posição 3
+ *   { titulo: "Nova Meta D" }        // recebe posição 4
+ * ]
  */
 exports.updateSprint = async (req, res) => {
   try {
