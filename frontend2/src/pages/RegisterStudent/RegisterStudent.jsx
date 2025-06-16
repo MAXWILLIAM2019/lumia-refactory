@@ -520,7 +520,7 @@ export default function RegisterStudent() {
             planoMestreId: Number(dadosEditados.planoId),
             idUsuario: alunoEditando.id,
             dataInicio: new Date().toISOString().split('T')[0],
-            status: 'não iniciado'
+            status: 'em andamento'
           });
           
           console.log('✓ Instância do plano criada com sucesso:', criarPlanoResponse.data);
