@@ -2,12 +2,24 @@
  * Serviço de Autenticação
  * 
  * Este módulo gerencia todas as operações relacionadas à autenticação,
- * como gerenciamento de tokens e verificação de status de autenticação.
+ * incluindo o sistema de impersonation que permite administradores
+ * acessarem o sistema como se fossem alunos específicos.
+ * 
+ * Fluxo de Impersonation:
+ * 1. Admin inicia impersonation de um aluno
+ * 2. Token original é armazenado
+ * 3. Novo token de impersonation é usado
+ * 4. Sistema opera como aluno
+ * 5. Admin pode retornar à sua sessão original
  */
 import api from './api';
 
 const AUTH_TOKEN_KEY = 'token';
 const USER_ROLE_KEY = 'userRole';
+const IMPERSONATION_KEY = 'impersonating';
+const ORIGINAL_TOKEN_KEY = 'originalToken';
+const ORIGINAL_ROLE_KEY = 'originalRole';
+const IMPERSONATED_USER_KEY = 'impersonatedUser';
 
 const authService = {
   /**
@@ -37,6 +49,10 @@ const authService = {
     console.log('Removendo token do localStorage');
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(USER_ROLE_KEY);
+    localStorage.removeItem(IMPERSONATION_KEY);
+    localStorage.removeItem(ORIGINAL_TOKEN_KEY);
+    localStorage.removeItem(ORIGINAL_ROLE_KEY);
+    localStorage.removeItem(IMPERSONATED_USER_KEY);
   },
 
   /**
@@ -137,6 +153,105 @@ const authService = {
       console.error('Erro no login:', error);
       throw error;
     }
+  },
+
+  /**
+   * Inicia uma sessão de impersonation como aluno
+   * @param {number} alunoId - ID do aluno a ser impersonado
+   * @returns {Promise<Object>} Dados do usuário impersonado e novo token
+   * 
+   * Processo:
+   * 1. Solicita token de impersonation do backend
+   * 2. Armazena credenciais originais do admin
+   * 3. Configura nova sessão como aluno
+   * 4. Atualiza headers de autenticação
+   */
+  async startImpersonation(alunoId) {
+    try {
+      console.log('Iniciando impersonation para aluno:', alunoId);
+      const response = await api.post(`/auth/impersonate/${alunoId}`);
+      
+      if (response.data.success && response.data.token) {
+        console.log('Token de impersonation recebido:', response.data);
+        
+        // Guarda o token e role originais
+        localStorage.setItem(ORIGINAL_TOKEN_KEY, this.getToken());
+        localStorage.setItem(ORIGINAL_ROLE_KEY, this.getUserRole());
+        
+        // Define o novo token de impersonation
+        this.setToken(response.data.token, 'aluno');
+        localStorage.setItem(IMPERSONATION_KEY, 'true');
+        localStorage.setItem(IMPERSONATED_USER_KEY, JSON.stringify(response.data.usuario));
+        
+        // Configura o token no Axios
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+        
+        console.log('Impersonation configurado com sucesso');
+        return response.data;
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
+    } catch (error) {
+      console.error('Erro ao iniciar impersonation:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Encerra uma sessão de impersonation
+   * 
+   * Processo:
+   * 1. Recupera credenciais originais do admin
+   * 2. Restaura sessão original
+   * 3. Limpa dados de impersonation
+   * 4. Atualiza headers de autenticação
+   */
+  stopImpersonation() {
+    const originalToken = localStorage.getItem(ORIGINAL_TOKEN_KEY);
+    const originalRole = localStorage.getItem(ORIGINAL_ROLE_KEY);
+    
+    if (originalToken && originalRole) {
+      console.log('Restaurando sessão original');
+      this.setToken(originalToken, originalRole);
+      
+      // Configura o token original no Axios
+      api.defaults.headers.common['Authorization'] = `Bearer ${originalToken}`;
+      
+      localStorage.removeItem(ORIGINAL_TOKEN_KEY);
+      localStorage.removeItem(ORIGINAL_ROLE_KEY);
+      localStorage.removeItem(IMPERSONATION_KEY);
+      localStorage.removeItem(IMPERSONATED_USER_KEY);
+    }
+  },
+
+  /**
+   * Verifica se está em modo de impersonation
+   * @returns {boolean} true se estiver em modo de impersonation
+   * 
+   * Usado para:
+   * - Controlar exibição de alertas de impersonation
+   * - Gerenciar comportamento de componentes
+   * - Validar operações permitidas
+   */
+  isImpersonating() {
+    return localStorage.getItem(IMPERSONATION_KEY) === 'true';
+  },
+
+  /**
+   * Obtém o papel original do usuário antes do impersonation
+   * @returns {string|null}
+   */
+  getOriginalRole() {
+    return localStorage.getItem(ORIGINAL_ROLE_KEY);
+  },
+
+  /**
+   * Obtém os dados do usuário sendo impersonado
+   * @returns {Object|null}
+   */
+  getImpersonatedUser() {
+    const userData = localStorage.getItem(IMPERSONATED_USER_KEY);
+    return userData ? JSON.parse(userData) : null;
   }
 };
 

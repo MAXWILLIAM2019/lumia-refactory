@@ -27,6 +27,8 @@ const AlunoPlano = require('../models/AlunoPlano');
 const Aluno = require('../models/Aluno');
 const Plano = require('../models/Plano');
 const Usuario = require('../models/Usuario');
+const Sprint = require('../models/Sprint');
+const Meta = require('../models/Meta');
 const { Op } = require('sequelize');
 const sequelize = require('../db');
 
@@ -88,7 +90,7 @@ exports.atribuirPlanoAluno = async (req, res) => {
     console.log('3. Verificando planos ativos do usuário...');
     const planoExistente = await AlunoPlano.findOne({
       where: {
-        IdUsuario: idusuario,
+        idusuario: idusuario,
         [Op.or]: [
           { status: 'não iniciado' },
           { status: 'em andamento' }
@@ -111,7 +113,7 @@ exports.atribuirPlanoAluno = async (req, res) => {
     console.log('4. Verificando associação existente...');
     const associacaoExistente = await AlunoPlano.findOne({
       where: {
-        IdUsuario: idusuario,
+        idusuario: idusuario,
         PlanoId: PlanoId
       },
       transaction
@@ -135,7 +137,7 @@ exports.atribuirPlanoAluno = async (req, res) => {
     // Criar a associação
     console.log('6. Criando nova associação...');
     const dadosCriacao = {
-      IdUsuario: idusuario,
+      idusuario: idusuario,
       PlanoId: PlanoId,
       dataInicio: dataInicio || new Date(),
       dataPrevisaoTermino: dataFinal,
@@ -154,7 +156,7 @@ exports.atribuirPlanoAluno = async (req, res) => {
     // Retornar a associação criada com dados do usuário e plano
     const resultado = await AlunoPlano.findOne({
       where: {
-        IdUsuario: alunoPlano.IdUsuario,
+        idusuario: alunoPlano.idusuario,
         PlanoId: alunoPlano.PlanoId
       },
       include: [
@@ -185,7 +187,7 @@ exports.atribuirPlanoAluno = async (req, res) => {
  * ATENÇÃO: Método testado e funcional - Não alterar sem consulta!
  * 
  * Fluxo de execução:
- * 1. Busca a associação aluno-plano pela chave composta (IdUsuario, PlanoId)
+ * 1. Busca a associação aluno-plano pela chave composta (idusuario, PlanoId)
  * 2. Atualiza campos conforme solicitado:
  *    - progresso: percentual de conclusão (0-100)
  *    - status: estado atual do plano
@@ -205,7 +207,7 @@ exports.atualizarProgresso = async (req, res) => {
     }
     // Buscar pela chave composta
     const alunoPlano = await AlunoPlano.findOne({
-      where: { IdUsuario: idusuario, PlanoId },
+      where: { idusuario: idusuario, PlanoId },
     });
     if (!alunoPlano) {
       return res.status(404).json({ message: 'Associação aluno-plano não encontrada' });
@@ -230,7 +232,7 @@ exports.atualizarProgresso = async (req, res) => {
     await alunoPlano.update(dadosAtualizacao);
     // Buscar os dados atualizados
     const resultado = await AlunoPlano.findOne({
-      where: { IdUsuario: idusuario, PlanoId },
+      where: { idusuario: idusuario, PlanoId },
       include: [
         { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] },
         { model: Plano, as: 'plano' }
@@ -268,7 +270,7 @@ exports.removerAssociacao = async (req, res) => {
     }
     // Buscar pela chave composta
     const alunoPlano = await AlunoPlano.findOne({
-      where: { IdUsuario: idusuario, PlanoId },
+      where: { idusuario: idusuario, PlanoId },
     });
     if (!alunoPlano) {
       return res.status(404).json({ message: 'Associação aluno-plano não encontrada' });
@@ -300,44 +302,45 @@ exports.removerAssociacao = async (req, res) => {
  */
 exports.listarAssociacoes = async (req, res) => {
   try {
-    console.log('Buscando associações aluno-plano...');
     const associacoes = await AlunoPlano.findAll({
       include: [
-        { 
-          model: Usuario,
-          as: 'usuario',
-          attributes: ['idusuario', 'login']
-        },
-        { 
-          model: Plano,
-          as: 'plano',
-          attributes: ['id', 'nome', 'cargo', 'duracao']
-        }
-      ],
-      order: [['createdAt', 'DESC']]
+        { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] },
+        { model: Plano, as: 'plano' }
+      ]
+    });
+    res.json(associacoes);
+  } catch (error) {
+    console.error('Erro ao listar associações:', error);
+    res.status(500).json({ 
+      message: 'Erro ao listar associações',
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Busca uma associação aluno-plano específica
+ */
+exports.buscarAssociacaoPorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const associacao = await AlunoPlano.findOne({
+      where: { id },
+      include: [
+        { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] },
+        { model: Plano, as: 'plano' }
+      ]
     });
     
-    // Formatar a resposta para ser mais fácil de usar no frontend
-    const associacoesFormatadas = associacoes.map(assoc => ({
-      id: assoc.id,
-      idusuario: assoc.IdUsuario,
-      planoId: assoc.PlanoId,
-      dataInicio: assoc.dataInicio,
-      dataPrevisaoTermino: assoc.dataPrevisaoTermino,
-      dataConclusao: assoc.dataConclusao,
-      progresso: assoc.progresso,
-      status: assoc.status,
-      observacoes: assoc.observacoes,
-      usuario: assoc.usuario,
-      plano: assoc.plano
-    }));
+    if (!associacao) {
+      return res.status(404).json({ message: 'Associação não encontrada' });
+    }
     
-    console.log(`${associacoesFormatadas.length} associações encontradas.`);
-    res.status(200).json(associacoesFormatadas);
+    res.json(associacao);
   } catch (error) {
-    console.error('Erro ao listar associações aluno-plano:', error);
+    console.error('Erro ao buscar associação:', error);
     res.status(500).json({ 
-      message: 'Erro ao listar associações aluno-plano',
+      message: 'Erro ao buscar associação',
       error: error.message 
     });
   }
@@ -354,46 +357,18 @@ exports.listarAssociacoes = async (req, res) => {
  */
 exports.buscarPlanosPorAluno = async (req, res) => {
   try {
-    const { idusuario } = req.params;
-    console.log(`Buscando planos para o usuário ID: ${idusuario}`);
-    
-    // Verificar se o usuário existe
-    const usuario = await Usuario.findByPk(idusuario);
-    if (!usuario) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
-    }
-    
-    // Buscar as associações do usuário
+    const { alunoId } = req.params;
     const associacoes = await AlunoPlano.findAll({
-      where: { IdUsuario: idusuario },
-      include: [{ 
-        model: Plano, 
-        as: 'plano',
-        attributes: ['id', 'nome', 'cargo', 'duracao', 'descricao']
-      }],
-      order: [['createdAt', 'DESC']]
+      where: { idusuario: alunoId },
+      include: [
+        { model: Plano, as: 'plano' }
+      ]
     });
-    
-    // Formatar a resposta
-    const planosFormatados = associacoes.map(assoc => ({
-      id: assoc.id,
-      idusuario: assoc.IdUsuario,
-      planoId: assoc.PlanoId,
-      dataInicio: assoc.dataInicio,
-      dataPrevisaoTermino: assoc.dataPrevisaoTermino,
-      dataConclusao: assoc.dataConclusao,
-      progresso: assoc.progresso,
-      status: assoc.status,
-      observacoes: assoc.observacoes,
-      plano: assoc.plano
-    }));
-    
-    console.log(`Encontradas ${planosFormatados.length} associações para o usuário ${idusuario}`);
-    res.status(200).json(planosFormatados);
+    res.json(associacoes);
   } catch (error) {
-    console.error('Erro ao buscar planos do usuário:', error);
+    console.error('Erro ao buscar planos do aluno:', error);
     res.status(500).json({ 
-      message: 'Erro ao buscar planos do usuário',
+      message: 'Erro ao buscar planos do aluno',
       error: error.message 
     });
   }
@@ -411,23 +386,13 @@ exports.buscarPlanosPorAluno = async (req, res) => {
 exports.buscarAlunosPorPlano = async (req, res) => {
   try {
     const { planoId } = req.params;
-    console.log(`Buscando alunos para o plano ID: ${planoId}`);
-    
-    // Verificar se o plano existe
-    const plano = await Plano.findByPk(planoId);
-    if (!plano) {
-      return res.status(404).json({ message: 'Plano não encontrado' });
-    }
-    
-    // Buscar as associações do plano - Use PlanoId em vez de planoId
     const associacoes = await AlunoPlano.findAll({
       where: { PlanoId: planoId },
-      include: [{ model: Usuario, as: 'usuario' }],
-      order: [['progresso', 'DESC']]
+      include: [
+        { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] }
+      ]
     });
-    
-    console.log(`Encontrados ${associacoes.length} alunos para o plano ${planoId}`);
-    res.status(200).json(associacoes);
+    res.json(associacoes);
   } catch (error) {
     console.error('Erro ao buscar alunos do plano:', error);
     res.status(500).json({ 
@@ -444,38 +409,66 @@ exports.buscarAlunosPorPlano = async (req, res) => {
  * @param {Object} res - Resposta HTTP
  * @returns {Object} Associação aluno-plano do aluno autenticado
  */
-exports.getPlanoDoAlunoLogado = async (req, res) => {
+exports.buscarPlanoDoAlunoLogado = async (req, res) => {
   try {
-    const idusuario = req.user.id;
+    console.log('========== BUSCANDO PLANO DO ALUNO LOGADO ==========');
+    console.log('Dados do usuário:', req.user);
+    
+    const idUsuario = req.user.id;
+    console.log('ID do usuário:', idUsuario);
+    
+    // Buscar a associação aluno-plano diretamente
+    console.log('Buscando associação aluno-plano com os parâmetros:', {
+      idusuario: idUsuario,
+      ativo: true
+    });
+    
     const associacao = await AlunoPlano.findOne({
       where: { 
-        IdUsuario: idusuario,
-        ativo: true // Adiciona filtro para buscar apenas planos ativos
+        idusuario: idUsuario,
+        ativo: true
       },
       include: [
-        { model: Usuario, as: 'usuario', attributes: ['idusuario', 'login'] },
-        { model: Plano, as: 'plano', attributes: ['id', 'nome', 'cargo', 'duracao', 'descricao'] }
+        { 
+          model: Plano,
+          as: 'plano',
+          include: [
+            {
+              model: Sprint,
+              as: 'sprints',
+              include: [
+                { 
+                  model: Meta,
+                  as: 'metas'
+                }
+              ]
+            }
+          ]
+        }
       ]
     });
+
     if (!associacao) {
-      return res.status(404).json({ message: 'Nenhum plano ativo associado a este usuário.' });
+      console.log('Nenhum plano ativo encontrado para o usuário');
+      return res.status(404).json({ message: 'Você não possui planos de estudo atribuídos.' });
     }
-    res.status(200).json({
-      id: associacao.id,
-      idusuario: associacao.IdUsuario,
+
+    // Contar sprints e metas
+    const sprints = associacao.plano.sprints || [];
+    const metas = sprints.reduce((total, sprint) => total + (sprint.metas ? sprint.metas.length : 0), 0);
+
+    console.log('Plano encontrado:', {
       planoId: associacao.PlanoId,
-      dataInicio: associacao.dataInicio,
-      dataPrevisaoTermino: associacao.dataPrevisaoTermino,
-      dataConclusao: associacao.dataConclusao,
-      progresso: associacao.progresso,
+      nome: associacao.plano.nome,
       status: associacao.status,
-      observacoes: associacao.observacoes,
-      usuario: associacao.usuario,
-      plano: associacao.plano,
-      ativo: associacao.ativo
+      sprints: sprints.length,
+      metas: metas
     });
+
+    console.log('========== FIM DA BUSCA DO PLANO DO ALUNO ==========');
+    res.json(associacao);
   } catch (error) {
-    console.error('Erro ao buscar plano do usuário logado:', error);
-    res.status(500).json({ message: 'Erro ao buscar plano do usuário logado', error: error.message });
+    console.error('Erro ao buscar plano do aluno:', error);
+    res.status(500).json({ message: 'Erro ao buscar plano do aluno' });
   }
 }; 

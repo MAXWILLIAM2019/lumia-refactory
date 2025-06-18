@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const planoMestreController = require('../controllers/planoMestreController');
-const { auth, adminOnly } = require('../middleware');
+const { auth, adminOnly } = require('../middleware/auth');
 
 /**
  * Rotas para gerenciamento de Planos Mestre

@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const planoController = require('../controllers/planoController');
+const sprintController = require('../controllers/sprintController');
+const { auth, adminOnly } = require('../middleware/auth');
 
 /**
  * ATENÇÃO: Este arquivo contém rotas específicas para diferentes módulos do sistema.
@@ -7,59 +10,77 @@ const router = express.Router();
  * NÃO altere o comportamento das rotas sem consultar o time de desenvolvimento.
  */
 
-const {
-  listarPlanos,
-  buscarPlanoPorId,
-  criarPlano,
-  atualizarPlano,
-  excluirPlano,
-  testarRota,
-  buscarDisciplinasPorPlano,
-  buscarSprintsPorPlano
-} = require('../controllers/planoController');
-
-const { buscarSprintsInstanciadasPorPlano } = require('../controllers/sprintController');
-
-const auth = require('../middleware/auth');
-
 // Aplica o middleware de autenticação em todas as rotas
 router.use(auth);
 
-// Rota de teste
-router.get('/test', testarRota);
+/**
+ * @route   GET /api/planos/test
+ * @desc    Rota de teste para verificar se o módulo está funcionando
+ * @access  Privado
+ */
+router.get('/test', (req, res) => {
+  res.json({ message: 'Rota de plano funcionando!' });
+});
 
 /**
  * ATENÇÃO: Rotas utilizadas no módulo de administração (Cadastro de Planos)
  * NÃO ALTERAR sem consultar o time de desenvolvimento
  */
 
-// Listar todos os planos mestre
-router.get('/', listarPlanos);
-
-// Criar um novo plano mestre
-router.post('/', criarPlano);
-
-// Buscar um plano mestre específico
-router.get('/:id', buscarPlanoPorId);
-
-// Buscar disciplinas de um plano mestre específico
-router.get('/:id/disciplinas', buscarDisciplinasPorPlano);
-
-// Buscar sprints de um plano mestre específico (template)
-// ATENÇÃO: Rota utilizada apenas na interface do administrador para gerenciar templates
-router.get('/:id/sprints', buscarSprintsPorPlano);
+/**
+ * @route   GET /api/planos
+ * @desc    Lista todos os planos
+ * @access  Privado/Admin
+ */
+router.get('/', auth, adminOnly, planoController.listarPlanos);
 
 /**
- * ATENÇÃO: Rota utilizada no módulo do aluno (Visualização de Sprints)
- * NÃO ALTERAR sem consultar o time de desenvolvimento
- * Esta rota retorna as sprints instanciadas (não os templates) de um plano específico
+ * @route   POST /api/planos
+ * @desc    Cria um novo plano
+ * @access  Privado/Admin
  */
-router.get('/:id/sprints-instancia', buscarSprintsInstanciadasPorPlano);
+router.post('/', auth, adminOnly, planoController.criarPlano);
 
-// Atualizar um plano mestre
-router.put('/:id', atualizarPlano);
+/**
+ * @route   GET /api/planos/:id
+ * @desc    Busca um plano específico
+ * @access  Privado
+ */
+router.get('/:id', planoController.buscarPlanoPorId);
 
-// Excluir um plano mestre
-router.delete('/:id', excluirPlano);
+/**
+ * @route   GET /api/planos/:id/disciplinas
+ * @desc    Busca disciplinas de um plano específico
+ * @access  Privado
+ */
+router.get('/:id/disciplinas', planoController.buscarDisciplinasPorPlano);
+
+/**
+ * @route   GET /api/planos/:id/sprints
+ * @desc    Busca sprints de um plano específico (template)
+ * @access  Privado/Admin
+ */
+router.get('/:id/sprints', auth, adminOnly, planoController.buscarSprintsPorPlano);
+
+/**
+ * @route   GET /api/planos/:id/sprints-instancia
+ * @desc    Busca as sprints instanciadas de um plano específico
+ * @access  Privado
+ */
+router.get('/:id/sprints-instancia', sprintController.buscarSprintsInstanciadasPorPlano);
+
+/**
+ * @route   PUT /api/planos/:id
+ * @desc    Atualiza um plano
+ * @access  Privado/Admin
+ */
+router.put('/:id', auth, adminOnly, planoController.atualizarPlano);
+
+/**
+ * @route   DELETE /api/planos/:id
+ * @desc    Remove um plano
+ * @access  Privado/Admin
+ */
+router.delete('/:id', auth, adminOnly, planoController.excluirPlano);
 
 module.exports = router; 

@@ -1,3 +1,12 @@
+/* 
+ * Estilos para o Registro de Estudantes
+ * 
+ * Inclui:
+ * - Layout do formulário
+ * - Estilos de campos e labels
+ * - Botões de ação (editar e impersonar)
+ */
+
 .container {
   padding: 32px 16px;
   color: #fff;
@@ -547,4 +556,51 @@
 .paginationBreak a:hover {
   background: transparent !important;
   color: #fff !important;
+}
+
+/* 
+ * Botões de Ação
+ * Estilização para os botões de editar e impersonar
+ */
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Botão de Edição */
+.editBtn {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.editBtn:hover {
+  background-color: #357abd;
+}
+
+/* 
+ * Botão de Impersonation
+ * Usado por administradores para acessar como aluno
+ */
+.impersonateBtn {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.impersonateBtn:hover {
+  background-color: #218838;
 }

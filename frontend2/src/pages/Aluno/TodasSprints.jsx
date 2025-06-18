@@ -3,6 +3,19 @@ import styles from './TodasSprints.module.css';
 import api from '../../services/api';
 
 /**
+ * Visualização de Todas as Sprints
+ * 
+ * Componente que lista todas as sprints disponíveis para o aluno:
+ * - Exibe informações do usuário e plano
+ * - Lista sprints em ordem cronológica
+ * - Mostra progresso de cada sprint
+ * 
+ * Suporta modo de impersonation:
+ * - Exibe informações do aluno sendo impersonado
+ * - Mantém consistência com o padrão: "Olá, {nome} ({plano} - {cargo})"
+ */
+
+/**
  * Componente TodasSprints
  * ATENÇÃO: Este componente é específico para a interface do aluno e utiliza apenas
  * as rotas de instâncias (não os templates). NÃO alterar a lógica de busca
@@ -48,9 +61,11 @@ export default function TodasSprints() {
   const fetchAlunoPlano = async () => {
     try {
       const planoResp = await api.get('/aluno-plano/meu-plano');
-      if (planoResp.data && planoResp.data.planoId) {
+      
+      if (planoResp.data) {
+        // A resposta já vem com o plano aninhado
         setPlanoInfo(planoResp.data.plano);
-        await fetchSprintsDoPlano(planoResp.data.planoId);
+        await fetchSprintsDoPlano(planoResp.data.PlanoId);
       } else {
         setError('Você não possui planos de estudo atribuídos.');
         setLoading(false);
@@ -171,7 +186,7 @@ export default function TodasSprints() {
         <h1>Minhas Sprints</h1>
         {usuario && planoInfo && (
           <div className={styles.planoInfo}>
-            <h2>Olá, {usuario.nome.split(' ')[0]} | {planoInfo.nome} - {planoInfo.cargo}</h2>
+            <h2>Olá, {usuario.nome.split(' ')[0]} ({planoInfo.nome} - {planoInfo.cargo})</h2>
             <p>{planoInfo.descricao}</p>
           </div>
         )}

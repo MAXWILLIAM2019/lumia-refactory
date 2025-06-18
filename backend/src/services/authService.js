@@ -30,52 +30,116 @@ const AUTH_CONFIG = {
 };
 
 /**
+ * Obtém as permissões base para um determinado papel
+ * @param {string} role - Papel do usuário
+ * @returns {string[]} Array de permissões
+ */
+const getPermissionsForRole = (role) => {
+  const permissions = {
+    administrador: [
+      'read:all',
+      'write:all',
+      'impersonate:aluno'
+    ],
+    aluno: [
+      'read:own',
+      'write:own'
+    ]
+  };
+  return permissions[role] || [];
+};
+
+/**
  * Gera token JWT para um usuário
  * 
  * @param {Object} usuario - Dados do usuário
  * @param {string} role - Papel do usuário no sistema (admin, aluno, mentor, etc)
+ * @param {Object} [impersonating] - Dados do usuário sendo impersonado (opcional)
  * @returns {string} Token JWT
  */
-const gerarToken = (usuario, role) => {
+const gerarToken = (usuario, role, impersonating = null) => {
   // Dados comuns a todos os tipos de usuário que serão incluídos no token
   const payload = {
-    id: usuario.id,
-    email: usuario.email,
+    id: usuario.id || usuario.IdUsuario,
+    email: usuario.email || usuario.login,
     role,
-    // Preparando para futuras integrações, adicionamos um namespace personalizado
-    // que pode ser usado para armazenar dados específicos da aplicação
+    // Namespace personalizado para dados específicos da aplicação
     'sis-mentoria': {
-      // Aqui podemos adicionar claims personalizados que seriam úteis
-      // em uma implementação SSO
-      role_name: role === 'admin' ? 'Administrador' : 
+      role_name: role === 'administrador' ? 'Administrador' : 
                  role === 'aluno' ? 'Aluno' : 'Usuário',
       permissions: getPermissionsForRole(role)
     }
   };
   
-  return jwt.sign(payload, AUTH_CONFIG.jwtSecret, { 
-    expiresIn: AUTH_CONFIG.tokenExpiresIn 
+  // Adiciona informações de impersonation se necessário
+  if (impersonating) {
+    payload['sis-mentoria'].impersonating = {
+      originalId: impersonating.originalId,
+      originalRole: impersonating.originalRole
+    };
+    // Atualiza o ID e role no token para refletir o usuário impersonado
+    payload.id = usuario.id || usuario.IdUsuario;
+    payload.role = role;
+    payload.isImpersonating = true;
+  }
+  
+  console.log('Gerando token com payload:', payload);
+  
+  return jwt.sign(payload, process.env.JWT_SECRET, { 
+    expiresIn: process.env.JWT_EXPIRES_IN || '24h'
   });
 };
 
 /**
- * Retorna as permissões básicas para cada papel (role)
- * Isso facilita a futura migração para um sistema baseado em permissões
+ * Gera um token de impersonation para um administrador acessar como aluno
  * 
- * @param {string} role - Papel do usuário
- * @returns {Array} Lista de permissões
+ * @param {Object} adminUser - Usuário administrador
+ * @param {Object} targetUserId - ID do usuário aluno a ser impersonado
+ * @returns {string} Token JWT com informações de impersonation
+ * @throws {Error} Se o admin não tiver permissão ou o aluno não existir
  */
-const getPermissionsForRole = (role) => {
-  switch (role) {
-    case 'admin':
-      return ['read:all', 'write:all', 'manage:users', 'manage:plans'];
-    case 'aluno':
-      return ['read:own_profile', 'read:assigned_plans', 'submit:activities'];
-    case 'mentor':
-      return ['read:students', 'read:plans', 'write:activities', 'review:submissions'];
-    default:
-      return ['read:public'];
+const generateImpersonationToken = async (adminUser, targetUserId) => {
+  // Verifica se o usuário é um administrador
+  const adminGrupo = await GrupoUsuario.findOne({ 
+    where: { 
+      IdGrupo: adminUser.grupo,
+      nome: 'administrador'
+    }
+  });
+
+  if (!adminGrupo) {
+    throw new Error('Apenas administradores podem realizar impersonation');
   }
+
+  // Busca o usuário alvo (aluno)
+  const targetUser = await Usuario.findOne({
+    where: { 
+      IdUsuario: targetUserId,
+      situacao: true
+    },
+    include: [
+      {
+        model: GrupoUsuario,
+        as: 'grupoUsuario',
+        where: { nome: 'aluno' }
+      },
+      {
+        model: AlunoInfo,
+        as: 'alunoInfo'
+      }
+    ]
+  });
+
+  if (!targetUser) {
+    throw new Error('Aluno não encontrado ou inativo');
+  }
+
+  // Gera o token com as informações de impersonation
+  return gerarToken(adminUser, 'administrador', {
+    IdUsuario: targetUser.IdUsuario,
+    email: targetUser.alunoInfo?.email || targetUser.login,
+    nome: targetUser.nome
+  });
 };
 
 /**
@@ -229,4 +293,5 @@ module.exports = {
   verificarToken,
   gerarToken,
   getPermissionsForRole,
+  generateImpersonationToken,
 }; 

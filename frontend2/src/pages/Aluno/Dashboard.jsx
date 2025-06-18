@@ -8,8 +8,16 @@ import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 
 /**
- * Componente Dashboard do Aluno
- * Página principal que exibe a sprint atual do aluno e suas metas
+ * Dashboard do Aluno
+ * 
+ * Componente principal da área do aluno que exibe:
+ * - Informações do usuário logado
+ * - Detalhes do plano atual
+ * - Status do progresso
+ * 
+ * Suporta modo de impersonation:
+ * - Exibe informações do aluno sendo impersonado
+ * - Mantém consistência com o padrão: "Olá, {nome} ({plano} - {cargo})"
  */
 export default function AlunoDashboard() {
   const [sprint, setSprint] = useState(null);
@@ -63,12 +71,12 @@ export default function AlunoDashboard() {
   // Função para buscar o plano do aluno logado
   const fetchAlunoPlano = async () => {
     try {
-      console.log('========== BUSCANDO PLANO DO ALUNO LOGADO ==========');
       const planoResp = await api.get('/aluno-plano/meu-plano');
-      console.log('Plano do aluno recebido:', planoResp.data);
-      if (planoResp.data && planoResp.data.planoId) {
+      
+      if (planoResp.data) {
+        // A resposta já vem com o plano aninhado
         setPlanoInfo(planoResp.data.plano);
-        return planoResp.data.planoId;
+        return planoResp.data.PlanoId;
       } else {
         setError('Você não possui planos de estudo atribuídos.');
         setLoading(false);
@@ -88,10 +96,11 @@ export default function AlunoDashboard() {
       setError('');
       console.log('========== BUSCANDO SPRINT ATUAL ==========');
       
-      // Primeiro, buscar o plano do aluno para ter acesso às instâncias
       const planoResp = await api.get('/aluno-plano/meu-plano');
-      if (!planoResp.data || !planoResp.data.planoId) {
-        setError('Você não possui planos de estudo atribuídos.');
+      console.log('Resposta do plano:', planoResp.data);
+      
+      if (!planoResp.data) {
+        setError('Erro ao buscar plano do aluno.');
         setLoading(false);
         return;
       }
@@ -310,7 +319,7 @@ export default function AlunoDashboard() {
       {usuario && planoInfo && (
         <div className={styles.userPlanoInfo}>
           <h2 className={styles.userPlanoTitle}>
-            Olá, {usuario.nome.split(' ')[0]} | {planoInfo.nome} - {planoInfo.cargo}
+            Olá, {usuario.nome.split(' ')[0]} ({planoInfo.nome || 'Sem plano'} - {planoInfo.cargo || 'Sem cargo'})
           </h2>
         </div>
       )}

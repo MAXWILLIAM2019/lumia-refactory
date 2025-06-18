@@ -9,15 +9,7 @@
 const express = require('express');
 const router = express.Router();
 const alunoController = require('../controllers/alunoController');
-const authController = require('../controllers/authController');
-const { 
-  auth, 
-  adminOnly, 
-  alunoOnly, 
-  ownProfileOnly, 
-  checkPermission,
-  ownProfileOrAdmin
-} = require('../middleware');
+const { auth, adminOnly, ownProfileOrAdmin } = require('../middleware/auth');
 
 /**
  * @route   GET /api/alunos/test
@@ -27,10 +19,6 @@ const {
 router.get('/test', (req, res) => {
   res.json({ message: 'Rota de alunos funcionando!' });
 });
-
-/**
- * Rotas Públicas (não necessitam de autenticação)
- */
 
 /**
  * @route   GET /api/alunos
@@ -48,15 +36,11 @@ router.get('/', alunoController.getAllAlunos);
 router.post('/', alunoController.createAluno);
 
 /**
- * Rotas Protegidas (necessitam de autenticação)
- */
-
-/**
  * @route   GET /api/alunos/planos
  * @desc    Busca os planos do aluno logado
  * @access  Privado (apenas para o próprio aluno)
  */
-router.get('/planos', auth, alunoOnly, alunoController.getAlunoPlanos);
+router.get('/planos', auth, alunoController.getAlunoPlanos);
 
 /**
  * @route   GET /api/alunos/sprints
@@ -71,7 +55,7 @@ router.get('/sprints', auth, alunoController.getAlunoSprints);
  * @access  Privado
  * @param   {id} ID do aluno
  */
-router.get('/:id', auth, ownProfileOnly('id'), alunoController.getAlunoById);
+router.get('/:id', auth, ownProfileOrAdmin('id'), alunoController.getAlunoById);
 
 /**
  * @route   PUT /api/alunos/:id
@@ -101,10 +85,10 @@ router.post('/:id/definir-senha', auth, ownProfileOrAdmin('id'), alunoController
 
 /**
  * @route   POST /api/alunos/:id/gerar-senha
- * @desc    Gera uma senha aleatória para um aluno (apenas admin ou o próprio aluno)
- * @access  Privado
+ * @desc    Gera uma senha aleatória para um aluno (apenas admin)
+ * @access  Privado/Admin
  * @param   {id} ID do aluno
  */
-router.post('/:id/gerar-senha', auth, checkPermission('admin', 'ownProfile'), alunoController.gerarSenha);
+router.post('/:id/gerar-senha', auth, adminOnly, alunoController.gerarSenha);
 
 module.exports = router; 

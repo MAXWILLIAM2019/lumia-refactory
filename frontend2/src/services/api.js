@@ -26,20 +26,53 @@ const api = axios.create({
  */
 
 /**
- * Interceptor de requisição
+ * Configuração do cliente Axios para comunicação com a API
  * 
- * Adiciona automaticamente o token JWT de autenticação no header
- * de todas as requisições, se disponível no localStorage.
- * NOTA: Este é o único interceptor de requisição que deve existir no projeto.
+ * Inclui suporte a:
+ * - Autenticação via token JWT
+ * - Impersonation de usuários
+ * - Interceptação de requisições
+ * - Logs detalhados para debug
+ * 
+ * Configuração:
+ * - URL Base: http://localhost:3000/api
+ * - Todas as requisições são relativas a esta base
+ */
+
+/**
+ * Interceptor de Requisições
+ * 
+ * Responsável por:
+ * 1. Verificar estado de impersonation
+ * 2. Adicionar token de autenticação
+ * 3. Registrar logs para debug
+ * 
+ * Fluxo:
+ * - Verifica se está em modo de impersonation
+ * - Recupera token apropriado (original ou impersonation)
+ * - Adiciona header de autorização
+ * - Registra informações para debug
  */
 api.interceptors.request.use(
   (config) => {
+    // Verifica se está em modo de impersonation
+    const isImpersonating = localStorage.getItem('impersonating') === 'true';
     const token = localStorage.getItem('token');
+    
+    console.log('API Interceptor - Modo impersonation:', isImpersonating);
     console.log('API Interceptor - Token encontrado:', !!token);
     console.log('API Interceptor - Token completo:', token);
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       console.log('API Interceptor - Authorization header configurado:', config.headers.Authorization);
+      
+      // Se estiver em modo de impersonation, adiciona headers adicionais
+      if (isImpersonating) {
+        config.headers['X-Original-Token'] = localStorage.getItem('originalToken');
+        config.headers['X-Original-Role'] = localStorage.getItem('originalRole');
+        console.log('API Interceptor - Headers de impersonation configurados');
+      }
     }
     return config;
   },
@@ -57,7 +90,8 @@ api.interceptors.response.use(
   (error) => {
     console.error('API Interceptor - Erro na resposta:', {
       status: error.response?.status,
-      message: error.response?.data?.message || error.message
+      message: error.response?.data?.message || error.message,
+      data: error.response?.data
     });
     return Promise.reject(error);
   }

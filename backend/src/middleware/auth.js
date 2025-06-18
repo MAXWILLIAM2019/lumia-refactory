@@ -7,134 +7,116 @@
  * 
  * Projetado para ser compatível com futura integração SSO (Keycloak).
  */
-const authService = require('../services/authService');
-const Administrador = require('../models/Administrador');
-const Aluno = require('../models/Aluno');
-const AdministradorInfo = require('../models/AdministradorInfo');
+const jwt = require('jsonwebtoken');
 const Usuario = require('../models/Usuario');
+const GrupoUsuario = require('../models/GrupoUsuario');
 const AlunoInfo = require('../models/AlunoInfo');
+const AdministradorInfo = require('../models/AdministradorInfo');
 
 const auth = async (req, res, next) => {
-  console.log('🔐 Middleware de autenticação iniciado');
-  console.log('🔄 Método da requisição:', req.method);
-  console.log('🌐 URL da requisição:', req.originalUrl);
-  
   try {
-    // Obtém o token do header
-    const authHeader = req.header('Authorization');
-    console.log('📝 Header de Autorização recebido:', authHeader);
-    
-    // Verifica se o token foi enviado
-    if (!authHeader) {
-      console.log('❌ Nenhum header de autorização fornecido');
-      return res.status(401).json({
-        success: false,
-        message: 'Token não fornecido'
-      });
-    }
-    
-    // Extrai o token removendo o prefixo "Bearer "
-    const token = authHeader.replace('Bearer ', '');
-    console.log('🔑 Token extraído:', token ? 'Presente' : 'Ausente');
-    
+    console.log('🔐 Middleware de autenticação iniciado');
+    console.log('🔄 Método da requisição:', req.method);
+    console.log('🌐 URL da requisição:', req.originalUrl);
+
+    // Verifica se o token foi fornecido
+    const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) {
-      console.log('❌ Token vazio após processamento');
-      return res.status(401).json({
-        success: false,
-        message: 'Token não fornecido'
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token não fornecido' 
       });
     }
 
-    // Verifica se a variável de ambiente JWT_SECRET está definida
-    if (!process.env.JWT_SECRET) {
-      console.error('❌ ERRO CRÍTICO: JWT_SECRET não definido no ambiente');
-      return res.status(500).json({
-        success: false,
-        message: 'Erro de configuração do servidor'
-      });
+    // Verifica e decodifica o token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Informações básicas do usuário
+    const userInfo = {
+      id: decoded.IdUsuario || decoded.id, // Compatibilidade com ambos os formatos
+      role: decoded.role
+    };
+
+    // Se houver impersonation, adiciona as informações originais
+    if (decoded['sis-mentoria']?.impersonating) {
+      userInfo.isImpersonating = true;
+      userInfo.originalId = decoded['sis-mentoria'].impersonating.originalId;
+      userInfo.originalRole = decoded['sis-mentoria'].impersonating.originalRole;
     }
 
-    try {
-      // Verifica o token usando o serviço de autenticação
-      const decoded = authService.verificarToken(token);
-      console.log('✅ Token verificado com sucesso:', decoded);
-      
-      // Armazena o payload decodificado no request
-      req.user = decoded;
-      
-      // Verifica o tipo de usuário (role) e busca os dados correspondentes
-      if (decoded.role === 'administrador') {
-        // Caso seja um administrador
-        const admin = await AdministradorInfo.findOne({
-          where: { IdUsuario: decoded.id },
-          include: [{ model: Usuario, as: 'usuario' }]
-        });
-        
-        if (!admin) {
-          console.log('❌ Administrador não encontrado para o ID:', decoded.id);
-          return res.status(401).json({
-            success: false,
-            message: 'Token inválido - administrador não encontrado'
-          });
-        }
-        
-        console.log('👤 Administrador autenticado:', admin.usuario?.login);
-        
-        // Mantém a compatibilidade com código existente que pode estar usando req.admin
-        req.admin = admin;
-      } 
-      else if (decoded.role === 'aluno') {
-        // Caso seja um aluno
-        const aluno = await AlunoInfo.findOne({
-          where: { IdUsuario: decoded.id },
-          include: [{ model: Usuario, as: 'usuario' }]
-        });
-        
-        if (!aluno) {
-          console.log('❌ Aluno não encontrado para o ID:', decoded.id);
-          return res.status(401).json({
-            success: false,
-            message: 'Token inválido - aluno não encontrado'
-          });
-        }
-        
-        console.log('👤 Aluno autenticado:', aluno.usuario?.login);
-        
-        // Adiciona o aluno ao request para uso posterior
-        req.aluno = aluno;
-      }
-      else {
-        // Caso o role não seja reconhecido
-        console.log('❌ Perfil de usuário não reconhecido:', decoded.role);
-        return res.status(401).json({
-          success: false,
-          message: 'Token inválido - perfil não reconhecido'
-        });
-      }
-      
-      // Para facilitar verificações futuras, adiciona as permissões ao request
-      req.permissions = decoded['sis-mentoria']?.permissions || [];
-      
-      console.log('✅ Autenticação concluída com sucesso');
-      console.log('🔑 Permissões do usuário:', req.permissions);
-      
-      next();
-    } catch (jwtError) {
-      console.error('❌ Erro na verificação do JWT:', jwtError.message);
-      return res.status(401).json({
-        success: false,
-        message: 'Token inválido ou expirado',
-        details: jwtError.message
-      });
-    }
+    // Adiciona as informações do usuário à requisição
+    req.user = userInfo;
+
+    // Log das informações do usuário (útil para debug)
+    console.log('👤 Informações do usuário:', {
+      ...userInfo,
+      url: req.originalUrl,
+      method: req.method
+    });
+
+    next();
   } catch (error) {
-    console.error('❌ Erro geral na autenticação:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Falha na autenticação',
-      details: error.message
+    console.error('❌ Erro no middleware de autenticação:', error);
+    res.status(401).json({ 
+      success: false, 
+      message: 'Token inválido ou expirado' 
     });
   }
 };
 
-module.exports = auth; 
+/**
+ * Middleware para verificar se o usuário é administrador
+ */
+const adminOnly = async (req, res, next) => {
+  try {
+    // Se estiver impersonating, usa o papel original
+    const role = req.user.isImpersonating ? req.user.originalRole : req.user.role;
+    
+    if (role !== 'administrador') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Acesso permitido apenas para administradores' 
+      });
+    }
+    next();
+  } catch (error) {
+    console.error('Erro ao verificar permissão de administrador:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao verificar permissões' 
+    });
+  }
+};
+
+/**
+ * Middleware para verificar se o usuário é o dono do recurso ou um administrador
+ * @param {string} paramId - Nome do parâmetro que contém o ID do recurso
+ */
+const ownProfileOrAdmin = (paramId) => async (req, res, next) => {
+  try {
+    const resourceId = req.params[paramId];
+    const userId = req.user.id;
+    const role = req.user.isImpersonating ? req.user.originalRole : req.user.role;
+
+    if (role === 'administrador' || userId === parseInt(resourceId)) {
+      return next();
+    }
+
+    res.status(403).json({ 
+      success: false, 
+      message: 'Acesso não autorizado a este recurso' 
+    });
+  } catch (error) {
+    console.error('Erro ao verificar permissão de acesso:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Erro ao verificar permissões' 
+    });
+  }
+};
+
+module.exports = {
+  auth,
+  adminOnly,
+  ownProfileOrAdmin
+}; 

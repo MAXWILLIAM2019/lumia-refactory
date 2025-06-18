@@ -85,7 +85,7 @@ exports.createSprint = async (req, res) => {
             SprintMestreId: sprintMestre.id,
             posicao: posicao
           });
-        })
+          })
       );
       
       // Adicionar as metas ao objeto de resposta para compatibilidade
@@ -719,12 +719,21 @@ exports.buscarSprintsInstanciadasPorPlano = async (req, res) => {
         {
           model: Meta,
           as: 'metas',
-          order: [['id', 'ASC']]
+          attributes: [
+            'id', 'disciplina', 'tipo', 'titulo', 'comandos', 'link',
+            'relevancia', 'tempoEstudado', 'desempenho', 'status',
+            'totalQuestoes', 'questoesCorretas', 'posicao'
+          ]
+        },
+        {
+          model: Plano,
+          attributes: ['id', 'nome', 'cargo', 'descricao']
         }
       ],
       order: [
         ['posicao', 'ASC'],
-        ['nome', 'ASC']
+        ['nome', 'ASC'],
+        [{ model: Meta, as: 'metas' }, 'posicao', 'ASC']
       ]
     });
     

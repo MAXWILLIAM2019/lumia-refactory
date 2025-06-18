@@ -11,12 +11,19 @@ const Meta = require('../models/Meta');
 exports.getSprintAtual = async (req, res) => {
   try {
     console.log('========== BUSCANDO SPRINT ATUAL ==========');
+    
+    // Obter o ID do usuário, considerando impersonation
     const idusuario = req.user.id;
+    console.log('Informações do usuário:', req.user);
     console.log('ID do usuário:', idusuario);
+
+    if (!idusuario) {
+      return res.status(400).json({ message: 'ID do usuário não encontrado' });
+    }
 
     // Primeiro, buscar o plano do usuário
     const alunoPlano = await AlunoPlano.findOne({
-      where: { IdUsuario: idusuario },
+      where: { idusuario },
       include: [{
         model: Plano,
         as: 'plano',

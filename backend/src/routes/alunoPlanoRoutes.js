@@ -7,7 +7,26 @@
 const express = require('express');
 const router = express.Router();
 const alunoPlanoController = require('../controllers/alunoPlanoController');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
+
+// Aplica o middleware de autenticação em todas as rotas
+router.use(auth);
+
+/**
+ * @route   GET /api/aluno-plano/test
+ * @desc    Rota de teste
+ * @access  Público
+ */
+router.get('/test', (req, res) => {
+  res.json({ message: 'Rota de aluno-plano funcionando!' });
+});
+
+/**
+ * @route   GET /api/aluno-plano
+ * @desc    Lista todas as associações entre alunos e planos
+ * @access  Público
+ */
+router.get('/', alunoPlanoController.listarAssociacoes);
 
 /**
  * @route   POST /api/aluno-plano
@@ -18,28 +37,11 @@ const auth = require('../middleware/auth');
 router.post('/', alunoPlanoController.atribuirPlanoAluno);
 
 /**
- * @route   GET /api/aluno-plano
- * @desc    Lista todas as associações entre alunos e planos
- * @access  Público
+ * @route   GET /api/aluno-plano/meu-plano
+ * @desc    Retorna o plano associado ao aluno logado
+ * @access  Privado (aluno autenticado)
  */
-router.get('/', alunoPlanoController.listarAssociacoes);
-
-/**
- * @route   PUT /api/aluno-plano/:id
- * @desc    Atualiza o progresso de um aluno em um plano
- * @access  Público
- * @param   {id} ID da associação
- * @body    {progresso, status, dataConclusao, observacoes}
- */
-router.put('/:id', alunoPlanoController.atualizarProgresso);
-
-/**
- * @route   DELETE /api/aluno-plano/:id
- * @desc    Remove a associação entre um aluno e um plano
- * @access  Público
- * @param   {id} ID da associação
- */
-router.delete('/:id', alunoPlanoController.removerAssociacao);
+router.get('/meu-plano', alunoPlanoController.buscarPlanoDoAlunoLogado);
 
 /**
  * @route   GET /api/aluno-plano/aluno/:alunoId
@@ -58,10 +60,27 @@ router.get('/aluno/:alunoId', alunoPlanoController.buscarPlanosPorAluno);
 router.get('/plano/:planoId', alunoPlanoController.buscarAlunosPorPlano);
 
 /**
- * @route   GET /api/aluno-plano/meu-plano
- * @desc    Retorna o plano associado ao aluno logado
- * @access  Privado (aluno autenticado)
+ * @route   GET /api/aluno-plano/:id
+ * @desc    Busca uma associação aluno-plano específica
+ * @access  Público
  */
-router.get('/meu-plano', auth, alunoPlanoController.getPlanoDoAlunoLogado);
+router.get('/:id', alunoPlanoController.buscarAssociacaoPorId);
+
+/**
+ * @route   PUT /api/aluno-plano/:id
+ * @desc    Atualiza o progresso de um aluno em um plano
+ * @access  Público
+ * @param   {id} ID da associação
+ * @body    {progresso, status, dataConclusao, observacoes}
+ */
+router.put('/:id', alunoPlanoController.atualizarProgresso);
+
+/**
+ * @route   DELETE /api/aluno-plano/:id
+ * @desc    Remove a associação entre um aluno e um plano
+ * @access  Público
+ * @param   {id} ID da associação
+ */
+router.delete('/:id', alunoPlanoController.removerAssociacao);
 
 module.exports = router; 

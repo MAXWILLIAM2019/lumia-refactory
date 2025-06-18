@@ -2,47 +2,58 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./db');
-const sprintRoutes = require('./routes/sprintRoutes');
+
+console.log('=== INICIANDO SISTEMA DE MENTORIA (BACKEND) ===');
+console.log('Ambiente:', process.env.NODE_ENV || 'desenvolvimento');
+
+// Importação das rotas
+console.log('\n1. Carregando módulos de rotas...');
+const authRoutes = require('./routes/authRoutes');
 const alunoRoutes = require('./routes/alunoRoutes');
 const planoRoutes = require('./routes/planoRoutes');
 const planoMestreRoutes = require('./routes/planoMestreRoutes');
-const auth = require('./routes/auth');
 const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const alunoPlanoRoutes = require('./routes/alunoPlanoRoutes');
+const sprintRoutes = require('./routes/sprintRoutes');
 const sprintAtualRoutes = require('./routes/sprintAtual');
+console.log('✓ Módulos de rotas carregados com sucesso');
 
-// Importa os modelos
-require('./models/Plano');
-require('./models/Disciplina');
-require('./models/Assunto');
-require('./models/Administrador');
-require('./models/Aluno');
-require('./models/Meta'); // Importa o modelo Meta (antigo Atividade)
-require('./models/AlunoPlano'); // Importa o modelo AlunoPlano
-require('./models/SprintAtual'); // Importa o modelo SprintAtual
+// Carrega os modelos e seus relacionamentos
+console.log('\n2. Carregando modelos e relacionamentos...');
+require('./models');
+console.log('✓ Modelos e relacionamentos carregados');
 
 const app = express();
 
 // Configuração de middlewares
-// CORS: Permite requisições de diferentes origens (frontend)
-// express.json(): Permite o parsing de JSON no corpo das requisições
+console.log('\n3. Configurando middlewares...');
 app.use(cors());
 app.use(express.json());
+console.log('✓ Middlewares configurados: CORS e JSON Parser');
 
 // Rotas da API
-// Todas as rotas relacionadas a sprints começam com /api/sprints
+console.log('\n4. Configurando rotas da API...');
 app.use('/api/sprints', sprintRoutes);
 app.use('/api/alunos', alunoRoutes);
 app.use('/api/planos', planoRoutes);
 app.use('/api/planos-mestre', planoMestreRoutes);
-app.use('/api/auth', auth);
+app.use('/api/auth', authRoutes);
 app.use('/api/disciplinas', disciplinaRoutes);
 app.use('/api/aluno-plano', alunoPlanoRoutes);
 app.use('/api/sprint-atual', sprintAtualRoutes);
+console.log('✓ Rotas configuradas:');
+console.log('  - /api/sprints');
+console.log('  - /api/alunos');
+console.log('  - /api/planos');
+console.log('  - /api/planos-mestre');
+console.log('  - /api/auth');
+console.log('  - /api/disciplinas');
+console.log('  - /api/aluno-plano');
+console.log('  - /api/sprint-atual');
 
 // Rota de teste para verificar se a API está funcionando
 app.get('/', (req, res) => {
-  res.json({ message: 'API do Mentor está funcionando!' });
+  res.json({ message: 'API do Sistema de Mentoria está funcionando!' });
 });
 
 // Rota de teste para verificar se a API está funcionando
@@ -51,25 +62,34 @@ app.get('/api/test', (req, res) => {
 });
 
 // Sincronização do banco de dados e inicialização do servidor
+console.log('\n5. Sincronizando banco de dados...');
 sequelize.sync().then(() => {
-  console.log('Banco de dados sincronizado');
-  console.log('Modelos disponíveis:', Object.keys(sequelize.models));
-  console.log('Tabelas criadas:', Object.keys(sequelize.models).map(model => sequelize.models[model].tableName));
+  console.log('✓ Banco de dados sincronizado com sucesso');
+  console.log('\n6. Informações do banco de dados:');
+  console.log('Modelos registrados:', Object.keys(sequelize.models).join(', '));
   
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+    console.log('\n=== SISTEMA INICIADO COM SUCESSO ===');
+    console.log(`Servidor rodando em: http://localhost:${PORT}`);
+    console.log('Use Ctrl+C para encerrar\n');
   });
 }).catch(error => {
-  console.error('Erro ao sincronizar banco de dados:', error);
+  console.error('\n❌ ERRO AO INICIAR O SISTEMA:');
+  console.error('Detalhes:', error.message);
+  console.error('Stack:', error.stack);
 });
 
 // Middleware de tratamento de erros
-// Captura qualquer erro não tratado nas rotas
 app.use((err, req, res, next) => {
-  console.error('Erro não tratado:', err);
+  console.error('\n❌ ERRO NÃO TRATADO:');
+  console.error('URL:', req.url);
+  console.error('Método:', req.method);
+  console.error('Detalhes:', err.message);
+  console.error('Stack:', err.stack);
+  
   res.status(500).json({ 
-    message: 'Algo deu errado!',
+    message: 'Erro interno do servidor',
     error: err.message
   });
 }); 

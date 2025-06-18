@@ -21,6 +21,43 @@
   margin-left: 64px;
 }
 
+/* TODO: Refatoração necessária - Mover estilos de impersonation
+ * Estes estilos devem ser movidos para um arquivo separado (ImpersonationAlert.module.css)
+ * quando o componente for refatorado, seguindo o princípio DRY e separação de responsabilidades
+ */
+.impersonationAlert {
+  background-color: #ffffff;
+  color: #1a1a1a;
+  padding: 12px;
+  text-align: center;
+  font-weight: 500;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.impersonationAlert button {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.impersonationAlert button:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 @media (max-width: 900px) {
   .mainContent {
     margin-left: 64px;

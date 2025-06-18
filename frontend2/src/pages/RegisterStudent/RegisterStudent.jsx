@@ -16,6 +16,7 @@ import api from '../../services/api';
 import styles from './RegisterStudent.module.css';
 import SenhaModal from '../../components/SenhaModal';
 import AlunoEditModal from '../../components/AlunoEditModal';
+import authService from '../../services/authService';
 
 export default function RegisterStudent() {
   const navigate = useNavigate();
@@ -551,6 +552,42 @@ export default function RegisterStudent() {
     }
   };
 
+  /**
+   * Inicia uma sessão de impersonation como aluno
+   */
+  const handleImpersonate = async (aluno) => {
+    try {
+      setLoading(true);
+      const timestamp = new Date().toLocaleString();
+      console.log(`[${timestamp}] 👁️ Iniciando impersonation para aluno:`, {
+        id: aluno.id,
+        nome: aluno.nome,
+        administrador: localStorage.getItem('userRole')
+      });
+      
+      const response = await authService.startImpersonation(aluno.id);
+      console.log(`[${timestamp}] ✅ Impersonation iniciado com sucesso para aluno ID ${aluno.id}`);
+      
+      // Aguarda um pequeno intervalo para garantir que o token foi processado
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // Força uma atualização do token no Axios antes de redirecionar
+      const currentToken = localStorage.getItem('token');
+      if (currentToken) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
+      }
+      
+      // Redireciona para a dashboard do aluno
+      window.location.href = '/aluno/dashboard';
+    } catch (error) {
+      console.error('Erro ao impersonar aluno:', error);
+      setError(error.response?.data?.message || 'Erro ao acessar como aluno. Por favor, tente novamente.');
+      setShowToast(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <h1 className={styles.titulo}>Cadastrar Aluno</h1>
@@ -944,9 +981,18 @@ export default function RegisterStudent() {
                         )}
                       </td>
                       <td>
-                        <button onClick={() => handleEditarAluno(aluno)} className={styles.editBtn}>
+                        <div className={styles.actionButtons}>
+                          <button onClick={() => handleEditarAluno(aluno)} className={styles.editBtn} title="Editar aluno">
                           Editar
                         </button>
+                          <button 
+                            onClick={() => handleImpersonate(aluno)} 
+                            className={styles.impersonateBtn}
+                            title="Acessar como este aluno"
+                          >
+                            👁️
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

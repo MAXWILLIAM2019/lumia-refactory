@@ -1,15 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const sprintAtualController = require('../controllers/sprintAtualController');
-const { auth } = require('../middleware');
+const { auth } = require('../middleware/auth');
 
-// Aplicar middleware de autenticação em todas as rotas
-router.use(auth);
+/**
+ * @route   GET /api/sprint-atual
+ * @desc    Busca a sprint atual do aluno
+ * @access  Privado
+ */
+router.get('/', auth, sprintAtualController.getSprintAtual);
 
-// Buscar sprint atual do aluno
-router.get('/', sprintAtualController.getSprintAtual);
-
-// Atualizar sprint atual do aluno
-router.put('/', sprintAtualController.atualizarSprintAtual);
+/**
+ * @route   PUT /api/sprint-atual
+ * @desc    Atualiza a sprint atual do aluno
+ * @access  Privado
+ */
+router.put('/', auth, sprintAtualController.atualizarSprintAtual);
 
 module.exports = router; 

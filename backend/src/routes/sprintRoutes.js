@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const sprintController = require('../controllers/sprintController');
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 // Aplica o middleware de autenticação em todas as rotas
 router.use(auth);

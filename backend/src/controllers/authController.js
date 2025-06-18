@@ -200,8 +200,124 @@ const me = async (req, res) => {
   }
 };
 
+/**
+ * @desc Gera um token de impersonation para um administrador acessar como aluno
+ * @route POST /auth/impersonate/:id
+ * @access Private/Admin
+ */
+const impersonateUser = async (req, res) => {
+  try {
+    const targetUserId = req.params.id;
+    const timestamp = new Date().toLocaleString();
+    console.log(`[${timestamp}] 🔄 Iniciando processo de impersonation:`);
+    console.log(`[${timestamp}] 👤 Admin:`, {
+      id: req.user.id,
+      role: req.user.role
+    });
+    console.log(`[${timestamp}] 🎯 Aluno alvo: ${targetUserId}`);
+    
+    // Busca o administrador atual
+    const admin = await Usuario.findOne({
+      where: { 
+        IdUsuario: req.user.id,
+        situacao: true
+      },
+      include: [
+        {
+          model: GrupoUsuario,
+          as: 'grupoUsuario',
+          where: { nome: 'administrador' }
+        },
+        {
+          model: AdministradorInfo,
+          as: 'adminInfo'
+        }
+      ]
+    });
+
+    if (!admin) {
+      console.log(`[${timestamp}] ❌ Acesso negado: Usuário não é administrador`);
+      return res.status(403).json({
+        success: false,
+        message: 'Apenas administradores podem realizar impersonation'
+      });
+    }
+
+    // Busca o aluno alvo
+    const aluno = await Usuario.findOne({
+      where: { 
+        IdUsuario: targetUserId,
+        situacao: true
+      },
+      include: [
+        {
+          model: GrupoUsuario,
+          as: 'grupoUsuario',
+          where: { nome: 'aluno' }
+        },
+        {
+          model: AlunoInfo,
+          as: 'alunoInfo'
+        }
+      ]
+    });
+
+    if (!aluno) {
+      console.log(`[${timestamp}] ❌ Aluno não encontrado: ${targetUserId}`);
+      return res.status(404).json({
+        success: false,
+        message: 'Aluno não encontrado'
+      });
+    }
+
+    console.log(`[${timestamp}] ✅ Validações concluídas com sucesso`);
+    console.log(`[${timestamp}] 🔑 Gerando token de impersonation:`, {
+      admin: admin.IdUsuario,
+      aluno: aluno.IdUsuario,
+      nome_aluno: aluno.nome
+    });
+
+    // Gera o token de impersonation
+    const impersonationToken = authService.gerarToken(
+      {
+        id: aluno.IdUsuario,
+        login: aluno.login,
+        email: aluno.alunoInfo?.email
+      },
+      'aluno',
+      {
+        originalId: admin.IdUsuario,
+        originalRole: 'administrador'
+      }
+    );
+
+    console.log(`[${timestamp}] ✨ Token de impersonation gerado com sucesso`);
+
+    res.json({
+      success: true,
+      message: 'Token de impersonation gerado com sucesso',
+      token: impersonationToken,
+      usuario: {
+        id: aluno.IdUsuario,
+        nome: aluno.nome,
+        email: aluno.alunoInfo?.email,
+        login: aluno.login
+      }
+    });
+
+  } catch (error) {
+    const timestamp = new Date().toLocaleString();
+    console.error(`[${timestamp}] ❌ Erro ao gerar token de impersonation:`, error);
+    res.status(error.message.includes('não encontrado') ? 404 : 500).json({
+      success: false,
+      message: error.message || 'Erro ao gerar token de impersonation'
+    });
+  }
+};
+
 module.exports = {
   registrar,
   loginUnificado,
-  me
+  me,
+  impersonateUser
 }; 
