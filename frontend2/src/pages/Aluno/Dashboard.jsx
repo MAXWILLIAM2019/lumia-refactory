@@ -250,13 +250,22 @@ export default function AlunoDashboard() {
     if (!sprint || !sprint.PlanoId) return;
 
     try {
-      const response = await api.get(`/planos/${sprint.PlanoId}/sprints`);
+      console.log('Buscando próxima sprint para o plano:', sprint.PlanoId);
+      const response = await api.get(`/sprints/plano/${sprint.PlanoId}/instancias`);
+      console.log('Sprints encontradas:', response.data);
+      
       const sprints = response.data.sort((a, b) => a.posicao - b.posicao);
+      console.log('Sprints ordenadas:', sprints);
+      console.log('Sprint atual ID:', sprint.id);
+      
       const indexAtual = sprints.findIndex(s => s.id === sprint.id);
+      console.log('Índice da sprint atual:', indexAtual);
       
       if (indexAtual !== -1 && indexAtual < sprints.length - 1) {
+        console.log('Próxima sprint encontrada:', sprints[indexAtual + 1]);
         setProximaSprint(sprints[indexAtual + 1]);
       } else {
+        console.log('Não há próxima sprint');
         setProximaSprint(null);
       }
     } catch (error) {

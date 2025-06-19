@@ -35,7 +35,7 @@ const listarPlanos = async (req, res) => {
       order: [['nome', 'ASC']] // Ordenar por nome
     });
     
-    console.log('7. Consulta concluída, número de planos mestre encontrados:', planosMestre?.length || 0);
+    console.log('7. Consulta concluída, número de planos mestres encontrados:', planosMestre?.length || 0);
     
     // Se não houver planos, retorna um array vazio em vez de null/undefined
     if (!planosMestre || planosMestre.length === 0) {
@@ -297,7 +297,8 @@ const buscarSprintsPorPlano = async (req, res) => {
         status: metaMestre.status,
         totalQuestoes: metaMestre.totalQuestoes,
         questoesCorretas: metaMestre.questoesCorretas,
-        SprintId: sprintMestre.id
+        SprintId: sprintMestre.id,
+        posicao: metaMestre.posicao
       })),
       createdAt: sprintMestre.createdAt,
       updatedAt: sprintMestre.updatedAt

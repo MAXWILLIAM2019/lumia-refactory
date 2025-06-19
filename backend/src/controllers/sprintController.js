@@ -67,8 +67,8 @@ exports.createSprint = async (req, res) => {
     if (metas && metas.length > 0) {
       const metasMestresCriadas = await Promise.all(
         metas.map(async (meta, index) => {
-          // Usar o índice + 1 como posição
-          const posicao = index + 1;
+          // Se a posição não foi fornecida ou é 0, usar o índice + 1
+          const posicao = meta.posicao && meta.posicao > 0 ? meta.posicao : index + 1;
 
           return MetaMestre.create({
             disciplina: meta.disciplina,
@@ -85,24 +85,28 @@ exports.createSprint = async (req, res) => {
             SprintMestreId: sprintMestre.id,
             posicao: posicao
           });
-          })
+        })
       );
       
       // Adicionar as metas ao objeto de resposta para compatibilidade
-      sprintMestre.metas = metasMestresCriadas.map(metaMestre => ({
-        id: metaMestre.id,
-        disciplina: metaMestre.disciplina,
-        tipo: metaMestre.tipo,
-        titulo: metaMestre.titulo,
-        comandos: metaMestre.comandos,
-        link: metaMestre.link,
-        relevancia: metaMestre.relevancia,
-        tempoEstudado: metaMestre.tempoEstudado,
-        desempenho: metaMestre.desempenho,
-        status: metaMestre.status,
-        totalQuestoes: metaMestre.totalQuestoes,
-        questoesCorretas: metaMestre.questoesCorretas,
-        SprintId: sprintMestre.id // Para compatibilidade com frontend
+      sprintMestre.metas = await Promise.all(metasMestresCriadas.map(async metaMestre => {
+        const metaFormatada = {
+          id: metaMestre.id,
+          disciplina: metaMestre.disciplina,
+          tipo: metaMestre.tipo,
+          titulo: metaMestre.titulo,
+          comandos: metaMestre.comandos,
+          link: metaMestre.link,
+          relevancia: metaMestre.relevancia,
+          tempoEstudado: metaMestre.tempoEstudado,
+          desempenho: metaMestre.desempenho,
+          status: metaMestre.status,
+          totalQuestoes: metaMestre.totalQuestoes,
+          questoesCorretas: metaMestre.questoesCorretas,
+          SprintId: sprintMestre.id,
+          posicao: metaMestre.posicao
+        };
+        return metaFormatada;
       }));
     }
 
@@ -174,7 +178,8 @@ exports.getAllSprints = async (req, res) => {
         status: metaMestre.status,
         totalQuestoes: metaMestre.totalQuestoes,
         questoesCorretas: metaMestre.questoesCorretas,
-        SprintId: sprintMestre.id
+        SprintId: sprintMestre.id,
+        posicao: metaMestre.posicao
       })) || [],
       Plano: sprintMestre.planoMestre ? {
         id: sprintMestre.planoMestre.id,
@@ -242,7 +247,8 @@ exports.getSprintById = async (req, res) => {
         status: metaMestre.status,
         totalQuestoes: metaMestre.totalQuestoes,
         questoesCorretas: metaMestre.questoesCorretas,
-        SprintId: sprintMestre.id
+        SprintId: sprintMestre.id,
+        posicao: metaMestre.posicao
       })) || [],
       Plano: sprintMestre.planoMestre ? {
         id: sprintMestre.planoMestre.id,
@@ -328,14 +334,6 @@ exports.updateSprint = async (req, res) => {
       // Array para armazenar os IDs das metas que serão mantidas
       const idsMetasManter = [];
 
-      // Primeiro, vamos encontrar a maior posição atual
-      const ultimaMetaMestre = await MetaMestre.findOne({
-        where: { SprintMestreId: sprintMestre.id },
-        order: [['posicao', 'DESC']]
-      });
-      
-      let proximaPosicao = ultimaMetaMestre ? ultimaMetaMestre.posicao + 1 : 1;
-
       // Processar cada meta da requisição
       for (const meta of metas) {
         if (meta.id && metasExistentesMap.has(meta.id)) {
@@ -352,7 +350,9 @@ exports.updateSprint = async (req, res) => {
             desempenho: meta.desempenho !== undefined ? meta.desempenho : metaExistente.desempenho,
             status: meta.status !== undefined ? meta.status : metaExistente.status,
             totalQuestoes: meta.totalQuestoes !== undefined ? meta.totalQuestoes : metaExistente.totalQuestoes,
-            questoesCorretas: meta.questoesCorretas !== undefined ? meta.questoesCorretas : metaExistente.questoesCorretas
+            questoesCorretas: meta.questoesCorretas !== undefined ? meta.questoesCorretas : metaExistente.questoesCorretas,
+            // Se a posição não foi fornecida ou é 0, manter a posição atual
+            posicao: meta.posicao && meta.posicao > 0 ? meta.posicao : metaExistente.posicao
           });
           idsMetasManter.push(meta.id);
         } else if (!meta.id) {
@@ -370,7 +370,8 @@ exports.updateSprint = async (req, res) => {
             totalQuestoes: meta.totalQuestoes || 0,
             questoesCorretas: meta.questoesCorretas || 0,
             SprintMestreId: sprintMestre.id,
-            posicao: proximaPosicao++
+            // Se a posição não foi fornecida ou é 0, usar a próxima posição disponível
+            posicao: meta.posicao && meta.posicao > 0 ? meta.posicao : proximaPosicao++
           });
           idsMetasManter.push(novaMetaMestre.id);
         }
@@ -425,7 +426,8 @@ exports.updateSprint = async (req, res) => {
         status: metaMestre.status,
         totalQuestoes: metaMestre.totalQuestoes,
         questoesCorretas: metaMestre.questoesCorretas,
-        SprintId: sprintMestreAtualizada.id
+        SprintId: sprintMestreAtualizada.id,
+        posicao: metaMestre.posicao
       })) || [],
       Plano: sprintMestreAtualizada.planoMestre ? {
         id: sprintMestreAtualizada.planoMestre.id,
@@ -494,7 +496,7 @@ exports.reordenarSprints = async (req, res) => {
       return res.status(404).json({ message: 'Plano não encontrado' });
     }
     
-    // Verificar se todas as sprints mestre pertencem ao plano mestre
+    // Verificar se todas as sprints mestres pertencem ao plano mestre
     const sprintsMestre = await SprintMestre.findAll({
       where: { PlanoMestreId: planoId }
     });
@@ -567,7 +569,8 @@ exports.reordenarSprints = async (req, res) => {
         status: metaMestre.status,
         totalQuestoes: metaMestre.totalQuestoes,
         questoesCorretas: metaMestre.questoesCorretas,
-        SprintId: sprintMestre.id
+        SprintId: sprintMestre.id,
+        posicao: metaMestre.posicao
       })) || [],
       Plano: sprintMestre.planoMestre ? {
         id: sprintMestre.planoMestre.id,
@@ -646,8 +649,29 @@ exports.updateMetaMestre = async (req, res) => {
  * ATENÇÃO: Função utilizada no módulo do aluno (Visualização de Metas)
  * NÃO ALTERAR sem consultar o time de desenvolvimento
  * 
- * Atualiza uma meta instanciada
+ * Atualiza uma meta instanciada e gerencia o status da sprint
  * Esta função é específica para instâncias e é usada apenas na interface do aluno
+ * 
+ * Fluxo de Gerenciamento de Status:
+ * 1. Quando uma meta é marcada como 'Concluída':
+ *    - Se for a primeira meta concluída da sprint:
+ *      -> Sprint muda de 'Pendente' para 'Em Andamento'
+ *    - Se todas as metas forem concluídas:
+ *      -> Sprint muda para 'Concluída'
+ * 
+ * IMPORTANTE:
+ * - Esta função trabalha em conjunto com sprintAtualController.atualizarSprintAtual
+ *   para garantir consistência no status das sprints
+ * - O status 'Em Andamento' só é atribuído quando a primeira meta é concluída
+ * - O status 'Concluída' pode ser atribuído aqui ou ao avançar para próxima sprint
+ * 
+ * @param {Object} req.params.id - ID da meta a ser atualizada
+ * @param {Object} req.body - Dados da atualização
+ * @param {string} req.body.status - Novo status da meta
+ * @param {string} req.body.tempoEstudado - Tempo estudado (opcional)
+ * @param {number} req.body.desempenho - Desempenho na meta (opcional)
+ * @param {number} req.body.totalQuestoes - Total de questões (opcional)
+ * @param {number} req.body.questoesCorretas - Questões corretas (opcional)
  */
 exports.updateMetaInstancia = async (req, res) => {
   try {
@@ -665,6 +689,28 @@ exports.updateMetaInstancia = async (req, res) => {
       totalQuestoes: totalQuestoes !== undefined ? totalQuestoes : meta.totalQuestoes,
       questoesCorretas: questoesCorretas !== undefined ? questoesCorretas : meta.questoesCorretas
     });
+
+    // Se a meta foi concluída, verificar se todas as metas da sprint foram concluídas
+    // ou se é a primeira meta concluída para atualizar o status da sprint
+    if (status === 'Concluída') {
+      const sprint = await Sprint.findByPk(meta.SprintId, {
+        include: [{
+          model: Meta,
+          as: 'metas'
+        }]
+      });
+
+      if (sprint) {
+        const todasMetasConcluidas = sprint.metas.every(m => m.status === 'Concluída');
+        
+        if (todasMetasConcluidas) {
+          await sprint.update({ status: 'Concluída' });
+        } else if (sprint.status === 'Pendente') {
+          // Se a sprint está pendente e temos uma meta concluída, mudar para Em Andamento
+          await sprint.update({ status: 'Em Andamento' });
+        }
+      }
+    }
 
     // Transformar para formato esperado pelo frontend
     const metaFormatada = {

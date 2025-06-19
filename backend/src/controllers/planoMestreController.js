@@ -240,7 +240,7 @@ exports.criarInstancia = async (req, res) => {
           nome: sprintMestre.nome,
           dataInicio: dataInicioAtual,
           dataFim: dataFimAtual,
-          posicao: sprintMestre.posicao || 0,
+          posicao: sprintMestre.posicao,
           PlanoId: novoPlano.id,
           sprint_mestre_id: sprintMestre.id
         }, { transaction });
@@ -260,15 +260,7 @@ exports.criarInstancia = async (req, res) => {
             tipoMeta = 'teoria'; // Valor padrão se o tipo não for válido
           }
 
-          // Determinar a próxima posição disponível para esta sprint
-          const ultimaMeta = await Meta.findOne({
-            where: { SprintId: novaSprint.id },
-            order: [['posicao', 'DESC']],
-            transaction
-          });
-          
-          const proximaPosicao = ultimaMeta ? ultimaMeta.posicao + 1 : 1;
-          
+          // Usar a mesma posição da meta mestre
           await Meta.create({
             disciplina: metaMestre.disciplina,
             tipo: tipoMeta,
@@ -278,7 +270,7 @@ exports.criarInstancia = async (req, res) => {
             relevancia: metaMestre.relevancia,
             SprintId: novaSprint.id,
             meta_mestre_id: metaMestre.id,
-            posicao: proximaPosicao
+            posicao: metaMestre.posicao
           }, { transaction });
         }
       }

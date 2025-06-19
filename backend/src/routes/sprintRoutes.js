@@ -35,4 +35,7 @@ router.put('/metas/mestre/:id', sprintController.updateMetaMestre);
 // Atualizar uma meta instanciada
 router.put('/metas/instancia/:id', sprintController.updateMetaInstancia);
 
+// Buscar sprints instanciadas de um plano
+router.get('/plano/:id/instancias', sprintController.buscarSprintsInstanciadasPorPlano);
+
 module.exports = router; 

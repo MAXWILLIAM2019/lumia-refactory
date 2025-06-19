@@ -234,7 +234,8 @@ const RegisterSprint = () => {
           type: meta.tipo,
           relevance: meta.relevancia,
           comandos: meta.comandos || '',
-          link: meta.link || ''
+          link: meta.link || '',
+          posicao: meta.posicao || 0
         }))
       });
     } catch (error) {
@@ -259,13 +260,14 @@ const RegisterSprint = () => {
         dataInicio: formData.startDate,
         dataFim: formData.endDate,
         planoId: planoId || formData.planoId,
-        metas: formData.activities.map(activity => ({
+        metas: formData.activities.map((activity, index) => ({
           disciplina: activity.discipline === 'custom' ? activity.customDiscipline : activity.discipline,
           tipo: activity.type,
           titulo: activity.title,
           relevancia: activity.relevance,
           comandos: activity.comandos,
-          link: activity.link
+          link: activity.link,
+          posicao: activity.posicao > 0 ? activity.posicao : index + 1
         }))
       };
 
@@ -324,7 +326,8 @@ const RegisterSprint = () => {
         type: 'teoria', 
         relevance: 1,
         comandos: '',
-        link: ''
+        link: '',
+        posicao: prev.activities.length + 1
       }]
     }));
     
@@ -403,12 +406,22 @@ const RegisterSprint = () => {
   console.log('- Disciplinas carregadas:', disciplinasDoPlanoDisciplinas.map(d => d.nome));
   console.log('- Assuntos carregados para disciplinas:', Object.keys(assuntosDaDisciplina));
 
-  // Função para importar metas via planilha
-  // - Aceita arquivos .xlsx, .xls e .csv
-  // - Valida colunas obrigatórias: disciplina, tipo, titulo, comandos, link, relevancia
-  // - Valida tipos permitidos: teoria, questoes, revisao, reforco
-  // - Exibe pré-visualização em modal com opção de remover linhas
-  // - Mantém estado separado para metas importadas
+  /**
+   * Função para importar metas via planilha
+   * Processo:
+   * 1. Lê o arquivo Excel/CSV usando a biblioteca XLSX
+   * 2. Valida o cabeçalho e as colunas obrigatórias
+   * 3. Processa cada linha, validando:
+   *    - Campos obrigatórios preenchidos
+   *    - Tipos de meta válidos
+   *    - Posição como número inteiro positivo
+   * 4. Armazena temporariamente no estado importedMetas
+   * 5. Exibe modal de pré-visualização
+   * 6. Ao finalizar, transfere para formData.activities mantendo:
+   *    - Todos os dados originais
+   *    - A posição original da planilha (meta.posicao)
+   *    - Flag imported=true para identificação
+   */
   const handleImportarMetasPlanilha = (file) => {
     setImportMetasError(null);
     setImportedMetas([]);
@@ -423,8 +436,8 @@ const RegisterSprint = () => {
       const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       const [header, ...rows] = json;
 
-      // Esperado: disciplina, tipo, titulo, comandos, link, relevancia
-      const colunasEsperadas = ['disciplina', 'tipo', 'titulo', 'comandos', 'link', 'relevancia'];
+      // Esperado: disciplina, tipo, titulo, comandos, link, relevancia, meta
+      const colunasEsperadas = ['disciplina', 'tipo', 'titulo', 'comandos', 'link', 'relevancia', 'meta'];
       const headerLower = header.map(h => (h || '').toString().toLowerCase().trim());
       const indices = colunasEsperadas.map(col => headerLower.indexOf(col));
 
@@ -432,7 +445,7 @@ const RegisterSprint = () => {
       if (indices.some(idx => idx === -1)) {
         setImportMetasError({
           titulo: 'Erro na importação',
-          mensagens: ['A planilha deve conter as colunas: disciplina, tipo, titulo, comandos, link, relevancia']
+          mensagens: ['A planilha deve conter as colunas: disciplina, tipo, titulo, comandos, link, relevancia, meta']
         });
         return;
       }
@@ -443,18 +456,31 @@ const RegisterSprint = () => {
         const tipo = row[indices[1]];
         const titulo = row[indices[2]];
         const relevancia = row[indices[5]];
+        const meta = row[indices[6]];
         const tiposValidos = ['teoria', 'questoes', 'revisao', 'reforco'];
-        if (!disciplina || !tipo || !titulo || !relevancia) {
+        
+        if (!disciplina || !tipo || !titulo || !relevancia || !meta) {
           return {
             linha: index + 2,
             motivo: [
               !disciplina ? 'Disciplina não preenchida' : '',
               !tipo ? 'Tipo não preenchido' : '',
               !titulo ? 'Título não preenchido' : '',
-              !relevancia ? 'Relevância não preenchida' : ''
+              !relevancia ? 'Relevância não preenchida' : '',
+              !meta ? 'Meta (posição) não preenchida' : ''
             ].filter(Boolean).join(', ')
           };
         }
+
+        // Validar se meta é um número inteiro positivo
+        const metaNum = parseInt(meta);
+        if (isNaN(metaNum) || metaNum <= 0 || metaNum !== parseFloat(meta)) {
+          return {
+            linha: index + 2,
+            motivo: 'Meta (posição) deve ser um número inteiro positivo maior que zero'
+          };
+        }
+
         if (!tiposValidos.includes(tipo.toLowerCase())) {
           return {
             linha: index + 2,
@@ -479,7 +505,8 @@ const RegisterSprint = () => {
         titulo: row[indices[2]]?.toString().trim() || '',
         comandos: row[indices[3]]?.toString().trim() || '',
         link: row[indices[4]]?.toString().trim() || '',
-        relevancia: row[indices[5]]?.toString().trim() || ''
+        relevancia: row[indices[5]]?.toString().trim() || '',
+        posicao: parseInt(row[indices[6]]?.toString().trim()) || 0
       }));
       setImportedMetas(result);
       setShowImportMetasModal(true);
@@ -813,7 +840,13 @@ const RegisterSprint = () => {
               </button>
             </div>
           </div>
-          {/* Sempre mostrar metas importadas (visualização) */}
+          {/* 
+            Seção de visualização das metas importadas
+            - Exibe apenas metas marcadas como imported=true
+            - Mantém a posição original da planilha em activity.posicao
+            - Usa layout flexbox para organização em linha
+            - Estilização consistente com o tema escuro da aplicação
+          */}
           {formData.activities.filter(a => a.imported).length > 0 && (
             <div style={{
               width: '100%',
@@ -842,7 +875,38 @@ const RegisterSprint = () => {
                   overflow: 'hidden',
                   gap: 8
                 }}>
-                  <div style={{ minWidth: 54, maxWidth: 60, color: '#f59e0b', borderRadius: 8, fontWeight: 700, fontSize: 15, padding: '6px 4px 6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', background: 'rgba(245,158,11,0.12)', marginRight: 12, marginLeft: 12, borderRight: '4px solid #181c23' }}>{`Meta ${idx + 1}`}</div>
+                  {/* 
+                    Container para numeração da meta
+                    - Largura fixa de 80px para acomodar números de uma ou duas casas decimais
+                    - Fundo amarelo com opacidade reduzida para destaque visual
+                    - Flexbox para centralização perfeita do conteúdo
+                    - Borda direita para separação visual do restante do conteúdo
+                  */}
+                  <div style={{ 
+                    // Dimensões fixas para manter consistência
+                    width: '80px', 
+                    minWidth: '80px',
+                    maxWidth: '80px',
+                    
+                    // Estilo visual
+                    color: '#f59e0b', 
+                    borderRadius: 8, 
+                    fontWeight: 700, 
+                    fontSize: 15, 
+                    background: 'rgba(245,158,11,0.12)',
+                    borderRight: '4px solid #181c23',
+                    
+                    // Espaçamento e margens
+                    padding: '6px 4px', 
+                    marginRight: 12, 
+                    marginLeft: 12, 
+                    
+                    // Centralização do conteúdo
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    textAlign: 'center'
+                  }}>{`Meta ${activity.posicao}`}</div>
                   <div style={{ minWidth: 80, maxWidth: 120, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 14, padding: '6px 8px', display: 'inline-block', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.discipline}</div>
                   <div style={{ minWidth: 70, maxWidth: 100, color: '#e0e6ed', borderRadius: 8, fontWeight: 600, fontSize: 14, padding: '6px 8px', display: 'inline-block', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.type}</div>
                   <div style={{ flex: 2, minWidth: 100, maxWidth: 180, color: '#e0e6ed', fontSize: 14, padding: '6px 8px', marginLeft: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activity.title}</div>
@@ -1327,6 +1391,14 @@ const RegisterSprint = () => {
             }}>
               <button
                 onClick={() => {
+                  /**
+                   * Processo de finalização da importação:
+                   * 1. Mapeia as metas do estado temporário (importedMetas) para o formato do formulário
+                   * 2. Preserva todos os dados originais incluindo a posição (meta.posicao)
+                   * 3. Adiciona flag imported=true para identificar metas importadas
+                   * 4. Atualiza o estado do formulário substituindo activities existentes
+                   * 5. Fecha o modal de pré-visualização
+                   */
                   const metasImportadas = importedMetas.map(meta => ({
                     discipline: meta.disciplina,
                     customDiscipline: '',
@@ -1335,7 +1407,8 @@ const RegisterSprint = () => {
                     relevance: Number(meta.relevancia) || 1,
                     comandos: meta.comandos || '',
                     link: meta.link || '',
-                    imported: true
+                    imported: true,
+                    posicao: meta.posicao
                   }));
 
                   setFormData(prev => ({

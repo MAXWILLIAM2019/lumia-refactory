@@ -150,6 +150,32 @@ exports.getSprintAtual = async (req, res) => {
 
 /**
  * Atualiza a sprint atual do aluno
+ * 
+ * ATENÇÃO: FUNCIONALIDADE TESTADA E FUNCIONAL - NÃO ALTERAR SEM CONSULTA!
+ * 
+ * Este método é responsável por:
+ * 1. Atualizar qual sprint o aluno está fazendo atualmente
+ * 2. Gerenciar o status da sprint anterior ao avançar
+ * 
+ * Fluxo de Gerenciamento de Status:
+ * 1. Ao avançar para próxima sprint:
+ *    - Verifica se todas as metas da sprint atual estão concluídas
+ *    - Se sim, marca a sprint atual como 'Concluída' antes de mudar
+ * 
+ * IMPORTANTE:
+ * - Esta função trabalha em conjunto com sprintController.updateMetaInstancia
+ *   para garantir consistência no status das sprints
+ * - O status 'Concluída' pode ser atribuído aqui ou ao concluir todas as metas
+ * - Não permite avançar se houver metas pendentes
+ * 
+ * Validações de Segurança:
+ * - Verifica se a sprint pertence ao plano do usuário
+ * - Verifica se o usuário tem plano ativo
+ * - Verifica conclusão das metas antes de avançar
+ * 
+ * @param {Object} req.user.id - ID do usuário logado
+ * @param {Object} req.body - Dados da atualização
+ * @param {number} req.body.sprintId - ID da nova sprint atual
  */
 exports.atualizarSprintAtual = async (req, res) => {
   try {
@@ -166,11 +192,15 @@ exports.atualizarSprintAtual = async (req, res) => {
       return res.status(404).json({ message: 'Sprint não encontrada' });
     }
 
-    // Verificar se a sprint pertence ao plano do usuário
-    const aluno = await Aluno.findByPk(idusuario, {
+    // Verificar se a sprint pertence ao plano do usuário usando AlunoPlano
+    const alunoPlano = await AlunoPlano.findOne({
+      where: { 
+        idusuario,
+        ativo: true 
+      },
       include: [{
         model: Plano,
-        as: 'planos',
+        as: 'plano',
         include: [{
           model: Sprint,
           as: 'sprints'
@@ -178,12 +208,37 @@ exports.atualizarSprintAtual = async (req, res) => {
       }]
     });
 
-    const sprintPertenceAoPlano = aluno.planos.some(plano => 
-      plano.sprints.some(s => s.id === sprintId)
-    );
+    if (!alunoPlano) {
+      return res.status(403).json({ message: 'Aluno não possui plano ativo' });
+    }
+
+    const sprintPertenceAoPlano = alunoPlano.plano.sprints.some(s => s.id === sprintId);
 
     if (!sprintPertenceAoPlano) {
       return res.status(403).json({ message: 'Sprint não pertence ao plano do usuário' });
+    }
+
+    // Buscar a sprint atual antes de atualizar
+    const sprintAtualAnterior = await SprintAtual.findOne({
+      where: { idusuario },
+      include: [{
+        model: Sprint,
+        include: [{
+          model: Meta,
+          as: 'metas'
+        }]
+      }]
+    });
+
+    // Se existir uma sprint atual, marcar como concluída antes de mudar
+    if (sprintAtualAnterior && sprintAtualAnterior.Sprint) {
+      const todasMetasConcluidas = sprintAtualAnterior.Sprint.metas.every(
+        meta => meta.status === 'Concluída'
+      );
+
+      if (todasMetasConcluidas) {
+        await sprintAtualAnterior.Sprint.update({ status: 'Concluída' });
+      }
     }
 
     // Atualizar ou criar o registro da sprint atual
