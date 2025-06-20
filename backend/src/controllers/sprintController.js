@@ -794,4 +794,163 @@ exports.buscarSprintsInstanciadasPorPlano = async (req, res) => {
       details: error.message 
     });
   }
+};
+
+/**
+ * ATENÇÃO: Função utilizada no módulo de administração (Cadastro de Planos)
+ * NÃO ALTERAR sem consultar o time de desenvolvimento
+ * 
+ * Adiciona novas metas a uma sprint mestre existente através da importação de planilha
+ * Esta função é específica para templates e é usada apenas na interface do administrador
+ * 
+ * Características importantes:
+ * - Mantém as metas existentes intactas
+ * - Adiciona apenas as novas metas importadas
+ * - Valida posições para evitar conflitos com metas existentes
+ * - Trabalha exclusivamente com MetaMestre (não afeta metas instanciadas)
+ * 
+ * Fluxo de importação:
+ * 1. Valida se as posições das novas metas não conflitam com as existentes
+ * 2. Cria apenas as novas metas mantendo as existentes
+ * 3. Retorna a sprint atualizada com todas as metas (antigas + novas)
+ * 
+ * TODO: Este método será expandido futuramente para suportar também a adição
+ * manual de metas individuais, além da importação em lote via planilha.
+ * Ao implementar, manter a mesma lógica de validação de posições e
+ * preservação das metas existentes.
+ */
+exports.adicionarMetas = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const metas = req.body;
+
+    // Validar se a sprint existe
+    const sprintMestre = await SprintMestre.findByPk(id, {
+      include: [{
+        model: MetaMestre,
+        as: 'metasMestre'
+      }]
+    });
+
+    if (!sprintMestre) {
+      return res.status(404).json({ message: 'Sprint não encontrada' });
+    }
+
+    // Validar se existem posições repetidas na planilha
+    const posicoesNasPlanilha = metas.map(meta => meta.posicao);
+    const posicoesUnicas = new Set(posicoesNasPlanilha);
+    
+    if (posicoesNasPlanilha.length !== posicoesUnicas.size) {
+      // Encontrar as posições que se repetem
+      const posicoesRepetidas = posicoesNasPlanilha.filter(
+        (posicao, index) => posicoesNasPlanilha.indexOf(posicao) !== index
+      );
+      
+      return res.status(400).json({ 
+        message: `Existem posições repetidas na planilha: ${posicoesRepetidas.join(', ')}. Cada meta deve ter uma posição única.`
+      });
+    }
+
+    // Obter posições já utilizadas na sprint
+    const posicoesExistentes = new Set(sprintMestre.metasMestre.map(meta => meta.posicao));
+
+    // Validar se alguma posição já está em uso na sprint
+    for (const meta of metas) {
+      if (posicoesExistentes.has(meta.posicao)) {
+        return res.status(400).json({ 
+          message: `A posição ${meta.posicao} já está em uso nesta sprint. Cada meta deve ter uma posição única.`
+        });
+      }
+    }
+
+    // Criar as novas metas
+    const novasMetasMestre = await Promise.all(metas.map(meta => 
+      MetaMestre.create({
+        disciplina: meta.disciplina,
+        tipo: meta.tipo,
+        titulo: meta.titulo,
+        comandos: meta.comandos || '',
+        link: meta.link || '',
+        relevancia: meta.relevancia,
+        tempoEstudado: '00:00',
+        desempenho: 0,
+        status: 'Pendente',
+        totalQuestoes: 0,
+        questoesCorretas: 0,
+        SprintMestreId: sprintMestre.id,
+        posicao: meta.posicao
+      })
+    ));
+
+    /**
+     * Propagação automática das novas metas para todas as sprints instanciadas
+     * TODO: No futuro, este processo poderá ser alterado para um sistema de aceite do aluno
+     */
+    // Buscar todas as sprints instanciadas desta sprint mestre
+    const sprintsInstanciadas = await Sprint.findAll({
+      where: { sprint_mestre_id: id }
+    });
+
+    // Criar as novas metas em cada sprint instanciada
+    for (const sprint of sprintsInstanciadas) {
+      await Promise.all(novasMetasMestre.map(metaMestre =>
+        Meta.create({
+          disciplina: metaMestre.disciplina,
+          tipo: metaMestre.tipo,
+          titulo: metaMestre.titulo,
+          comandos: metaMestre.comandos,
+          link: metaMestre.link,
+          relevancia: metaMestre.relevancia,
+          tempoEstudado: '00:00',
+          desempenho: 0,
+          status: 'Pendente',
+          totalQuestoes: 0,
+          questoesCorretas: 0,
+          SprintId: sprint.id,
+          posicao: metaMestre.posicao,
+          meta_mestre_id: metaMestre.id
+        })
+      ));
+    }
+
+    // Buscar a sprint atualizada com todas as metas
+    const sprintAtualizada = await SprintMestre.findByPk(id, {
+      include: [{
+        model: MetaMestre,
+        as: 'metasMestre',
+        order: [['posicao', 'ASC']]
+      }]
+    });
+
+    // Transformar para formato esperado pelo frontend
+    const sprintFormatada = {
+      id: sprintAtualizada.id,
+      nome: sprintAtualizada.nome,
+      PlanoId: sprintAtualizada.PlanoMestreId,
+      posicao: sprintAtualizada.posicao,
+      dataInicio: sprintAtualizada.dataInicio,
+      dataFim: sprintAtualizada.dataFim,
+      metas: sprintAtualizada.metasMestre?.map(metaMestre => ({
+        id: metaMestre.id,
+        disciplina: metaMestre.disciplina,
+        tipo: metaMestre.tipo,
+        titulo: metaMestre.titulo,
+        comandos: metaMestre.comandos,
+        link: metaMestre.link,
+        relevancia: metaMestre.relevancia,
+        tempoEstudado: metaMestre.tempoEstudado,
+        desempenho: metaMestre.desempenho,
+        status: metaMestre.status,
+        totalQuestoes: metaMestre.totalQuestoes,
+        questoesCorretas: metaMestre.questoesCorretas,
+        SprintId: sprintAtualizada.id,
+        posicao: metaMestre.posicao
+      })) || []
+    };
+
+    res.status(201).json(sprintFormatada);
+  } catch (error) {
+    console.error('Erro ao adicionar metas:', error);
+    res.status(400).json({ message: error.message });
+  }
 }; 

@@ -411,16 +411,24 @@ const RegisterSprint = () => {
    * Processo:
    * 1. Lê o arquivo Excel/CSV usando a biblioteca XLSX
    * 2. Valida o cabeçalho e as colunas obrigatórias
-   * 3. Processa cada linha, validando:
+   * 3. Valida posições das metas:
+   *    - Verifica se existem posições repetidas na planilha
+   *    - Garante que cada meta tenha uma posição única
+   * 4. Processa cada linha, validando:
    *    - Campos obrigatórios preenchidos
    *    - Tipos de meta válidos
    *    - Posição como número inteiro positivo
-   * 4. Armazena temporariamente no estado importedMetas
-   * 5. Exibe modal de pré-visualização
-   * 6. Ao finalizar, transfere para formData.activities mantendo:
+   * 5. Armazena temporariamente no estado importedMetas
+   * 6. Exibe modal de pré-visualização
+   * 7. Ao finalizar, transfere para formData.activities mantendo:
    *    - Todos os dados originais
    *    - A posição original da planilha (meta.posicao)
    *    - Flag imported=true para identificação
+   * 
+   * Validações de Posição:
+   * - Não permite posições repetidas na planilha
+   * - Exibe mensagem de erro informando exatamente quais posições estão duplicadas
+   * - Garante integridade dos dados antes de prosseguir com a importação
    */
   const handleImportarMetasPlanilha = (file) => {
     setImportMetasError(null);
@@ -446,6 +454,22 @@ const RegisterSprint = () => {
         setImportMetasError({
           titulo: 'Erro na importação',
           mensagens: ['A planilha deve conter as colunas: disciplina, tipo, titulo, comandos, link, relevancia, meta']
+        });
+        return;
+      }
+
+      // Coletar todas as posições da planilha
+      const posicoesNaPlanilha = rows.map(row => parseInt(row[indices[6]]?.toString().trim()));
+      const posicoesUnicas = new Set(posicoesNaPlanilha.filter(p => !isNaN(p)));
+
+      // Verificar posições repetidas na planilha
+      if (posicoesNaPlanilha.length !== posicoesUnicas.size) {
+        const posicoesRepetidas = posicoesNaPlanilha.filter(
+          (posicao, index) => posicoesNaPlanilha.indexOf(posicao) !== index
+        );
+        setImportMetasError({
+          titulo: 'Erro na importação',
+          mensagens: [`Existem posições repetidas na planilha: ${posicoesRepetidas.join(', ')}. Cada meta deve ter uma posição única.`]
         });
         return;
       }

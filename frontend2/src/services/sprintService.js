@@ -86,5 +86,15 @@ export const sprintService = {
       console.error('Erro ao listar sprints do aluno:', error);
       throw new Error(error.response?.data?.message || 'Erro ao listar sprints do aluno');
     }
+  },
+
+  async adicionarMetas(sprintId, metas) {
+    try {
+      const response = await api.post(`/sprints/${sprintId}/metas`, metas);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao adicionar metas:', error);
+      throw new Error(error.response?.data?.message || 'Erro ao adicionar metas à sprint');
+    }
   }
 }; 

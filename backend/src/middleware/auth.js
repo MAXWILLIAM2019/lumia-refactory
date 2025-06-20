@@ -13,6 +13,12 @@ const GrupoUsuario = require('../models/GrupoUsuario');
 const AlunoInfo = require('../models/AlunoInfo');
 const AdministradorInfo = require('../models/AdministradorInfo');
 
+// Mapeamento de roles para permissões
+const rolePermissions = {
+  administrador: ['administrador', 'read:all', 'write:all'],
+  aluno: ['aluno', 'read:own_profile', 'write:own_profile']
+};
+
 const auth = async (req, res, next) => {
   try {
     console.log('🔐 Middleware de autenticação iniciado');
@@ -47,9 +53,14 @@ const auth = async (req, res, next) => {
     // Adiciona as informações do usuário à requisição
     req.user = userInfo;
 
+    // Adiciona as permissões baseadas no role do usuário
+    const role = userInfo.isImpersonating ? userInfo.originalRole : userInfo.role;
+    req.permissions = rolePermissions[role] || [];
+
     // Log das informações do usuário (útil para debug)
     console.log('👤 Informações do usuário:', {
       ...userInfo,
+      permissions: req.permissions,
       url: req.originalUrl,
       method: req.method
     });

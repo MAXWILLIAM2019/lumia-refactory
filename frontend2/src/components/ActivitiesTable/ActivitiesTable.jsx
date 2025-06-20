@@ -275,8 +275,26 @@ export default function ActivitiesTable({ activities, onFilterChange, onRefresh 
         updateData.questoesCorretas = formData.questoesCorretas;
       }
       
+      /**
+       * ATENÇÃO: Função utilizada no módulo do aluno (Visualização de Metas)
+       * NÃO ALTERAR sem consultar o time de desenvolvimento
+       * 
+       * Atualiza uma meta instanciada e gerencia o status da sprint
+       * Esta função é específica para instâncias e é usada apenas na interface do aluno
+       * 
+       * Fluxo de Gerenciamento de Status:
+       * 1. Quando uma meta é marcada como 'Concluída':
+       *    - Atualiza o tempo estudado
+       *    - Atualiza o desempenho (se houver questões)
+       *    - Atualiza o status da meta
+       * 
+       * IMPORTANTE:
+       * - Esta função trabalha em conjunto com sprintController.updateMetaInstancia
+       *   para garantir consistência no status das metas e sprints
+       * - A URL deve seguir EXATAMENTE este padrão para funcionar corretamente
+       */
       // Enviar para o backend usando a rota de meta instanciada
-      await api.put(`/sprints/metas/instancia/${selectedActivity.codigo}`, updateData);
+      await api.put(`/sprints/instancia/${selectedActivity.codigo}/meta/${selectedActivity.codigo}`, updateData);
       
       // Fechar o modal e atualizar os dados
       handleModalClose();
