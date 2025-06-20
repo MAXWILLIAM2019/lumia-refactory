@@ -186,7 +186,7 @@ export default function TodasSprints() {
         <h1>Minhas Sprints</h1>
         {usuario && planoInfo && (
           <div className={styles.planoInfo}>
-            <h2>Olá, {usuario.nome.split(' ')[0]} ({planoInfo.nome} - {planoInfo.cargo})</h2>
+            <h2>Olá, {usuario.nome.split(' ')[0]}</h2>
             <p>{planoInfo.descricao}</p>
           </div>
         )}

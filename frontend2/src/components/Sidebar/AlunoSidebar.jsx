@@ -50,7 +50,7 @@ export default function AlunoSidebar() {
           >
             <div className={styles.menuItemContent}>
               <img src={sprintIcon} alt="Dashboard" className={styles.icon} />
-              <span>Minha Sprint</span>
+              <span>Dashboard</span>
             </div>
           </li>
           <li 
@@ -58,8 +58,8 @@ export default function AlunoSidebar() {
             onClick={handleTodasSprintsClick}
           >
             <div className={styles.menuItemContent}>
-              <img src={listSprintIcon} alt="Todas as Sprints" className={styles.icon} />
-              <span>Todas as Sprints</span>
+              <img src={listSprintIcon} alt="Sprints" className={styles.icon} />
+              <span>Sprints</span>
             </div>
           </li>
           <li 
@@ -67,8 +67,8 @@ export default function AlunoSidebar() {
             onClick={handleEstatisticasClick}
           >
             <div className={styles.menuItemContent}>
-              <img src={statsIcon} alt="Minhas Estatísticas" className={styles.icon} />
-              <span>Minhas Estatísticas</span>
+              <img src={statsIcon} alt="Estatísticas" className={styles.icon} />
+              <span>Estatísticas</span>
             </div>
           </li>
           <li 

@@ -36,8 +36,8 @@ router.put('/metas/mestre/:id', checkPermission('administrador'), sprintControll
 // Buscar sprints instanciadas de um plano (admin e aluno podem ver)
 router.get('/plano/:id/instancias', sprintController.buscarSprintsInstanciadasPorPlano);
 
-// Adicionar metas a uma sprint (admin e aluno podem adicionar)
-router.post('/:id/metas', sprintController.adicionarMetas);
+// Adicionar metas a uma sprint mestre (apenas admin)
+router.post('/:id/metas', checkPermission('administrador'), sprintController.adicionarMetas);
 
 /**
  * ATENÇÃO: Rota utilizada no módulo do aluno (Visualização de Metas)
