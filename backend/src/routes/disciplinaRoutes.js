@@ -9,7 +9,7 @@ const router = express.Router();
 const disciplinaController = require('../controllers/disciplinaController');
 const authMiddleware = require('../middlewares/authMiddleware');
 
-// Schemas estão definidos em: backend/src/docs/swaggerSchemas.js
+// Schemas estão definidos em: backend/src/docs/schemas/disciplinaSchemas.js
 
 // Aplicar middleware de autenticação em todas as rotas
 router.use(authMiddleware);

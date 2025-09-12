@@ -3,7 +3,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const { auth, adminOnly } = require('../middleware/auth');
 
-// Schemas estão definidos em: backend/src/docs/swaggerSchemas.js
+// Schemas estão definidos em: backend/src/docs/schemas/authSchemas.js
 
 /**
  * @swagger

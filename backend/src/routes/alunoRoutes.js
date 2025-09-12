@@ -6,7 +6,7 @@
  * 
  * Inclui controle de permissões para proteção de recursos.
  * 
- * Schemas estão definidos em: backend/src/docs/swaggerSchemas.js
+ * Schemas estão definidos em: backend/src/docs/schemas/alunoSchemas.js
  */
 const express = require('express');
 const router = express.Router();

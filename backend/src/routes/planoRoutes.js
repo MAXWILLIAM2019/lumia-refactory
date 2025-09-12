@@ -4,6 +4,8 @@ const planoController = require('../controllers/planoController');
 const sprintController = require('../controllers/sprintController');
 const { auth, adminOnly } = require('../middleware/auth');
 
+// Schemas estão definidos em: backend/src/docs/schemas/planoSchemas.js
+
 /**
  * ATENÇÃO: Este arquivo contém rotas específicas para diferentes módulos do sistema.
  * Algumas rotas são exclusivas para a interface do administrador e outras para a interface do aluno.

@@ -78,7 +78,7 @@
  *           example: 6
  *         versao:
  *           type: string
- *           description: Versão do plano mestre (opcional, default: 1.0)
+ *           description: Versão do plano mestre (opcional)
  *           example: "1.0"
  *
  *     PlanoMestreResponse:
@@ -140,12 +140,12 @@
  *         dataInicio:
  *           type: string
  *           format: date
- *           description: Data de início do plano (opcional, default: data atual)
+ *           description: Data de início do plano (opcional)
  *           example: "2024-01-15"
  *         status:
  *           type: string
  *           enum: [não iniciado, em andamento, concluído, cancelado]
- *           description: Status inicial do plano (opcional, default: 'não iniciado')
+ *           description: Status inicial do plano (opcional)
  *           example: "não iniciado"
  *         observacoes:
  *           type: string

@@ -104,7 +104,7 @@
  *         dataInicio:
  *           type: string
  *           format: date
- *           description: Data de início do plano (opcional, default: data atual)
+ *           description: Data de início do plano (opcional)
  *           example: "2024-01-15"
  *         dataPrevisaoTermino:
  *           type: string
@@ -114,7 +114,7 @@
  *         status:
  *           type: string
  *           enum: [não iniciado, em andamento, concluído, cancelado]
- *           description: Status inicial (opcional, default: 'não iniciado')
+ *           description: Status inicial (opcional)
  *           example: "não iniciado"
  *         observacoes:
  *           type: string

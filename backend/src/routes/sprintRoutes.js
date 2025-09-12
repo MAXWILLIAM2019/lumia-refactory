@@ -4,7 +4,7 @@ const sprintController = require('../controllers/sprintController');
 const { auth } = require('../middleware/auth');
 const { checkPermission } = require('../middleware/checkPermission');
 
-// Schemas estão definidos em: backend/src/docs/swaggerSchemas.js
+// Schemas estão definidos em: backend/src/docs/schemas/sprintSchemas.js
 
 // Aplica o middleware de autenticação em todas as rotas
 router.use(auth);
