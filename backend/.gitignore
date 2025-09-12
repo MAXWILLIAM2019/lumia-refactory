@@ -1,0 +1,96 @@
+# Dependências
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+database.sqlite
+
+# Uploads directory (se houver)
+uploads/
+public/uploads/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Editor directories and files
+.vscode/
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# PM2 logs
+.pm2/
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Backup files
+*.backup
+*.bak
+
+# Lock files (manter package-lock.json)
+yarn.lock
+pnpm-lock.yaml

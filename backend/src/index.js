@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const sequelize = require('./db');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 console.log('=== INICIANDO SISTEMA DE MENTORIA (BACKEND) ===');
 console.log('Ambiente:', process.env.NODE_ENV || 'desenvolvimento');
@@ -31,6 +33,44 @@ app.use(cors());
 app.use(express.json());
 console.log('✓ Middlewares configurados: CORS e JSON Parser');
 
+// Configuração do Swagger
+console.log('\n3.1. Configurando Swagger...');
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Sistema de Mentoria API',
+      version: '1.0.0',
+      description: 'API para gerenciamento de sistema de mentoria acadêmica',
+      contact: {
+        name: 'Equipe de Desenvolvimento',
+        email: 'dev@mentoria.com'
+      }
+    },
+    servers: [
+      {
+        url: `http://localhost:${process.env.PORT || 3000}`,
+        description: 'Servidor de Desenvolvimento'
+      }
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT'
+        }
+      }
+    }
+  },
+  apis: ['./src/routes/*.js', './src/docs/schemas/*.js', './src/index.js'] // Caminhos para arquivos com documentação
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+console.log('Schemas encontrados:', Object.keys(swaggerSpec.components?.schemas || {}));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+console.log('✓ Swagger configurado: http://localhost:3000/api-docs');
+
 // Rotas da API
 console.log('\n4. Configurando rotas da API...');
 app.use('/api/sprints', sprintRoutes);
@@ -51,14 +91,9 @@ console.log('  - /api/disciplinas');
 console.log('  - /api/aluno-plano');
 console.log('  - /api/sprint-atual');
 
-// Rota de teste para verificar se a API está funcionando
+// Rota básica de verificação
 app.get('/', (req, res) => {
   res.json({ message: 'API do Sistema de Mentoria está funcionando!' });
-});
-
-// Rota de teste para verificar se a API está funcionando
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API funcionando!' });
 });
 
 // Sincronização do banco de dados e inicialização do servidor

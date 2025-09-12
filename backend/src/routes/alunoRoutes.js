@@ -5,6 +5,8 @@
  * seguindo padrões RESTful para as operações CRUD.
  * 
  * Inclui controle de permissões para proteção de recursos.
+ * 
+ * Schemas estão definidos em: backend/src/docs/swaggerSchemas.js
  */
 const express = require('express');
 const router = express.Router();
@@ -12,82 +14,718 @@ const alunoController = require('../controllers/alunoController');
 const { auth, adminOnly, ownProfileOrAdmin } = require('../middleware/auth');
 
 /**
- * @route   GET /api/alunos/test
- * @desc    Rota de teste para verificar se o módulo de alunos está funcionando
- * @access  Público
+ * @swagger
+ * /api/alunos/test:
+ *   get:
+ *     summary: Teste do módulo de alunos
+ *     description: Verifica se o módulo de alunos está funcionando
+ *     tags: [Alunos]
+ *     responses:
+ *       200:
+ *         description: Módulo funcionando
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Rota de alunos funcionando!"
  */
 router.get('/test', (req, res) => {
   res.json({ message: 'Rota de alunos funcionando!' });
 });
 
 /**
- * @route   GET /api/alunos
- * @desc    Lista todos os alunos cadastrados
- * @access  Público
+ * @swagger
+ * /api/alunos:
+ *   get:
+ *     summary: Listar todos os alunos
+ *     description: Retorna uma lista com todos os alunos cadastrados no sistema
+ *     tags: [Alunos]
+ *     responses:
+ *       200:
+ *         description: Lista de alunos obtida com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AlunoListResponse'
+ *             example:
+ *               - id: 1
+ *                 email: "joao.silva@email.com"
+ *                 situacao: true
+ *                 nome: "João Silva"
+ *                 cpf: "123.456.789-00"
+ *                 info:
+ *                   IdAlunoInfo: 1
+ *                   IdUsuario: 1
+ *                   email: "joao.silva@email.com"
+ *               - id: 2
+ *                 email: "maria.santos@email.com"
+ *                 situacao: true
+ *                 nome: "Maria Santos"
+ *                 cpf: "987.654.321-00"
+ *                 info:
+ *                   IdAlunoInfo: 2
+ *                   IdUsuario: 2
+ *                   email: "maria.santos@email.com"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao listar alunos"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.get('/', alunoController.getAllAlunos);
 
 /**
- * @route   POST /api/alunos
- * @desc    Cadastra um novo aluno
- * @access  Público/Admin
- * @body    {nome, email, cpf}
+ * @swagger
+ * /api/alunos:
+ *   post:
+ *     summary: Cadastrar novo aluno
+ *     description: Cria um novo aluno no sistema com os dados fornecidos
+ *     tags: [Alunos]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AlunoRequest'
+ *           examples:
+ *             aluno_completo:
+ *               summary: Aluno com senha
+ *               value:
+ *                 nome: "João Silva Santos"
+ *                 email: "joao.silva@email.com"
+ *                 cpf: "123.456.789-00"
+ *                 senha: "123456"
+ *             aluno_sem_senha:
+ *               summary: Aluno sem senha (será definida depois)
+ *               value:
+ *                 nome: "Maria Santos Silva"
+ *                 email: "maria.santos@email.com"
+ *                 cpf: "987.654.321-00"
+ *     responses:
+ *       201:
+ *         description: Aluno cadastrado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AlunoResponse'
+ *             example:
+ *               usuario:
+ *                 IdUsuario: 1
+ *                 login: "joao.silva@email.com"
+ *                 grupo: 1
+ *                 situacao: true
+ *                 nome: "João Silva Santos"
+ *                 cpf: "123.456.789-00"
+ *                 createdAt: "2024-01-15T10:30:00.000Z"
+ *                 updatedAt: "2024-01-15T10:30:00.000Z"
+ *               alunoInfo:
+ *                 IdAlunoInfo: 1
+ *                 IdUsuario: 1
+ *                 email: "joao.silva@email.com"
+ *       400:
+ *         description: Dados inválidos ou duplicados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               campos_obrigatorios:
+ *                 summary: Campos obrigatórios não preenchidos
+ *                 value:
+ *                   message: "Preencha nome, email e CPF."
+ *               email_duplicado:
+ *                 summary: Email já existe
+ *                 value:
+ *                   message: "Já existe um usuário com este email."
+ *               cpf_duplicado:
+ *                 summary: CPF já existe
+ *                 value:
+ *                   message: "Já existe um usuário com este CPF."
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao cadastrar aluno"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.post('/', alunoController.createAluno);
 
 /**
- * @route   GET /api/alunos/planos
- * @desc    Busca os planos do aluno logado
- * @access  Privado (apenas para o próprio aluno)
+ * @swagger
+ * /api/alunos/planos:
+ *   get:
+ *     summary: Buscar planos do aluno logado
+ *     description: Retorna os planos associados ao aluno autenticado
+ *     tags: [Alunos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Planos do aluno obtidos com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   nome:
+ *                     type: string
+ *                     example: "Plano de Estudos - Desenvolvimento Web"
+ *                   descricao:
+ *                     type: string
+ *                     example: "Plano completo para desenvolvimento web"
+ *                   status:
+ *                     type: string
+ *                     example: "ativo"
+ *                   dataInicio:
+ *                     type: string
+ *                     format: date
+ *                     example: "2024-01-15"
+ *                   dataPrevisaoTermino:
+ *                     type: string
+ *                     format: date
+ *                     example: "2024-06-15"
+ *             example:
+ *               - id: 1
+ *                 nome: "Plano de Estudos - Desenvolvimento Web"
+ *                 descricao: "Plano completo para desenvolvimento web"
+ *                 status: "ativo"
+ *                 dataInicio: "2024-01-15"
+ *                 dataPrevisaoTermino: "2024-06-15"
+ *               - id: 2
+ *                 nome: "Plano Avançado - React"
+ *                 descricao: "Plano focado em React e ecossistema"
+ *                 status: "concluído"
+ *                 dataInicio: "2023-08-01"
+ *                 dataPrevisaoTermino: "2023-12-01"
+ *       401:
+ *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Token de acesso requerido"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao buscar planos do aluno"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.get('/planos', auth, alunoController.getAlunoPlanos);
 
 /**
- * @route   GET /api/alunos/sprints
- * @desc    Busca as sprints do aluno logado (ou todas as sprints se for admin)
- * @access  Privado (aluno ou administrador)
+ * @swagger
+ * /api/alunos/sprints:
+ *   get:
+ *     summary: Buscar sprints do aluno logado
+ *     description: Retorna as sprints associadas ao aluno autenticado. Se for administrador, retorna todas as sprints.
+ *     tags: [Alunos]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sprints obtidas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 1
+ *                   nome:
+ *                     type: string
+ *                     example: "Sprint 1 - Fundamentos HTML/CSS"
+ *                   descricao:
+ *                     type: string
+ *                     example: "Primeira sprint focada nos fundamentos"
+ *                   ordem:
+ *                     type: integer
+ *                     example: 1
+ *                   status:
+ *                     type: string
+ *                     example: "em_andamento"
+ *                   dataInicio:
+ *                     type: string
+ *                     format: date
+ *                     example: "2024-01-15"
+ *                   dataFim:
+ *                     type: string
+ *                     format: date
+ *                     example: "2024-01-29"
+ *                   progresso:
+ *                     type: number
+ *                     example: 75.5
+ *                   metas:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                           example: 1
+ *                         titulo:
+ *                           type: string
+ *                           example: "Criar página HTML básica"
+ *                         concluida:
+ *                           type: boolean
+ *                           example: true
+ *             example:
+ *               - id: 1
+ *                 nome: "Sprint 1 - Fundamentos HTML/CSS"
+ *                 descricao: "Primeira sprint focada nos fundamentos"
+ *                 ordem: 1
+ *                 status: "em_andamento"
+ *                 dataInicio: "2024-01-15"
+ *                 dataFim: "2024-01-29"
+ *                 progresso: 75.5
+ *                 metas:
+ *                   - id: 1
+ *                     titulo: "Criar página HTML básica"
+ *                     concluida: true
+ *                   - id: 2
+ *                     titulo: "Estilizar com CSS"
+ *                     concluida: false
+ *               - id: 2
+ *                 nome: "Sprint 2 - JavaScript Básico"
+ *                 descricao: "Segunda sprint focada em JavaScript"
+ *                 ordem: 2
+ *                 status: "pendente"
+ *                 dataInicio: "2024-01-30"
+ *                 dataFim: "2024-02-13"
+ *                 progresso: 0
+ *                 metas: []
+ *       401:
+ *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Token de acesso requerido"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao buscar sprints do aluno"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.get('/sprints', auth, alunoController.getAlunoSprints);
 
 /**
- * @route   GET /api/alunos/:id
- * @desc    Busca um aluno pelo ID (apenas admin ou o próprio aluno)
- * @access  Privado
- * @param   {id} ID do aluno
+ * @swagger
+ * /api/alunos/{id}:
+ *   get:
+ *     summary: Buscar aluno por ID
+ *     description: Retorna os dados de um aluno específico pelo ID. Apenas administradores ou o próprio aluno podem acessar.
+ *     tags: [Alunos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID único do aluno
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: Aluno encontrado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Aluno'
+ *             example:
+ *               id: 1
+ *               nome: "João Silva Santos"
+ *               email: "joao.silva@email.com"
+ *               cpf: "123.456.789-00"
+ *               situacao: true
+ *               info:
+ *                 IdAlunoInfo: 1
+ *                 IdUsuario: 1
+ *                 email: "joao.silva@email.com"
+ *       401:
+ *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Token de acesso requerido"
+ *       403:
+ *         description: Acesso negado - apenas o próprio aluno ou administrador
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Acesso negado - você só pode ver seus próprios dados"
+ *       404:
+ *         description: Aluno não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Aluno não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao buscar aluno"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.get('/:id', auth, ownProfileOrAdmin('id'), alunoController.getAlunoById);
 
 /**
- * @route   PUT /api/alunos/:id
- * @desc    Atualiza os dados de um aluno (apenas admin ou o próprio aluno)
- * @access  Privado
- * @param   {id} ID do aluno
- * @body    {nome, email, cpf}
+ * @swagger
+ * /api/alunos/{id}:
+ *   put:
+ *     summary: Atualizar dados do aluno
+ *     description: Atualiza os dados de um aluno. Apenas administradores ou o próprio aluno podem atualizar.
+ *     tags: [Alunos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID único do aluno
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               nome:
+ *                 type: string
+ *                 description: Nome completo do aluno
+ *                 example: "João Silva Santos"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email do aluno (deve ser único)
+ *                 example: "joao.santos@email.com"
+ *               cpf:
+ *                 type: string
+ *                 description: CPF do aluno (deve ser único)
+ *                 example: "123.456.789-00"
+ *           example:
+ *             nome: "João Silva Santos"
+ *             email: "joao.santos@email.com"
+ *             cpf: "123.456.789-00"
+ *     responses:
+ *       200:
+ *         description: Aluno atualizado com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Aluno'
+ *             example:
+ *               id: 1
+ *               email: "joao.santos@email.com"
+ *               situacao: true
+ *               nome: "João Silva Santos"
+ *               cpf: "123.456.789-00"
+ *               info:
+ *                 IdAlunoInfo: 1
+ *                 IdUsuario: 1
+ *                 email: "joao.santos@email.com"
+ *       400:
+ *         description: Dados inválidos ou duplicados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               cpf_duplicado:
+ *                 summary: CPF já existe
+ *                 value:
+ *                   message: "Já existe um usuário com este CPF."
+ *               email_duplicado:
+ *                 summary: Email já existe
+ *                 value:
+ *                   message: "Já existe um usuário com este email."
+ *       401:
+ *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Token de acesso requerido"
+ *       403:
+ *         description: Acesso negado - apenas o próprio aluno ou administrador
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Acesso negado - você só pode atualizar seus próprios dados"
+ *       404:
+ *         description: Aluno não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Aluno não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao atualizar aluno"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.put('/:id', auth, ownProfileOrAdmin('id'), alunoController.updateAluno);
 
 /**
- * @route   DELETE /api/alunos/:id
- * @desc    Remove um aluno do sistema (apenas admin)
- * @access  Privado/Admin
- * @param   {id} ID do aluno
+ * @swagger
+ * /api/alunos/{id}:
+ *   delete:
+ *     summary: Remover aluno (Admin)
+ *     description: Remove um aluno do sistema. Apenas administradores podem usar esta funcionalidade.
+ *     tags: [Alunos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID único do aluno a ser removido
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: Aluno removido com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Aluno deletado com sucesso"
+ *             example:
+ *               message: "Aluno deletado com sucesso"
+ *       401:
+ *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Token de acesso requerido"
+ *       403:
+ *         description: Acesso negado - apenas administradores
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Acesso negado - apenas administradores podem remover alunos"
+ *       404:
+ *         description: Aluno não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Aluno não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao deletar aluno"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
 
 /**
- * @route   POST /api/alunos/:id/definir-senha
- * @desc    Define uma senha para um aluno (apenas admin ou o próprio aluno)
- * @access  Privado
- * @param   {id} ID do aluno
- * @body    {senha} Nova senha do aluno
+ * @swagger
+ * /api/alunos/{id}/definir-senha:
+ *   post:
+ *     summary: Definir senha do aluno
+ *     description: Define uma nova senha para um aluno. Apenas administradores ou o próprio aluno podem alterar a senha.
+ *     tags: [Alunos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID único do aluno
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SenhaRequest'
+ *           example:
+ *             senha: "novaSenha123"
+ *     responses:
+ *       200:
+ *         description: Senha definida com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SenhaResponse'
+ *             example:
+ *               message: "Senha definida com sucesso"
+ *       400:
+ *         description: Dados inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             examples:
+ *               senha_obrigatoria:
+ *                 summary: Senha não fornecida
+ *                 value:
+ *                   message: "Senha é obrigatória"
+ *               senha_curta:
+ *                 summary: Senha muito curta
+ *                 value:
+ *                   message: "Senha deve ter pelo menos 6 caracteres"
+ *       401:
+ *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Token de acesso requerido"
+ *       403:
+ *         description: Acesso negado - apenas o próprio aluno ou administrador
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Acesso negado - você só pode alterar sua própria senha"
+ *       404:
+ *         description: Aluno não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Aluno não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao definir senha"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.post('/:id/definir-senha', auth, ownProfileOrAdmin('id'), alunoController.definirSenha);
 
 /**
- * @route   POST /api/alunos/:id/gerar-senha
- * @desc    Gera uma senha aleatória para um aluno (apenas admin)
- * @access  Privado/Admin
- * @param   {id} ID do aluno
+ * @swagger
+ * /api/alunos/{id}/gerar-senha:
+ *   post:
+ *     summary: Gerar senha aleatória (Admin)
+ *     description: Gera uma senha aleatória para um aluno. Apenas administradores podem usar esta funcionalidade.
+ *     tags: [Alunos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID único do aluno
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     responses:
+ *       200:
+ *         description: Senha gerada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SenhaResponse'
+ *             example:
+ *               message: "Senha gerada com sucesso"
+ *               senhaGerada: "Abc123Xyz"
+ *       401:
+ *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Token de acesso requerido"
+ *       403:
+ *         description: Acesso negado - apenas administradores
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Acesso negado - apenas administradores podem gerar senhas"
+ *       404:
+ *         description: Aluno não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Aluno não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao gerar senha"
+ *               error: "Falha na conexão com o banco de dados"
  */
 router.post('/:id/gerar-senha', auth, adminOnly, alunoController.gerarSenha);
 
