@@ -132,10 +132,11 @@ const authService = {
   },
   
   /**
-   * Realiza login unificado no sistema
+   * Realiza login unificado no sistema (método legado)
    * @param {Object} credentials - Credenciais de login
    * @param {string} credentials.login - Login do usuário
    * @param {string} credentials.senha - Senha do usuário
+   * @param {string} credentials.grupo - Grupo do usuário (aluno/administrador)
    * @returns {Promise<Object>} Dados do usuário logado
    */
   login: async (credentials) => {
@@ -151,6 +152,60 @@ const authService = {
       }
     } catch (error) {
       console.error('Erro no login:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Realiza login específico para alunos
+   * @param {Object} credentials - Credenciais de login
+   * @param {string} credentials.login - Login do usuário
+   * @param {string} credentials.senha - Senha do usuário
+   * @returns {Promise<Object>} Dados do usuário logado
+   */
+  loginAluno: async (credentials) => {
+    try {
+      console.log('Tentando fazer login de aluno:', credentials.login);
+      const response = await api.post('/auth/login', {
+        ...credentials,
+        grupo: 'aluno'
+      });
+      if (response.data.success && response.data.token) {
+        // Armazena o grupo retornado pelo backend
+        authService.setToken(response.data.token, response.data.grupo);
+        return response.data;
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
+    } catch (error) {
+      console.error('Erro no login de aluno:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Realiza login específico para administradores
+   * @param {Object} credentials - Credenciais de login
+   * @param {string} credentials.login - Login do usuário
+   * @param {string} credentials.senha - Senha do usuário
+   * @returns {Promise<Object>} Dados do usuário logado
+   */
+  loginAdmin: async (credentials) => {
+    try {
+      console.log('Tentando fazer login de administrador:', credentials.login);
+      const response = await api.post('/auth/login', {
+        ...credentials,
+        grupo: 'administrador'
+      });
+      if (response.data.success && response.data.token) {
+        // Armazena o grupo retornado pelo backend
+        authService.setToken(response.data.token, response.data.grupo);
+        return response.data;
+      } else {
+        throw new Error('Resposta inválida do servidor');
+      }
+    } catch (error) {
+      console.error('Erro no login de administrador:', error);
       throw error;
     }
   },

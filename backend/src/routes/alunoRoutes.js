@@ -428,53 +428,36 @@ router.get('/:id', auth, ownProfileOrAdmin('id'), alunoController.getAlunoById);
  *       content:
  *         application/json:
  *           schema:
- *             type: object
- *             properties:
- *               nome:
- *                 type: string
- *                 description: Nome completo do aluno
- *                 example: "João Silva Santos"
- *               email:
- *                 type: string
- *                 format: email
- *                 description: Email do aluno (deve ser único)
- *                 example: "joao.santos@email.com"
- *               cpf:
- *                 type: string
- *                 description: CPF do aluno (deve ser único)
- *                 example: "123.456.789-00"
+ *             $ref: '#/components/schemas/AlunoRequest'
  *           example:
  *             nome: "João Silva Santos"
  *             email: "joao.santos@email.com"
- *             cpf: "123.456.789-00"
+ *             telefone: "(11) 99999-9999"
+ *             biografia: "Estudante de desenvolvimento web com foco em React e Node.js"
+ *             formacao: "ensino-superior-completo"
+ *             isTrabalhando: true
+ *             isAceitaTermos: true
  *     responses:
  *       200:
  *         description: Aluno atualizado com sucesso
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Aluno'
- *             example:
- *               id: 1
- *               email: "joao.santos@email.com"
- *               situacao: true
- *               nome: "João Silva Santos"
- *               cpf: "123.456.789-00"
- *               info:
- *                 IdAlunoInfo: 1
- *                 IdUsuario: 1
- *                 email: "joao.santos@email.com"
+ *               $ref: '#/components/schemas/AlunoResponse'
  *       400:
- *         description: Dados inválidos ou duplicados
+ *         description: Dados inválidos fornecidos
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             examples:
- *               cpf_duplicado:
- *                 summary: CPF já existe
+ *               telefone_invalido:
+ *                 summary: Telefone com formato inválido
  *                 value:
- *                   message: "Já existe um usuário com este CPF."
+ *                   message: "Telefone deve ter 10 ou 11 dígitos (formato brasileiro)"
+ *                   field: "telefone"
+ *                   received: "123"
+ *                   expected: "Formato: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX"
  *               email_duplicado:
  *                 summary: Email já existe
  *                 value:

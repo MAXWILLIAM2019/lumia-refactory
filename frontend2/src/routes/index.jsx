@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from '../pages/Login';
+import LoginAluno from '../pages/LoginAluno/LoginAluno';
+import LoginAdmin from '../pages/LoginAdmin/LoginAdmin';
 import Register from '../pages/Register';
 import Dashboard from '../pages/Dashboard/Dashboard';
 import AcompanharSprints from '../pages/AcompanharSprints/AcompanharSprints';
@@ -19,6 +20,7 @@ import Disciplinas from '../pages/Disciplinas/Disciplinas';
 import CadastrarDisciplina from '../pages/CadastrarDisciplina/CadastrarDisciplina';
 import AlunoEstatisticas from '../pages/AlunoEstatisticas/AlunoEstatisticas';
 import PlanSprints from '../pages/PlanSprints/PlanSprints';
+import Conta from '../pages/Conta/Conta';
 
 // Componente para rotas protegidas de administrador
 const AdminRoute = ({ children }) => {
@@ -62,7 +64,8 @@ const AppRoutes = () => {
     <BrowserRouter>
       <Routes>
         {/* Rotas públicas */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<LoginAluno />} />
+        <Route path="/admin/login" element={<LoginAdmin />} />
         <Route path="/register" element={<Register />} />
 
         {/* Rotas protegidas de administrador */}
@@ -209,6 +212,14 @@ const AppRoutes = () => {
           element={
             <AlunoRoute>
               <div>Meu Perfil (em desenvolvimento)</div>
+            </AlunoRoute>
+          }
+        />
+        <Route
+          path="/conta"
+          element={
+            <AlunoRoute>
+              <Conta />
             </AlunoRoute>
           }
         />

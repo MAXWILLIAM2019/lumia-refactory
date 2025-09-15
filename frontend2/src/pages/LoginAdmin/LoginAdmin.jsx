@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import BackgroundConnections from '../components/BackgroundConnections';
-import styles from './Login.module.css';
-import authService from '../services/authService';
+import BackgroundConnections from '../../components/BackgroundConnections';
+import styles from './LoginAdmin.module.css';
+import authService from '../../services/authService';
 
-const LoginAluno = () => {
+const LoginAdmin = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
+    login: '',
     senha: ''
   });
   const [error, setError] = useState('');
@@ -27,26 +27,22 @@ const LoginAluno = () => {
     setLoading(true);
 
     try {
-      console.log('Iniciando processo de login de aluno...');
+      console.log('Iniciando processo de login administrativo...');
       
-      // Usa o método loginAluno do authService
-      const response = await authService.loginAluno({
-        email: formData.email,
+      // Login específico para administrador (sem parâmetro grupo)
+      const response = await authService.loginAdmin({
+        login: formData.login,
         senha: formData.senha
       });
 
-      console.log('Login de aluno bem-sucedido:', response);
+      console.log('Login administrativo bem-sucedido:', response);
       
-      // Redireciona para o dashboard de aluno após login
-      navigate('/aluno/dashboard');
+      // Redireciona para o dashboard administrativo
+      navigate('/dashboard');
     } catch (error) {
-      console.error('Erro no login de aluno:', error);
+      console.error('Erro no login administrativo:', error);
       if (error.response?.status === 401) {
-        if (error.response?.data?.message === 'Senha não definida para este aluno') {
-          setError('Sua senha ainda não foi definida. Entre em contato com o administrador.');
-        } else {
-          setError('Email ou senha incorretos');
-        }
+        setError('Login ou senha incorretos');
       } else if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
@@ -61,21 +57,24 @@ const LoginAluno = () => {
     <div className={styles.container}>
       <BackgroundConnections />
       <div className={styles.loginBox}>
-        <h1 className={styles.title}>Área do Aluno</h1>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Acesso Administrativo</h1>
+          <p className={styles.subtitle}>Entre com suas credenciais para acessar o painel administrativo</p>
+        </div>
         
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.formGroup}>
-            <label htmlFor="email" className={styles.label}>
-              Email
+            <label htmlFor="login" className={styles.label}>
+              Login
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              id="login"
+              name="login"
+              value={formData.login}
               onChange={handleChange}
               className={styles.input}
-              placeholder="Seu email"
+              placeholder="Seu login administrativo"
               required
             />
           </div>
@@ -103,12 +102,27 @@ const LoginAluno = () => {
             className={styles.button}
             disabled={loading}
           >
-            {loading ? 'Entrando...' : 'Entrar'}
+            {loading ? 'Entrando...' : 'Entrar como Administrador'}
           </button>
         </form>
+
+        <div className={styles.footer}>
+          <p className={styles.footerText}>
+            É aluno?{' '}
+            <Link to="/login" className={styles.link}>
+              Acesse aqui
+            </Link>
+          </p>
+          <p className={styles.footerText}>
+            Não tem uma conta?{' '}
+            <Link to="/register" className={styles.link}>
+              Cadastre-se
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
 };
 
-export default LoginAluno; 
+export default LoginAdmin;

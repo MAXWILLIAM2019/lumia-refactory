@@ -3,6 +3,7 @@ import styles from './Sidebar.module.css';
 import sprintIcon from '../../assets/icons/sprint.svg';
 import listSprintIcon from '../../assets/icons/list-sprint.svg';
 import statsIcon from '../../assets/icons/stats.svg';
+import contaIcon from '../../assets/icons/conta.svg';
 import authService from '../../services/authService';
 
 /**
@@ -28,6 +29,10 @@ export default function AlunoSidebar() {
 
   const handleEstatisticasClick = () => {
     navigate('/aluno/estatisticas');
+  };
+
+  const handleContaClick = () => {
+    navigate('/conta');
   };
 
   const handleLogout = () => {
@@ -69,6 +74,15 @@ export default function AlunoSidebar() {
             <div className={styles.menuItemContent}>
               <img src={statsIcon} alt="Estatísticas" className={styles.icon} />
               <span>Estatísticas</span>
+            </div>
+          </li>
+          <li 
+            className={`${styles.menuItem} ${location.pathname === '/conta' ? styles.active : ''}`}
+            onClick={handleContaClick}
+          >
+            <div className={styles.menuItemContent}>
+              <img src={contaIcon} alt="Conta" className={styles.icon} />
+              <span>Conta</span>
             </div>
           </li>
           <li 

@@ -167,14 +167,44 @@ exports.getAlunoById = async (req, res) => {
  * @param {Object} req.body - Corpo da requisição contendo dados do aluno
  * @param {string} [req.body.nome] - Nome do aluno
  * @param {string} [req.body.email] - Email do aluno
- * @param {string} [req.body.cpf] - CPF do aluno
+ * @param {string} [req.body.telefone] - Telefone do aluno
+ * @param {string} [req.body.biografia] - Biografia do aluno
+ * @param {string} [req.body.formacao] - Formação do aluno
+ * @param {boolean} [req.body.isTrabalhando] - Se está trabalhando
+ * @param {boolean} [req.body.isAceitaTermos] - Se aceita termos
  * @param {Object} res - Resposta HTTP
  * @returns {Object} Aluno atualizado ou mensagem de erro
  */
 exports.updateAluno = async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, email, cpf } = req.body;
+    const { nome, email, telefone, biografia, formacao, isTrabalhando, isAceitaTermos } = req.body;
+
+    // Validação de telefone se fornecido
+    if (telefone !== undefined && telefone !== null && telefone !== '') {
+      // Remove todos os caracteres não numéricos
+      const apenasNumeros = telefone.replace(/\D/g, '');
+      
+      // Valida se tem 10 ou 11 dígitos (telefone brasileiro)
+      if (apenasNumeros.length !== 10 && apenasNumeros.length !== 11) {
+        return res.status(400).json({ 
+          message: 'Telefone deve ter 10 ou 11 dígitos (formato brasileiro)',
+          field: 'telefone',
+          received: telefone,
+          expected: 'Formato: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX'
+        });
+      }
+      
+      // Valida se contém apenas números válidos
+      if (!/^\d{10,11}$/.test(apenasNumeros)) {
+        return res.status(400).json({ 
+          message: 'Telefone deve conter apenas números válidos',
+          field: 'telefone',
+          received: telefone
+        });
+      }
+      
+    }
 
     // Busca o usuário
     const usuario = await Usuario.findOne({
@@ -193,13 +223,7 @@ exports.updateAluno = async (req, res) => {
       return res.status(404).json({ message: 'Aluno não encontrado.' });
     }
 
-    // Verifica se o novo CPF já existe em outro usuário
-    if (cpf && cpf !== usuario.cpf) {
-      const cpfExistente = await Usuario.findOne({ where: { cpf } });
-      if (cpfExistente) {
-        return res.status(400).json({ message: 'Já existe um usuário com este CPF.' });
-      }
-    }
+    // CPF não pode ser alterado pelo próprio aluno - apenas por administradores
 
     // Verifica se o novo email já existe em outro usuário
     if (email && email !== usuario.login) {
@@ -209,19 +233,40 @@ exports.updateAluno = async (req, res) => {
       }
     }
 
-    // Atualiza o usuário
+    // Atualiza o usuário (CPF não pode ser alterado pelo próprio aluno)
     await usuario.update({
       nome: nome || usuario.nome,
-      login: email || usuario.login,
-      cpf: cpf || usuario.cpf
+      login: email || usuario.login
     });
 
-    // Atualiza o email no AlunoInfo
-    if (email) {
-      await AlunoInfo.update(
-        { email },
-        { where: { IdUsuario: id } }
-      );
+    // Atualiza os dados no AlunoInfo
+    const dadosAlunoInfo = {};
+    if (email) dadosAlunoInfo.email = email;
+    if (telefone !== undefined) dadosAlunoInfo.telefone = telefone;
+    if (biografia !== undefined) dadosAlunoInfo.biografia = biografia;
+    if (formacao !== undefined) dadosAlunoInfo.formacao = formacao;
+    if (isTrabalhando !== undefined) dadosAlunoInfo.is_trabalhando = isTrabalhando;
+    if (isAceitaTermos !== undefined) dadosAlunoInfo.is_aceita_termos = isAceitaTermos;
+
+    if (Object.keys(dadosAlunoInfo).length > 0) {
+      // Verificar se existe registro na tabela aluno_info
+      const alunoInfoExistente = await AlunoInfo.findOne({ where: { IdUsuario: id } });
+      
+      if (alunoInfoExistente) {
+        // Atualizar registro existente
+        await AlunoInfo.update(
+          dadosAlunoInfo,
+          { where: { IdUsuario: id } }
+        );
+      } else {
+        // Criar novo registro se não existir
+        const dadosParaCriar = {
+          IdUsuario: id,
+          email: email || usuario.login, // Usar email fornecido ou login do usuário
+          ...dadosAlunoInfo
+        };
+        await AlunoInfo.create(dadosParaCriar);
+      }
     }
 
     // Busca o usuário atualizado
@@ -243,7 +288,13 @@ exports.updateAluno = async (req, res) => {
       situacao: usuarioAtualizado.situacao,
       nome: usuarioAtualizado.nome,
       cpf: usuarioAtualizado.cpf,
-      info: usuarioAtualizado.alunoInfo
+      info: usuarioAtualizado.alunoInfo,
+      // Incluir dados específicos do aluno_info para facilitar o frontend
+      telefone: usuarioAtualizado.alunoInfo?.telefone,
+      biografia: usuarioAtualizado.alunoInfo?.biografia,
+      formacao: usuarioAtualizado.alunoInfo?.formacao,
+      isTrabalhando: usuarioAtualizado.alunoInfo?.is_trabalhando,
+      isAceitaTermos: usuarioAtualizado.alunoInfo?.is_aceita_termos
     };
 
     res.json(resposta);

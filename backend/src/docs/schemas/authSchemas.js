@@ -48,6 +48,21 @@
  *             email:
  *               type: string
  *               example: "joao.silva@email.com"
+ *             telefone:
+ *               type: string
+ *               example: "(11) 99999-9999"
+ *             biografia:
+ *               type: string
+ *               example: "Estudante de desenvolvimento web com foco em React e Node.js"
+ *             formacao:
+ *               type: string
+ *               example: "ensino-superior-completo"
+ *             isTrabalhando:
+ *               type: boolean
+ *               example: true
+ *             isAceitaTermos:
+ *               type: boolean
+ *               example: true
  *         adminInfo:
  *           type: object
  *           description: Informações específicas do administrador (se aplicável)

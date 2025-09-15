@@ -114,6 +114,11 @@ router.post('/register', authController.registrar);
  *                 alunoInfo:
  *                   email: "joao.silva@email.com"
  *                   cpf: "123.456.789-00"
+ *                   telefone: "(11) 99999-9999"
+ *                   biografia: "Estudante de desenvolvimento web com foco em React e Node.js"
+ *                   formacao: "ensino-superior-completo"
+ *                   is_trabalhando: true
+ *                   is_aceita_termos: true
  *       401:
  *         description: Credenciais inválidas
  *         content:
@@ -176,6 +181,11 @@ router.post('/login', authController.loginUnificado);
  *                 alunoInfo:
  *                   email: "joao.silva@email.com"
  *                   cpf: "123.456.789-00"
+ *                   telefone: "(11) 99999-9999"
+ *                   biografia: "Estudante de desenvolvimento web com foco em React e Node.js"
+ *                   formacao: "ensino-superior-completo"
+ *                   is_trabalhando: true
+ *                   is_aceita_termos: true
  *       401:
  *         description: Token inválido ou expirado
  *         content:
@@ -253,6 +263,11 @@ router.get('/me', auth, authController.me);
  *                 alunoInfo:
  *                   email: "pedro.aluno@email.com"
  *                   cpf: "987.654.321-00"
+ *                   telefone: "(11) 99999-9999"
+ *                   biografia: "Estudante de desenvolvimento web com foco em React e Node.js"
+ *                   formacao: "ensino-superior-completo"
+ *                   is_trabalhando: true
+ *                   is_aceita_termos: true
  *       401:
  *         description: Não autorizado
  *         content:

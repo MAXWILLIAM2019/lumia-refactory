@@ -171,13 +171,18 @@ const me = async (req, res) => {
     };
 
     // Adiciona dados específicos do tipo de usuário para compatibilidade
-    if (userRole === 'aluno' && usuario.alunoInfo) {
+    if (userRole === 'aluno') {
       responseData.aluno = {
         id: usuario.IdUsuario,
         nome: usuario.nome,
-        email: usuario.alunoInfo.email,
-        cpf: usuario.alunoInfo.cpf,
-        login: usuario.login
+        email: usuario.alunoInfo?.email || usuario.login,
+        cpf: usuario.alunoInfo?.cpf || usuario.cpf,
+        login: usuario.login,
+        telefone: usuario.alunoInfo?.telefone || '',
+        biografia: usuario.alunoInfo?.biografia || '',
+        formacao: usuario.alunoInfo?.formacao || '',
+        isTrabalhando: usuario.alunoInfo?.is_trabalhando || false,
+        isAceitaTermos: usuario.alunoInfo?.is_aceita_termos || false
       };
     } else if (userRole === 'administrador' && usuario.adminInfo) {
       responseData.administrador = {

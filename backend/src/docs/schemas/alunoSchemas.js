@@ -29,19 +29,26 @@
  *           type: string
  *           description: Telefone do aluno
  *           example: "(11) 99999-9999"
- *         dataNascimento:
+ *         biografia:
  *           type: string
- *           format: date
- *           description: Data de nascimento do aluno
- *           example: "1995-05-15"
- *         endereco:
+ *           description: Biografia do aluno
+ *           example: "Estudante de desenvolvimento web com foco em React e Node.js"
+ *         formacao:
  *           type: string
- *           description: Endereço do aluno
- *           example: "Rua das Flores, 123 - São Paulo/SP"
+ *           description: Nível de formação do aluno
+ *           example: "ensino-superior-completo"
+ *         isTrabalhando:
+ *           type: boolean
+ *           description: Indica se o aluno está trabalhando atualmente
+ *           example: true
+ *         isAceitaTermos:
+ *           type: boolean
+ *           description: Indica se o aluno aceita os termos de uso
+ *           example: true
  *         situacao:
- *           type: string
- *           description: Situação do aluno
- *           example: "ativo"
+ *           type: boolean
+ *           description: Situação do aluno (ativo/inativo)
+ *           example: true
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -56,7 +63,6 @@
  *       required:
  *         - nome
  *         - email
- *         - cpf
  *       properties:
  *         nome:
  *           type: string
@@ -66,14 +72,30 @@
  *           type: string
  *           description: Email do aluno
  *           example: "joao.silva@email.com"
- *         cpf:
- *           type: string
- *           description: CPF do aluno
- *           example: "123.456.789-00"
  *         senha:
  *           type: string
  *           description: Senha do aluno (opcional)
  *           example: "senha123"
+ *         telefone:
+ *           type: string
+ *           description: Telefone do aluno (opcional)
+ *           example: "(11) 99999-9999"
+ *         biografia:
+ *           type: string
+ *           description: Biografia do aluno (opcional)
+ *           example: "Estudante de desenvolvimento web com foco em React e Node.js"
+ *         formacao:
+ *           type: string
+ *           description: Nível de formação do aluno (opcional)
+ *           example: "ensino-superior-completo"
+ *         isTrabalhando:
+ *           type: boolean
+ *           description: Indica se o aluno está trabalhando atualmente (opcional)
+ *           example: true
+ *         isAceitaTermos:
+ *           type: boolean
+ *           description: Indica se o aluno aceita os termos de uso (opcional)
+ *           example: true
  *
  *     AlunoResponse:
  *       type: object
@@ -119,6 +141,21 @@
  *             email:
  *               type: string
  *               example: "joao.silva@email.com"
+ *             telefone:
+ *               type: string
+ *               example: "(11) 99999-9999"
+ *             biografia:
+ *               type: string
+ *               example: "Estudante de desenvolvimento web com foco em React e Node.js"
+ *             formacao:
+ *               type: string
+ *               example: "ensino-superior-completo"
+ *             is_trabalhando:
+ *               type: boolean
+ *               example: true
+ *             is_aceita_termos:
+ *               type: boolean
+ *               example: true
  *
  *     AlunoListResponse:
  *       type: array

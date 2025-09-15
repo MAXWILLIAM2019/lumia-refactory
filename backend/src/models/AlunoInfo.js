@@ -33,6 +33,28 @@ const AlunoInfo = sequelize.define('AlunoInfo', {
   data_criacao: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
+  },
+  telefone: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  biografia: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  formacao: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  is_trabalhando: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  is_aceita_termos: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   tableName: 'aluno_info',

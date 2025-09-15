@@ -59,25 +59,19 @@ api.interceptors.request.use(
     const isImpersonating = localStorage.getItem('impersonating') === 'true';
     const token = localStorage.getItem('token');
     
-    console.log('API Interceptor - Modo impersonation:', isImpersonating);
-    console.log('API Interceptor - Token encontrado:', !!token);
-    console.log('API Interceptor - Token completo:', token);
-    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('API Interceptor - Authorization header configurado:', config.headers.Authorization);
       
       // Se estiver em modo de impersonation, adiciona headers adicionais
       if (isImpersonating) {
         config.headers['X-Original-Token'] = localStorage.getItem('originalToken');
         config.headers['X-Original-Role'] = localStorage.getItem('originalRole');
-        console.log('API Interceptor - Headers de impersonation configurados');
       }
     }
     return config;
   },
   (error) => {
-    console.error('API Interceptor - Erro na requisição:', error);
+    console.error('Erro na requisição:', error);
     return Promise.reject(error);
   }
 );
@@ -88,10 +82,9 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    console.error('API Interceptor - Erro na resposta:', {
+    console.error('Erro na resposta da API:', {
       status: error.response?.status,
-      message: error.response?.data?.message || error.message,
-      data: error.response?.data
+      message: error.response?.data?.message || error.message
     });
     return Promise.reject(error);
   }
