@@ -740,4 +740,124 @@ router.post('/:id/definir-senha', auth, ownProfileOrAdmin('id'), alunoController
  */
 router.post('/:id/gerar-senha', auth, adminOnly, alunoController.gerarSenha);
 
+/**
+ * @swagger
+ * /api/alunos/{id}/notificacoes:
+ *   put:
+ *     summary: Atualizar configurações de notificação do aluno
+ *     description: Atualiza as preferências de notificação do aluno logado
+ *     tags: [Alunos]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: ID único do aluno
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - notificacoes
+ *             properties:
+ *               notificacoes:
+ *                 type: object
+ *                 properties:
+ *                   novidadesPlataforma:
+ *                     type: boolean
+ *                     description: Notificações sobre atualizações da plataforma
+ *                     example: true
+ *                   mensagensMentor:
+ *                     type: boolean
+ *                     description: Notificações de mensagens do mentor
+ *                     example: true
+ *                   novoMaterial:
+ *                     type: boolean
+ *                     description: Notificações de novo material publicado
+ *                     example: true
+ *                   atividadesSimulados:
+ *                     type: boolean
+ *                     description: Notificações de atividades e simulados
+ *                     example: false
+ *                   mentorias:
+ *                     type: boolean
+ *                     description: Notificações de mentorias agendadas
+ *                     example: false
+ *           example:
+ *             notificacoes:
+ *               novidadesPlataforma: true
+ *               mensagensMentor: true
+ *               novoMaterial: true
+ *               atividadesSimulados: false
+ *               mentorias: false
+ *     responses:
+ *       200:
+ *         description: Configurações atualizadas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Configurações de notificação atualizadas com sucesso"
+ *                 notificacoes:
+ *                   type: object
+ *                   properties:
+ *                     novidadesPlataforma:
+ *                       type: boolean
+ *                       example: true
+ *                     mensagensMentor:
+ *                       type: boolean
+ *                       example: true
+ *                     novoMaterial:
+ *                       type: boolean
+ *                       example: true
+ *                     atividadesSimulados:
+ *                       type: boolean
+ *                       example: false
+ *                     mentorias:
+ *                       type: boolean
+ *                       example: false
+ *       400:
+ *         description: Dados inválidos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Configurações de notificação são obrigatórias"
+ *       401:
+ *         description: Token inválido ou não fornecido
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Token não fornecido"
+ *       404:
+ *         description: Usuário não encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Usuário não encontrado"
+ *       500:
+ *         description: Erro interno do servidor
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               message: "Erro ao atualizar notificações"
+ */
+router.put('/:id/notificacoes', auth, ownProfileOrAdmin('id'), alunoController.atualizarNotificacoes);
+
 module.exports = router; 

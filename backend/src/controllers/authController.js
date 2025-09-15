@@ -182,7 +182,15 @@ const me = async (req, res) => {
         biografia: usuario.alunoInfo?.biografia || '',
         formacao: usuario.alunoInfo?.formacao || '',
         isTrabalhando: usuario.alunoInfo?.is_trabalhando || false,
-        isAceitaTermos: usuario.alunoInfo?.is_aceita_termos || false
+        isAceitaTermos: usuario.alunoInfo?.is_aceita_termos || false,
+        // Campos de notificações
+        notificacoes: {
+          novidadesPlataforma: usuario.alunoInfo?.notif_novidades_plataforma ?? true,
+          mensagensMentor: usuario.alunoInfo?.notif_mensagens_mentor ?? true,
+          novoMaterial: usuario.alunoInfo?.notif_novo_material ?? true,
+          atividadesSimulados: usuario.alunoInfo?.notif_atividades_simulados ?? false,
+          mentorias: usuario.alunoInfo?.notif_mentorias ?? false
+        }
       };
     } else if (userRole === 'administrador' && usuario.adminInfo) {
       responseData.administrador = {

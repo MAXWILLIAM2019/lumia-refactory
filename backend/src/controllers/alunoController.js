@@ -595,6 +595,70 @@ exports.getAlunoSprints = async (req, res) => {
   }
 };
 
+/**
+ * Atualiza as configurações de notificação do aluno
+ * 
+ * @param {Object} req - Requisição HTTP
+ * @param {Object} res - Resposta HTTP
+ * @returns {Object} Mensagem de sucesso ou erro
+ */
+exports.atualizarNotificacoes = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { notificacoes } = req.body;
+    
+    // Validações básicas
+    if (!notificacoes || typeof notificacoes !== 'object') {
+      return res.status(400).json({ message: 'Configurações de notificação são obrigatórias' });
+    }
+
+    // Busca o usuário na tabela usuario
+    const usuario = await Usuario.findByPk(id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Busca ou cria o registro de aluno_info
+    let alunoInfo = await AlunoInfo.findOne({ where: { IdUsuario: id } });
+    
+    if (!alunoInfo) {
+      // Cria um novo registro se não existir
+      alunoInfo = await AlunoInfo.create({
+        IdUsuario: id,
+        email: usuario.login,
+        notif_novidades_plataforma: notificacoes.novidadesPlataforma ?? true,
+        notif_mensagens_mentor: notificacoes.mensagensMentor ?? true,
+        notif_novo_material: notificacoes.novoMaterial ?? true,
+        notif_atividades_simulados: notificacoes.atividadesSimulados ?? false,
+        notif_mentorias: notificacoes.mentorias ?? false
+      });
+    } else {
+      // Atualiza o registro existente
+      await alunoInfo.update({
+        notif_novidades_plataforma: notificacoes.novidadesPlataforma ?? true,
+        notif_mensagens_mentor: notificacoes.mensagensMentor ?? true,
+        notif_novo_material: notificacoes.novoMaterial ?? true,
+        notif_atividades_simulados: notificacoes.atividadesSimulados ?? false,
+        notif_mentorias: notificacoes.mentorias ?? false
+      });
+    }
+
+    res.json({ 
+      message: 'Configurações de notificação atualizadas com sucesso',
+      notificacoes: {
+        novidadesPlataforma: alunoInfo.notif_novidades_plataforma,
+        mensagensMentor: alunoInfo.notif_mensagens_mentor,
+        novoMaterial: alunoInfo.notif_novo_material,
+        atividadesSimulados: alunoInfo.notif_atividades_simulados,
+        mentorias: alunoInfo.notif_mentorias
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar notificações:', error);
+    res.status(500).json({ message: 'Erro ao atualizar notificações', error: error.message });
+  }
+};
+
 module.exports = {
   createAluno: exports.createAluno,
   getAllAlunos: exports.getAllAlunos,
@@ -604,5 +668,6 @@ module.exports = {
   definirSenha: exports.definirSenha,
   gerarSenha: exports.gerarSenha,
   getAlunoPlanos: exports.getAlunoPlanos,
-  getAlunoSprints: exports.getAlunoSprints
+  getAlunoSprints: exports.getAlunoSprints,
+  atualizarNotificacoes: exports.atualizarNotificacoes
 }; 
