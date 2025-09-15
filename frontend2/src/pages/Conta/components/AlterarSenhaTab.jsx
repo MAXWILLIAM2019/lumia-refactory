@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import api from '../../../services/api';
+import { alunoService } from '../../../services/alunoService';
 
 const AlterarSenhaTab = () => {
   const [senhaData, setSenhaData] = useState({
@@ -36,11 +38,19 @@ const AlterarSenhaTab = () => {
         throw new Error('Confirmação de senha não confere');
       }
 
-      // TODO: Implementar chamada para API de alteração de senha
-      console.log('Alterando senha...', senhaData);
+      // Buscar ID do usuário logado
+      const response = await api.get('/auth/me');
+      const userId = response.data.aluno?.id || response.data.usuario?.IdUsuario;
       
-      // Simular delay da API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (!userId) {
+        throw new Error('ID do usuário não encontrado');
+      }
+
+      // Chamar serviço para alterar senha
+      await alunoService.definirSenha(userId, {
+        senhaAtual: senhaData.senhaAtual,
+        novaSenha: senhaData.novaSenha
+      });
       
       setMessage('Senha alterada com sucesso!');
       setSenhaData({
@@ -50,7 +60,15 @@ const AlterarSenhaTab = () => {
       });
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
-      setMessage(error.message || 'Erro ao alterar senha');
+      
+      // Tratar erros específicos da API
+      if (error.response?.data?.message) {
+        setMessage(error.response.data.message);
+      } else if (error.message) {
+        setMessage(error.message);
+      } else {
+        setMessage('Erro ao alterar senha. Tente novamente.');
+      }
     } finally {
       setSaving(false);
     }

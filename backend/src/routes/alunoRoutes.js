@@ -219,7 +219,7 @@ router.post('/', alunoController.createAluno);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Token de acesso requerido"
+ *               message: "Token não fornecido"
  *       500:
  *         description: Erro interno do servidor
  *         content:
@@ -323,7 +323,7 @@ router.get('/planos', auth, alunoController.getAlunoPlanos);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Token de acesso requerido"
+ *               message: "Token não fornecido"
  *       500:
  *         description: Erro interno do servidor
  *         content:
@@ -377,7 +377,7 @@ router.get('/sprints', auth, alunoController.getAlunoSprints);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Token de acesso requerido"
+ *               message: "Token não fornecido"
  *       403:
  *         description: Acesso negado - apenas o próprio aluno ou administrador
  *         content:
@@ -469,7 +469,7 @@ router.get('/:id', auth, ownProfileOrAdmin('id'), alunoController.getAlunoById);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Token de acesso requerido"
+ *               message: "Token não fornecido"
  *       403:
  *         description: Acesso negado - apenas o próprio aluno ou administrador
  *         content:
@@ -535,7 +535,7 @@ router.put('/:id', auth, ownProfileOrAdmin('id'), alunoController.updateAluno);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Token de acesso requerido"
+ *               message: "Token não fornecido"
  *       403:
  *         description: Acesso negado - apenas administradores
  *         content:
@@ -568,8 +568,13 @@ router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
  * @swagger
  * /api/alunos/{id}/definir-senha:
  *   post:
- *     summary: Definir senha do aluno
- *     description: Define uma nova senha para um aluno. Apenas administradores ou o próprio aluno podem alterar a senha.
+ *     summary: Definir/Alterar senha do aluno
+ *     description: |
+ *       Define ou altera a senha de um aluno com comportamento diferenciado:
+ *       - **ALUNO**: Requer senha atual para validação (alteração de senha)
+ *       - **ADMINISTRADOR**: Não requer senha atual (criação/definição de senha)
+ *       
+ *       Apenas administradores ou o próprio aluno podem usar esta funcionalidade.
  *     tags: [Alunos]
  *     security:
  *       - bearerAuth: []
@@ -587,17 +592,32 @@ router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/SenhaRequest'
- *           example:
- *             senha: "novaSenha123"
+ *           examples:
+ *             aluno_alterando:
+ *               summary: Aluno alterando senha (requer senha atual)
+ *               value:
+ *                 senhaAtual: "senhaAtual123"
+ *                 novaSenha: "novaSenha123"
+ *             admin_definindo:
+ *               summary: Admin definindo senha (não requer senha atual)
+ *               value:
+ *                 novaSenha: "novaSenha123"
  *     responses:
  *       200:
- *         description: Senha definida com sucesso
+ *         description: Senha definida/alterada com sucesso
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/SenhaResponse'
- *             example:
- *               message: "Senha definida com sucesso"
+ *             examples:
+ *               aluno_sucesso:
+ *                 summary: Aluno alterando senha
+ *                 value:
+ *                   message: "Senha alterada com sucesso"
+ *               admin_sucesso:
+ *                 summary: Admin definindo senha
+ *                 value:
+ *                   message: "Senha definida com sucesso"
  *       400:
  *         description: Dados inválidos
  *         content:
@@ -605,14 +625,22 @@ router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             examples:
- *               senha_obrigatoria:
- *                 summary: Senha não fornecida
+ *               senha_atual_obrigatoria:
+ *                 summary: Senha atual não fornecida
  *                 value:
- *                   message: "Senha é obrigatória"
+ *                   message: "A senha atual é obrigatória"
+ *               nova_senha_obrigatoria:
+ *                 summary: Nova senha não fornecida
+ *                 value:
+ *                   message: "A nova senha é obrigatória"
  *               senha_curta:
- *                 summary: Senha muito curta
+ *                 summary: Nova senha muito curta
  *                 value:
- *                   message: "Senha deve ter pelo menos 6 caracteres"
+ *                   message: "A nova senha deve ter pelo menos 6 caracteres"
+ *               senha_atual_incorreta:
+ *                 summary: Senha atual incorreta
+ *                 value:
+ *                   message: "Senha atual incorreta"
  *       401:
  *         description: Token inválido ou não fornecido
  *         content:
@@ -620,7 +648,7 @@ router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Token de acesso requerido"
+ *               message: "Token não fornecido"
  *       403:
  *         description: Acesso negado - apenas o próprio aluno ou administrador
  *         content:
@@ -628,15 +656,15 @@ router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Acesso negado - você só pode alterar sua própria senha"
+ *               message: "Acesso não autorizado a este recurso"
  *       404:
- *         description: Aluno não encontrado
+ *         description: Usuário não encontrado
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Aluno não encontrado"
+ *               message: "Usuário não encontrado"
  *       500:
  *         description: Erro interno do servidor
  *         content:
@@ -644,7 +672,7 @@ router.delete('/:id', auth, adminOnly, alunoController.deleteAluno);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Erro ao definir senha"
+ *               message: "Erro ao alterar senha"
  *               error: "Falha na conexão com o banco de dados"
  */
 router.post('/:id/definir-senha', auth, ownProfileOrAdmin('id'), alunoController.definirSenha);
@@ -683,7 +711,7 @@ router.post('/:id/definir-senha', auth, ownProfileOrAdmin('id'), alunoController
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
- *               message: "Token de acesso requerido"
+ *               message: "Token não fornecido"
  *       403:
  *         description: Acesso negado - apenas administradores
  *         content:

@@ -330,33 +330,63 @@ exports.deleteAluno = async (req, res) => {
 };
 
 /**
- * Define uma senha para um aluno existente
+ * Define ou altera uma senha para um aluno
+ * 
+ * Comportamento diferenciado:
+ * - ALUNO: Requer senha atual para validação (alteração de senha)
+ * - ADMINISTRADOR: Não requer senha atual (criação/definição de senha)
  * 
  * @param {Object} req - Requisição HTTP
  * @param {string} req.params.id - ID do aluno
  * @param {Object} req.body - Dados da requisição
- * @param {string} req.body.senha - Nova senha do aluno
+ * @param {string} [req.body.senhaAtual] - Senha atual do aluno (obrigatória apenas para alunos)
+ * @param {string} req.body.novaSenha - Nova senha do aluno
  * @param {Object} res - Resposta HTTP
  * @returns {Object} Mensagem de sucesso ou erro
  */
 exports.definirSenha = async (req, res) => {
   try {
     const { id } = req.params;
-    const { senha } = req.body;
-    if (!senha) {
-      return res.status(400).json({ message: 'A senha é obrigatória' });
+    const { senhaAtual, novaSenha } = req.body;
+    const userRole = req.user.role;
+    
+    // Validações básicas
+    if (!novaSenha) {
+      return res.status(400).json({ message: 'A nova senha é obrigatória' });
     }
+    if (novaSenha.length < 6) {
+      return res.status(400).json({ message: 'A nova senha deve ter pelo menos 6 caracteres' });
+    }
+    
     // Busca o usuário na tabela usuario
     const usuario = await Usuario.findByPk(id);
     if (!usuario) {
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
-    const senhaCriptografada = await bcrypt.hash(senha, 10);
+    
+    // Se for o próprio aluno alterando a senha, valida a senha atual
+    if (userRole === 'aluno' && req.user.id === parseInt(id)) {
+      if (!senhaAtual) {
+        return res.status(400).json({ message: 'A senha atual é obrigatória' });
+      }
+      
+      // Verifica se a senha atual está correta
+      const senhaAtualValida = await bcrypt.compare(senhaAtual, usuario.senha);
+      if (!senhaAtualValida) {
+        return res.status(400).json({ message: 'Senha atual incorreta' });
+      }
+    }
+    // Se for administrador, não precisa validar senha atual (pode criar/alterar senha)
+    
+    // Criptografa e salva a nova senha
+    const senhaCriptografada = await bcrypt.hash(novaSenha, 10);
     await usuario.update({ senha: senhaCriptografada });
-    res.json({ message: 'Senha definida com sucesso' });
+    
+    const message = userRole === 'administrador' ? 'Senha definida com sucesso' : 'Senha alterada com sucesso';
+    res.json({ message });
   } catch (error) {
-    console.error('Erro ao definir senha:', error);
-    res.status(500).json({ message: 'Erro ao definir senha', error: error.message });
+    console.error('Erro ao alterar senha:', error);
+    res.status(500).json({ message: 'Erro ao alterar senha', error: error.message });
   }
 };
 

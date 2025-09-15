@@ -64,16 +64,18 @@ export const alunoService = {
   },
 
   /**
-   * Define uma senha para um aluno
+   * Define ou altera uma senha para um aluno
    * 
    * @param {number|string} id - ID do aluno
-   * @param {string} senha - Senha a ser definida
+   * @param {Object} senhaData - Dados da senha
+   * @param {string} [senhaData.senhaAtual] - Senha atual (obrigatória para alunos)
+   * @param {string} senhaData.novaSenha - Nova senha
    * @returns {Promise<Object>} Mensagem de confirmação
    * @throws {Error} Erro se a definição de senha falhar
    */
-  async definirSenha(id, senha) {
+  async definirSenha(id, senhaData) {
     try {
-      const response = await api.post(`/alunos/${id}/definir-senha`, { senha });
+      const response = await api.post(`/alunos/${id}/definir-senha`, senhaData);
       return response.data;
     } catch (error) {
       console.error('Erro ao definir senha:', error);

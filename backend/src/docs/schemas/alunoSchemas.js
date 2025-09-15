@@ -165,11 +165,16 @@
  *     SenhaRequest:
  *       type: object
  *       required:
- *         - senha
+ *         - novaSenha
  *       properties:
- *         senha:
+ *         senhaAtual:
  *           type: string
- *           description: Nova senha do aluno
+ *           description: Senha atual do aluno (obrigatória apenas para alunos)
+ *           example: "senhaAtual123"
+ *         novaSenha:
+ *           type: string
+ *           description: Nova senha do aluno (mínimo 6 caracteres)
+ *           minLength: 6
  *           example: "novaSenha123"
  *
  *     SenhaResponse:
@@ -177,7 +182,7 @@
  *       properties:
  *         message:
  *           type: string
- *           example: "Senha definida com sucesso"
+ *           example: "Senha alterada com sucesso"
  *         senhaGerada:
  *           type: string
  *           description: Senha gerada automaticamente (apenas para gerar-senha)
