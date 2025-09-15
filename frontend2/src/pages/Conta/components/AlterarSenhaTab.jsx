@@ -2,6 +2,46 @@ import React, { useState } from 'react';
 import api from '../../../services/api';
 import { alunoService } from '../../../services/alunoService';
 
+// Componente reutilizável para campo de senha
+const PasswordField = ({ name, value, onChange, placeholder, showPassword, onToggle }) => (
+  <div style={{ position: 'relative' }}>
+    <input
+      type={showPassword ? 'text' : 'password'}
+      name={name}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      style={{
+        width: '100%',
+        padding: '12px 16px',
+        backgroundColor: '#374151',
+        border: '1px solid #4b5563',
+        borderRadius: '8px',
+        color: '#f9fafb',
+        fontSize: '16px'
+      }}
+    />
+    <button
+      type="button"
+      onClick={onToggle}
+      style={{
+        position: 'absolute',
+        right: '12px',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        background: 'none',
+        border: 'none',
+        color: '#9ca3af',
+        cursor: 'pointer',
+        fontSize: '18px',
+        padding: '4px'
+      }}
+    >
+      {showPassword ? '🙈' : '👁️'}
+    </button>
+  </div>
+);
+
 const AlterarSenhaTab = () => {
   const [senhaData, setSenhaData] = useState({
     senhaAtual: '',
@@ -10,6 +50,11 @@ const AlterarSenhaTab = () => {
   });
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [showPasswords, setShowPasswords] = useState({
+    senhaAtual: false,
+    novaSenha: false,
+    confirmarSenha: false
+  });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -17,6 +62,10 @@ const AlterarSenhaTab = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
   const handleSave = async () => {
@@ -58,6 +107,11 @@ const AlterarSenhaTab = () => {
         novaSenha: '',
         confirmarSenha: ''
       });
+      setShowPasswords({
+        senhaAtual: false,
+        novaSenha: false,
+        confirmarSenha: false
+      });
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
       
@@ -79,6 +133,11 @@ const AlterarSenhaTab = () => {
       senhaAtual: '',
       novaSenha: '',
       confirmarSenha: ''
+    });
+    setShowPasswords({
+      senhaAtual: false,
+      novaSenha: false,
+      confirmarSenha: false
     });
     setMessage('');
   };
@@ -106,21 +165,13 @@ const AlterarSenhaTab = () => {
         }}>
           Senha atual
         </label>
-        <input
-          type="password"
+        <PasswordField
           name="senhaAtual"
           value={senhaData.senhaAtual}
           onChange={handleInputChange}
           placeholder="Digite sua senha atual"
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            backgroundColor: '#374151',
-            border: '1px solid #4b5563',
-            borderRadius: '8px',
-            color: '#f9fafb',
-            fontSize: '16px'
-          }}
+          showPassword={showPasswords.senhaAtual}
+          onToggle={() => togglePasswordVisibility('senhaAtual')}
         />
       </div>
 
@@ -134,21 +185,13 @@ const AlterarSenhaTab = () => {
         }}>
           Nova senha
         </label>
-        <input
-          type="password"
+        <PasswordField
           name="novaSenha"
           value={senhaData.novaSenha}
           onChange={handleInputChange}
           placeholder="Digite sua nova senha"
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            backgroundColor: '#374151',
-            border: '1px solid #4b5563',
-            borderRadius: '8px',
-            color: '#f9fafb',
-            fontSize: '16px'
-          }}
+          showPassword={showPasswords.novaSenha}
+          onToggle={() => togglePasswordVisibility('novaSenha')}
         />
         <p style={{ 
           color: '#6b7280', 
@@ -169,21 +212,13 @@ const AlterarSenhaTab = () => {
         }}>
           Confirmar nova senha
         </label>
-        <input
-          type="password"
+        <PasswordField
           name="confirmarSenha"
           value={senhaData.confirmarSenha}
           onChange={handleInputChange}
           placeholder="Confirme sua nova senha"
-          style={{
-            width: '100%',
-            padding: '12px 16px',
-            backgroundColor: '#374151',
-            border: '1px solid #4b5563',
-            borderRadius: '8px',
-            color: '#f9fafb',
-            fontSize: '16px'
-          }}
+          showPassword={showPasswords.confirmarSenha}
+          onToggle={() => togglePasswordVisibility('confirmarSenha')}
         />
       </div>
 
