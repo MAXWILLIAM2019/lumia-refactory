@@ -21,6 +21,7 @@ import CadastrarDisciplina from '../pages/CadastrarDisciplina/CadastrarDisciplin
 import AlunoEstatisticas from '../pages/AlunoEstatisticas/AlunoEstatisticas';
 import PlanSprints from '../pages/PlanSprints/PlanSprints';
 import Conta from '../pages/Conta/Conta';
+import Ranking from '../pages/Ranking/Ranking';
 
 // Componente para rotas protegidas de administrador
 const AdminRoute = ({ children }) => {
@@ -228,6 +229,14 @@ const AppRoutes = () => {
           element={
             <AlunoRoute>
               <AlunoEstatisticas />
+            </AlunoRoute>
+          }
+        />
+        <Route
+          path="/aluno/ranking"
+          element={
+            <AlunoRoute>
+              <Ranking />
             </AlunoRoute>
           }
         />

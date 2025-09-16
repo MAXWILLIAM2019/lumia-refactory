@@ -4,6 +4,7 @@ import sprintIcon from '../../assets/icons/sprint.svg';
 import listSprintIcon from '../../assets/icons/list-sprint.svg';
 import statsIcon from '../../assets/icons/stats.svg';
 import contaIcon from '../../assets/icons/conta.svg';
+import rankingIcon from '../../assets/icons/ranking.svg';
 import authService from '../../services/authService';
 
 /**
@@ -11,7 +12,7 @@ import authService from '../../services/authService';
  * Barra lateral de navegação para alunos
  * 
  * Funcionalidades:
- * - Navegação simplificada apenas para o dashboard
+ * - Navegação para dashboard, sprints, estatísticas, conta e ranking
  * - Exibição de status ativo da página atual
  * - Logout do aluno
  */
@@ -33,6 +34,10 @@ export default function AlunoSidebar() {
 
   const handleContaClick = () => {
     navigate('/conta');
+  };
+
+  const handleRankingClick = () => {
+    navigate('/aluno/ranking');
   };
 
   const handleLogout = () => {
@@ -83,6 +88,15 @@ export default function AlunoSidebar() {
             <div className={styles.menuItemContent}>
               <img src={contaIcon} alt="Conta" className={styles.icon} />
               <span>Conta</span>
+            </div>
+          </li>
+          <li 
+            className={`${styles.menuItem} ${location.pathname === '/aluno/ranking' ? styles.active : ''}`}
+            onClick={handleRankingClick}
+          >
+            <div className={styles.menuItemContent}>
+              <img src={rankingIcon} alt="Ranking" className={styles.icon} />
+              <span>Ranking</span>
             </div>
           </li>
           <li 

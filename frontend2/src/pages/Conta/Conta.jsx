@@ -51,7 +51,7 @@ const Conta = () => {
         justifyContent: 'center',
         alignItems: 'center',
         height: '100vh',
-        backgroundColor: '#1f2937'
+        background: '#10131a'
       }}>
         <div style={{
           color: '#f9fafb',
@@ -67,13 +67,13 @@ const Conta = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#1f2937',
+      background: '#10131a',
       padding: '24px'
     }}>
       <div style={{
         maxWidth: '1200px',
         margin: '0 auto',
-        backgroundColor: '#1f2937'
+        background: '#10131a'
       }}>
         {/* Header */}
         <div style={{

@@ -18,6 +18,7 @@ const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const alunoPlanoRoutes = require('./routes/alunoPlanoRoutes');
 const sprintRoutes = require('./routes/sprintRoutes');
 const sprintAtualRoutes = require('./routes/sprintAtual');
+const rankingRoutes = require('./routes/rankingRoutesTest2');
 console.log('✓ Módulos de rotas carregados com sucesso');
 
 // Carrega os modelos e seus relacionamentos
@@ -81,6 +82,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/disciplinas', disciplinaRoutes);
 app.use('/api/aluno-plano', alunoPlanoRoutes);
 app.use('/api/sprint-atual', sprintAtualRoutes);
+app.use('/api/ranking', rankingRoutes);
 console.log('✓ Rotas configuradas:');
 console.log('  - /api/sprints');
 console.log('  - /api/alunos');
@@ -90,6 +92,7 @@ console.log('  - /api/auth');
 console.log('  - /api/disciplinas');
 console.log('  - /api/aluno-plano');
 console.log('  - /api/sprint-atual');
+console.log('  - /api/ranking');
 
 // Rota básica de verificação
 app.get('/', (req, res) => {
@@ -102,6 +105,12 @@ sequelize.sync().then(() => {
   console.log('✓ Banco de dados sincronizado com sucesso');
   console.log('\n6. Informações do banco de dados:');
   console.log('Modelos registrados:', Object.keys(sequelize.models).join(', '));
+  
+  // Inicializa o agendador de jobs (comentado temporariamente)
+  // console.log('\n7. Iniciando agendador de jobs...');
+  // const scheduler = require('./jobs/scheduler');
+  // scheduler.iniciar();
+  // console.log('✓ Agendador de jobs iniciado');
   
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {
