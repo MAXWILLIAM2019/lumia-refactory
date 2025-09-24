@@ -18,7 +18,7 @@ const disciplinaRoutes = require('./routes/disciplinaRoutes');
 const alunoPlanoRoutes = require('./routes/alunoPlanoRoutes');
 const sprintRoutes = require('./routes/sprintRoutes');
 const sprintAtualRoutes = require('./routes/sprintAtual');
-const rankingRoutes = require('./routes/rankingRoutesTest2');
+const rankingRoutes = require('./routes/rankingRoutes');
 console.log('✓ Módulos de rotas carregados com sucesso');
 
 // Carrega os modelos e seus relacionamentos
@@ -106,11 +106,10 @@ sequelize.sync().then(() => {
   console.log('\n6. Informações do banco de dados:');
   console.log('Modelos registrados:', Object.keys(sequelize.models).join(', '));
   
-  // Inicializa o agendador de jobs (comentado temporariamente)
-  // console.log('\n7. Iniciando agendador de jobs...');
-  // const scheduler = require('./jobs/scheduler');
-  // scheduler.iniciar();
-  // console.log('✓ Agendador de jobs iniciado');
+  // Inicializa o agendador de jobs
+  console.log('\n7. Iniciando agendador de jobs...');
+  const scheduler = require('./jobs/scheduler');
+  scheduler.iniciar();
   
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => {

@@ -1,407 +1,297 @@
 const express = require('express');
+const { QueryTypes } = require('sequelize');
+const db = require('../db');
+const { auth } = require('../middleware/auth');
 const router = express.Router();
-const rankingController = require('../controllers/rankingController');
-const auth = require('../middleware/auth');
+
+// Schemas estão definidos em: backend/src/docs/schemas/rankingSchemas.js
 
 /**
  * @swagger
- * components:
- *   schemas:
- *     RankingItem:
- *       type: object
- *       properties:
- *         posicao:
- *           type: integer
- *           description: Posição no ranking
- *           example: 1
- *         nome_usuario:
- *           type: string
- *           description: Nome do usuário
- *           example: "João Silva"
- *         total_questoes:
- *           type: integer
- *           description: Total de questões respondidas
- *           example: 25
- *         total_acertos:
- *           type: integer
- *           description: Total de acertos
- *           example: 20
- *         percentual_acerto:
- *           type: number
- *           format: float
- *           description: Percentual de acerto
- *           example: 80.00
- *         pontuacao_final:
- *           type: number
- *           format: float
- *           description: Pontuação final calculada
- *           example: 205.50
- *         ultima_atualizacao:
- *           type: string
- *           format: date-time
- *           description: Data da última atualização
- *           example: "2024-01-15T14:30:00Z"
- *     
- *     RankingResponse:
- *       type: object
- *       properties:
- *         success:
- *           type: boolean
- *           example: true
- *         data:
- *           type: object
- *           properties:
- *             ranking:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/RankingItem'
- *             paginacao:
- *               type: object
- *               properties:
- *                 pagina:
- *                   type: integer
- *                   example: 1
- *                 limite:
- *                   type: integer
- *                   example: 50
- *                 total:
- *                   type: integer
- *                   example: 150
- *                 totalPaginas:
- *                   type: integer
- *                   example: 3
- *                 temProxima:
- *                   type: boolean
- *                   example: true
- *                 temAnterior:
- *                   type: boolean
- *                   example: false
- *             semana:
- *               type: object
- *               properties:
- *                 inicio:
- *                   type: string
- *                   format: date
- *                   example: "2024-01-15"
- *                 fim:
- *                   type: string
- *                   format: date
- *                   example: "2024-01-21"
- *     
- *     EstatisticasRanking:
- *       type: object
- *       properties:
- *         totalAlunos:
- *           type: integer
- *           example: 150
- *         pontuacaoMedia:
- *           type: string
- *           example: "125.50"
- *         pontuacaoMaxima:
- *           type: string
- *           example: "250.00"
- *         pontuacaoMinima:
- *           type: string
- *           example: "45.20"
- *         totalQuestoes:
- *           type: integer
- *           example: 3750
- *         totalAcertos:
- *           type: integer
- *           example: 3000
- *         percentualGeralAcerto:
- *           type: string
- *           example: "80.00"
- */
-
-/**
- * @swagger
- * /api/ranking:
+ * /api/ranking/:
  *   get:
- *     summary: Obter ranking semanal global
- *     description: Retorna o ranking semanal de todos os alunos baseado em acertos e quantidade de questões
+ *     summary: Obter ranking global semanal
+ *     description: Retorna o ranking semanal de todos os alunos com paginação. O ranking é baseado na pontuação final calculada a partir do desempenho nas questões respondidas durante a semana atual.
  *     tags: [Ranking]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: limite
+ *         required: false
+ *         description: Número de itens por página
  *         schema:
  *           type: integer
- *           default: 50
+ *           minimum: 1
  *           maximum: 100
- *         description: Número máximo de alunos no ranking
+ *           default: 50
+ *           example: 25
  *       - in: query
  *         name: pagina
+ *         required: false
+ *         description: Número da página
  *         schema:
  *           type: integer
- *           default: 1
  *           minimum: 1
- *         description: Número da página para paginação
+ *           default: 1
+ *           example: 1
  *     responses:
  *       200:
- *         description: Ranking obtido com sucesso
+ *         description: Ranking carregado com sucesso
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/RankingResponse'
- *       401:
- *         description: Token inválido ou não fornecido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Token não fornecido"
+ *             examples:
+ *               ranking_completo:
+ *                 summary: Ranking com múltiplos alunos
+ *                 value:
+ *                   success: true
+ *                   message: "Ranking carregado com sucesso!"
+ *                   data:
+ *                     ranking:
+ *                       - posicao: 1
+ *                         nome_usuario: "Ana Souza"
+ *                         total_questoes: 30
+ *                         total_acertos: 28
+ *                         percentual_acerto: 93.33
+ *                         pontuacao_final: 95.50
+ *                       - posicao: 2
+ *                         nome_usuario: "João Silva"
+ *                         total_questoes: 25
+ *                         total_acertos: 22
+ *                         percentual_acerto: 88.00
+ *                         pontuacao_final: 89.20
+ *                       - posicao: 3
+ *                         nome_usuario: "Maria Santos"
+ *                         total_questoes: 20
+ *                         total_acertos: 18
+ *                         percentual_acerto: 90.00
+ *                         pontuacao_final: 87.80
+ *                     paginacao:
+ *                       pagina: 1
+ *                       limite: 50
+ *                       total: 3
+ *                       totalPaginas: 1
+ *                       temProxima: false
+ *                       temAnterior: false
+ *                     semana:
+ *                       inicio: "2024-01-15"
+ *                       fim: "2024-01-21"
+ *               ranking_vazio:
+ *                 summary: Ranking sem alunos
+ *                 value:
+ *                   success: true
+ *                   message: "Ranking carregado com sucesso!"
+ *                   data:
+ *                     ranking: []
+ *                     paginacao:
+ *                       pagina: 1
+ *                       limite: 50
+ *                       total: 0
+ *                       totalPaginas: 0
+ *                       temProxima: false
+ *                       temAnterior: false
+ *                     semana:
+ *                       inicio: "2024-01-15"
+ *                       fim: "2024-01-21"
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/RankingErrorResponse'
  *             example:
+ *               success: false
  *               message: "Erro interno do servidor"
+ *               error: "Database connection failed"
  */
-router.get('/', auth, rankingController.obterRanking);
+
+// Controller que consulta a tabela ranking_semanal real
+const obterRanking = async (req, res) => {
+  try {
+    const { limite = 50, pagina = 1 } = req.query;
+    const offset = (pagina - 1) * limite;
+
+    // Consulta a tabela ranking_semanal real
+    const ranking = await db.query(`
+      SELECT 
+        posicao,
+        nome_usuario,
+        total_questoes,
+        total_acertos,
+        percentual_acerto,
+        pontuacao_final
+      FROM public.ranking_semanal 
+      WHERE semana_inicio = DATE_TRUNC('week', CURRENT_DATE)::DATE
+      ORDER BY posicao
+      LIMIT :limite OFFSET :offset
+    `, {
+      replacements: { limite: parseInt(limite), offset: parseInt(offset) },
+      type: QueryTypes.SELECT
+    });
+
+    // Conta total de alunos no ranking
+    const totalResult = await db.query(`
+      SELECT COUNT(*) as total
+      FROM public.ranking_semanal 
+      WHERE semana_inicio = DATE_TRUNC('week', CURRENT_DATE)::DATE
+    `, {
+      type: QueryTypes.SELECT
+    });
+
+    const totalAlunos = totalResult[0]?.total || 0;
+    const totalPaginas = Math.ceil(totalAlunos / limite);
+
+    // Calcula início e fim da semana atual
+    const semanaInicio = new Date();
+    semanaInicio.setDate(semanaInicio.getDate() - semanaInicio.getDay() + 1); // Segunda-feira
+    const semanaFim = new Date(semanaInicio);
+    semanaFim.setDate(semanaFim.getDate() + 6); // Domingo
+
+    res.json({
+      success: true,
+      message: 'Ranking carregado com sucesso!',
+      data: {
+        ranking,
+        paginacao: {
+          pagina: parseInt(pagina),
+          limite: parseInt(limite),
+          total: totalAlunos,
+          totalPaginas,
+          temProxima: pagina < totalPaginas,
+          temAnterior: pagina > 1
+        },
+        semana: {
+          inicio: semanaInicio.toISOString().split('T')[0],
+          fim: semanaFim.toISOString().split('T')[0]
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao obter ranking:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  }
+};
 
 /**
  * @swagger
  * /api/ranking/meu-ranking:
  *   get:
- *     summary: Obter posição do usuário logado
- *     description: Retorna a posição do usuário logado no ranking semanal
+ *     summary: Obter posição do usuário logado no ranking
+ *     description: Retorna a posição e dados do usuário autenticado no ranking semanal atual. Se o usuário não estiver no ranking desta semana, retorna data como null.
  *     tags: [Ranking]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Posição obtida com sucesso
+ *         description: Dados do ranking do usuário obtidos com sucesso
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
+ *               $ref: '#/components/schemas/MeuRankingResponse'
+ *             examples:
+ *               usuario_no_ranking:
+ *                 summary: Usuário está no ranking
+ *                 value:
+ *                   success: true
+ *                   data:
  *                     posicao:
- *                       $ref: '#/components/schemas/RankingItem'
+ *                       posicao: 2
+ *                       nome_usuario: "João Silva"
+ *                       total_questoes: 25
+ *                       total_acertos: 22
+ *                       percentual_acerto: 88.00
+ *                       pontuacao_final: 89.20
  *                     semana:
- *                       type: object
- *                       properties:
- *                         inicio:
- *                           type: string
- *                           format: date
- *                           example: "2024-01-15"
- *                         fim:
- *                           type: string
- *                           format: date
- *                           example: "2024-01-21"
+ *                       inicio: "2024-01-15"
+ *                       fim: "2024-01-21"
+ *               usuario_sem_ranking:
+ *                 summary: Usuário não está no ranking
+ *                 value:
+ *                   success: true
+ *                   data: null
+ *                   message: "Usuário não encontrado no ranking desta semana"
  *       401:
- *         description: Token inválido ou não fornecido
+ *         description: Token de autenticação inválido ou ausente
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/RankingErrorResponse'
  *             example:
- *               message: "Token não fornecido"
+ *               success: false
+ *               message: "Token inválido"
+ *               error: "Token expirado ou malformado"
  *       500:
  *         description: Erro interno do servidor
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *               $ref: '#/components/schemas/RankingErrorResponse'
  *             example:
+ *               success: false
  *               message: "Erro interno do servidor"
+ *               error: "Database connection failed"
  */
-router.get('/meu-ranking', auth, rankingController.obterMeuRanking);
 
-/**
- * @swagger
- * /api/ranking/usuario/{id}:
- *   get:
- *     summary: Obter posição de um usuário específico
- *     description: Retorna a posição de um usuário específico no ranking semanal
- *     tags: [Ranking]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: ID do usuário
- *         schema:
- *           type: integer
- *           example: 1
- *     responses:
- *       200:
- *         description: Posição obtida com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     posicao:
- *                       $ref: '#/components/schemas/RankingItem'
- *                     semana:
- *                       type: object
- *                       properties:
- *                         inicio:
- *                           type: string
- *                           format: date
- *                           example: "2024-01-15"
- *                         fim:
- *                           type: string
- *                           format: date
- *                           example: "2024-01-21"
- *       400:
- *         description: ID do usuário inválido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "ID do usuário inválido"
- *       404:
- *         description: Usuário não encontrado no ranking
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Usuário não encontrado no ranking desta semana"
- *       401:
- *         description: Token inválido ou não fornecido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Token não fornecido"
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Erro interno do servidor"
- */
-router.get('/usuario/:id', auth, rankingController.obterPosicaoUsuario);
+const obterMeuRanking = async (req, res) => {
+  try {
+    const userId = req.user.id; // ID do usuário logado
 
-/**
- * @swagger
- * /api/ranking/estatisticas:
- *   get:
- *     summary: Obter estatísticas do ranking
- *     description: Retorna estatísticas gerais do ranking semanal
- *     tags: [Ranking]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Estatísticas obtidas com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: object
- *                   properties:
- *                     estatisticas:
- *                       $ref: '#/components/schemas/EstatisticasRanking'
- *                     semana:
- *                       type: object
- *                       properties:
- *                         inicio:
- *                           type: string
- *                           format: date
- *                           example: "2024-01-15"
- *                         fim:
- *                           type: string
- *                           format: date
- *                           example: "2024-01-21"
- *       401:
- *         description: Token inválido ou não fornecido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Token não fornecido"
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Erro interno do servidor"
- */
-router.get('/estatisticas', auth, rankingController.obterEstatisticas);
+    // Consulta a posição do usuário no ranking atual
+    const meuRanking = await db.query(`
+      SELECT 
+        posicao,
+        nome_usuario,
+        total_questoes,
+        total_acertos,
+        percentual_acerto,
+        pontuacao_final
+      FROM public.ranking_semanal 
+      WHERE id_usuario = :userId 
+        AND semana_inicio = DATE_TRUNC('week', CURRENT_DATE)::DATE
+    `, {
+      replacements: { userId },
+      type: QueryTypes.SELECT
+    });
 
-/**
- * @swagger
- * /api/ranking/atualizar:
- *   post:
- *     summary: Forçar atualização do ranking
- *     description: Força a atualização do ranking semanal (apenas para administradores)
- *     tags: [Ranking]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Ranking atualizado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: "Ranking atualizado com sucesso"
- *       403:
- *         description: Acesso negado
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Acesso negado. Apenas administradores podem forçar atualização"
- *       401:
- *         description: Token inválido ou não fornecido
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Token não fornecido"
- *       500:
- *         description: Erro interno do servidor
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               message: "Erro ao atualizar ranking"
- */
-router.post('/atualizar', auth, rankingController.forcarAtualizacao);
+    if (meuRanking.length === 0) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'Usuário não encontrado no ranking desta semana'
+      });
+    }
+
+    // Calcula início e fim da semana atual
+    const semanaInicio = new Date();
+    semanaInicio.setDate(semanaInicio.getDate() - semanaInicio.getDay() + 1); // Segunda-feira
+    const semanaFim = new Date(semanaInicio);
+    semanaFim.setDate(semanaFim.getDate() + 6); // Domingo
+
+    res.json({
+      success: true,
+      data: {
+        posicao: meuRanking[0],
+        semana: {
+          inicio: semanaInicio.toISOString().split('T')[0],
+          fim: semanaFim.toISOString().split('T')[0]
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao obter meu ranking:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
+  }
+};
+
+router.get('/', obterRanking);
+router.get('/meu-ranking', auth, obterMeuRanking);
 
 module.exports = router;
-

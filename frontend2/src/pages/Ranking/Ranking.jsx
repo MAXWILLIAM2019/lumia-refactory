@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './Ranking.module.css';
+import rankingService from '../../services/rankingService';
 
 /**
  * Componente Ranking
@@ -13,70 +14,36 @@ import styles from './Ranking.module.css';
  * - Avatares com iniciais dos alunos
  */
 export default function Ranking() {
+  // Estados para dados do ranking
   const [rankingData, setRankingData] = useState({
-    top3: [
-      {
-        position: 1,
-        initials: 'AB',
-        name: 'Ana B****** S**...',
-        performance: 92,
-        trophy: 'gold'
-      },
-      {
-        position: 2,
-        initials: 'JC',
-        name: 'Juliana C******O',
-        performance: 85,
-        trophy: 'silver'
-      },
-      {
-        position: 3,
-        initials: 'LS',
-        name: 'Lucas S*****Z',
-        performance: 76,
-        trophy: 'bronze'
-      }
-    ],
-    list: [
-      {
-        position: 984,
-        initials: 'MW',
-        name: 'Você (Max William)',
-        performance: 55,
-        change: 'up'
-      },
-      {
-        position: 4,
-        initials: 'PM',
-        name: 'Pedro ******** Moraes',
-        performance: 75,
-        change: 'up'
-      },
-      {
-        position: 5,
-        initials: 'VN',
-        name: 'Vitória N*******0',
-        performance: 70,
-        change: 'up'
-      },
-      {
-        position: 6,
-        initials: 'AP',
-        name: 'André **** p***s',
-        performance: 67,
-        change: 'down'
-      }
-    ]
+    top3: [],
+    list: []
   });
-
+  
+  // Estados para controle da aplicação
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [timeLeft, setTimeLeft] = useState({
-    days: 10,
-    hours: 23,
-    minutes: 59,
-    seconds: 29
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
   });
 
+  // Formata o texto do timer
+  const timerText = `Próximo reset: ${timeLeft.days || 0}d ${timeLeft.hours || 0}h ${timeLeft.minutes || 0}m ${timeLeft.seconds || 0}s`;
+
+  // Carrega dados do ranking
   useEffect(() => {
+    carregarRanking();
+  }, []);
+
+  // Timer para contagem regressiva
+  useEffect(() => {
+    // Inicializa o timer
+    const tempoInicial = rankingService.calcularTempoRestante();
+    setTimeLeft(tempoInicial);
+
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev.seconds > 0) {
@@ -94,6 +61,40 @@ export default function Ranking() {
 
     return () => clearInterval(timer);
   }, []);
+
+  /**
+   * Carrega dados do ranking da API
+   */
+  const carregarRanking = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Carrega ranking geral e posição do usuário em paralelo
+      const [rankingResult, meuRankingResult] = await Promise.all([
+        rankingService.obterRanking(50, 1),
+        rankingService.obterMeuRanking()
+      ]);
+
+      if (rankingResult.success) {
+        
+        const dadosFormatados = rankingService.formatarDadosRanking(
+          rankingResult.data.data.ranking,
+          meuRankingResult.success && meuRankingResult.data && meuRankingResult.data.data ? meuRankingResult.data.data.posicao : null
+        );
+        
+        setRankingData(dadosFormatados);
+      } else {
+        setError(rankingResult.error);
+      }
+
+    } catch (err) {
+      console.error('Erro ao carregar ranking:', err);
+      setError('Erro ao carregar dados do ranking');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getTrophyIcon = (trophy) => {
     switch (trophy) {
@@ -116,6 +117,36 @@ export default function Ranking() {
     return change === 'up' ? '#10b981' : '#ef4444';
   };
 
+  // Estados de loading e erro
+  if (loading) {
+    return (
+      <div className={styles.rankingContainer}>
+        <div className={styles.loadingContainer}>
+          <div className={styles.loadingSpinner}></div>
+          <p className={styles.loadingText}>Carregando ranking...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={styles.rankingContainer}>
+        <div className={styles.errorContainer}>
+          <div className={styles.errorIcon}>⚠️</div>
+          <h3 className={styles.errorTitle}>Erro ao carregar ranking</h3>
+          <p className={styles.errorMessage}>{error}</p>
+          <button 
+            className={styles.retryButton}
+            onClick={carregarRanking}
+          >
+            Tentar novamente
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={styles.rankingContainer}>
       {/* Header com timer */}
@@ -123,7 +154,7 @@ export default function Ranking() {
         <div className={styles.timerContainer}>
           <span className={styles.hourglass}>⏳</span>
           <span className={styles.timerText}>
-            O ranking semanal irá reiniciar em {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+            {timerText}
           </span>
         </div>
       </div>
@@ -132,31 +163,37 @@ export default function Ranking() {
       <div className={styles.podiumContainer}>
         <div className={styles.podium}>
           {/* 2º Lugar */}
-          <div className={`${styles.podiumItem} ${styles.secondPlace}`}>
-            <div className={styles.avatar}>{rankingData.top3[1].initials}</div>
-            <div className={styles.trophy}>{getTrophyIcon(rankingData.top3[1].trophy)}</div>
-            <div className={styles.position}>2º Lugar</div>
-            <div className={styles.name}>{rankingData.top3[1].name}</div>
-            <div className={styles.performance}>{rankingData.top3[1].performance}%</div>
-          </div>
+          {rankingData.top3[1] && (
+            <div className={`${styles.podiumItem} ${styles.secondPlace}`}>
+              <div className={styles.avatar}>{rankingData.top3[1].initials}</div>
+              <div className={styles.trophy}>{getTrophyIcon(rankingData.top3[1].trophy)}</div>
+              <div className={styles.position}>2º Lugar</div>
+              <div className={styles.name}>{rankingData.top3[1].name}</div>
+              <div className={styles.performance}>{rankingData.top3[1].performance}%</div>
+            </div>
+          )}
 
           {/* 1º Lugar */}
-          <div className={`${styles.podiumItem} ${styles.firstPlace}`}>
-            <div className={styles.avatar}>{rankingData.top3[0].initials}</div>
-            <div className={styles.trophy}>{getTrophyIcon(rankingData.top3[0].trophy)}</div>
-            <div className={styles.position}>1º Lugar</div>
-            <div className={styles.name}>{rankingData.top3[0].name}</div>
-            <div className={styles.performance}>{rankingData.top3[0].performance}%</div>
-          </div>
+          {rankingData.top3[0] && (
+            <div className={`${styles.podiumItem} ${styles.firstPlace}`}>
+              <div className={styles.avatar}>{rankingData.top3[0].initials}</div>
+              <div className={styles.trophy}>{getTrophyIcon(rankingData.top3[0].trophy)}</div>
+              <div className={styles.position}>1º Lugar</div>
+              <div className={styles.name}>{rankingData.top3[0].name}</div>
+              <div className={styles.performance}>{rankingData.top3[0].performance}%</div>
+            </div>
+          )}
 
           {/* 3º Lugar */}
-          <div className={`${styles.podiumItem} ${styles.thirdPlace}`}>
-            <div className={styles.avatar}>{rankingData.top3[2].initials}</div>
-            <div className={styles.trophy}>{getTrophyIcon(rankingData.top3[2].trophy)}</div>
-            <div className={styles.position}>3º Lugar</div>
-            <div className={styles.name}>{rankingData.top3[2].name}</div>
-            <div className={styles.performance}>{rankingData.top3[2].performance}%</div>
-          </div>
+          {rankingData.top3[2] && (
+            <div className={`${styles.podiumItem} ${styles.thirdPlace}`}>
+              <div className={styles.avatar}>{rankingData.top3[2].initials}</div>
+              <div className={styles.trophy}>{getTrophyIcon(rankingData.top3[2].trophy)}</div>
+              <div className={styles.position}>3º Lugar</div>
+              <div className={styles.name}>{rankingData.top3[2].name}</div>
+              <div className={styles.performance}>{rankingData.top3[2].performance}%</div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -171,28 +208,36 @@ export default function Ranking() {
             Nome do aluno
             <span className={styles.sortIcon}>↕</span>
           </div>
+          <div className={styles.headerCell}>Questões</div>
           <div className={styles.headerCell}>Desempenho (%)</div>
         </div>
 
         <div className={styles.tableBody}>
-          {rankingData.list.map((item, index) => (
-            <div key={index} className={`${styles.tableRow} ${item.name.includes('Você') ? styles.userRow : ''}`}>
-              <div className={styles.positionCell}>
-                <span className={styles.positionNumber}>{item.position}</span>
-                <span 
-                  className={styles.changeIcon}
-                  style={{ color: getChangeColor(item.change) }}
-                >
-                  {getChangeIcon(item.change)}
-                </span>
+          {rankingData.list.length > 0 ? (
+            rankingData.list.map((item, index) => (
+              <div key={index} className={`${styles.tableRow} ${item.name.includes('Você') ? styles.userRow : ''}`}>
+                <div className={styles.positionCell}>
+                  <span className={styles.positionNumber}>{item.position}</span>
+                  <span 
+                    className={styles.changeIcon}
+                    style={{ color: getChangeColor(item.change) }}
+                  >
+                    {getChangeIcon(item.change)}
+                  </span>
+                </div>
+                <div className={styles.nameCell}>
+                  <div className={styles.userAvatar}>{item.initials}</div>
+                  <span className={styles.userName}>{item.name}</span>
+                </div>
+                <div className={styles.questionsCell}>{item.totalQuestions}</div>
+                <div className={styles.performanceCell}>{item.performance}%</div>
               </div>
-              <div className={styles.nameCell}>
-                <div className={styles.userAvatar}>{item.initials}</div>
-                <span className={styles.userName}>{item.name}</span>
-              </div>
-              <div className={styles.performanceCell}>{item.performance}%</div>
+            ))
+          ) : (
+            <div className={styles.emptyState}>
+              <p>Nenhum dado de ranking disponível no momento.</p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

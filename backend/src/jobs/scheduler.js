@@ -21,26 +21,8 @@ class JobScheduler {
 
     console.log('🚀 Iniciando agendador de jobs...');
 
-    // Job 1: Atualização do ranking 3x ao dia
-    // 08:00, 14:00, 20:00
-    const rankingJob1 = cron.schedule('0 8 * * *', async () => {
-      console.log('⏰ Executando job de ranking (08:00)...');
-      await rankingJob.executarAtualizacao();
-    }, {
-      scheduled: false,
-      timezone: 'America/Sao_Paulo'
-    });
-
-    const rankingJob2 = cron.schedule('0 14 * * *', async () => {
-      console.log('⏰ Executando job de ranking (14:00)...');
-      await rankingJob.executarAtualizacao();
-    }, {
-      scheduled: false,
-      timezone: 'America/Sao_Paulo'
-    });
-
-    const rankingJob3 = cron.schedule('0 20 * * *', async () => {
-      console.log('⏰ Executando job de ranking (20:00)...');
+    // Job 1: Atualização do ranking a cada 10 segundos (desenvolvimento)
+    const rankingJobSchedule = cron.schedule('*/10 * * * * *', async () => {
       await rankingJob.executarAtualizacao();
     }, {
       scheduled: false,
@@ -49,7 +31,6 @@ class JobScheduler {
 
     // Job 2: Limpeza semanal (segunda-feira às 02:00)
     const limpezaJob = cron.schedule('0 2 * * 1', async () => {
-      console.log('⏰ Executando limpeza semanal (segunda 02:00)...');
       await rankingJob.executarLimpeza();
     }, {
       scheduled: false,
@@ -57,7 +38,7 @@ class JobScheduler {
     });
 
     // Armazena referências dos jobs
-    this.jobs = [rankingJob1, rankingJob2, rankingJob3, limpezaJob];
+    this.jobs = [rankingJobSchedule, limpezaJob];
 
     // Inicia todos os jobs
     this.jobs.forEach(job => job.start());
@@ -66,7 +47,7 @@ class JobScheduler {
 
     console.log('✅ Agendador iniciado com sucesso!');
     console.log('📅 Jobs agendados:');
-    console.log('   • Ranking: 08:00, 14:00, 20:00 (diário)');
+    console.log('   • Ranking: a cada 10 segundos (desenvolvimento)');
     console.log('   • Limpeza: 02:00 (segundas-feiras)');
   }
 
