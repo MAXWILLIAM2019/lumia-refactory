@@ -7,8 +7,6 @@
  */
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const Administrador = require('../models/Administrador');
-const Aluno = require('../models/Aluno');
 const { Op } = require('sequelize');
 const Usuario = require('../models/Usuario');
 const GrupoUsuario = require('../models/GrupoUsuario');
@@ -145,23 +143,29 @@ const generateImpersonationToken = async (adminUser, targetUserId) => {
 /**
  * Verifica se um usuário existe e se a senha está correta
  * 
- * @param {string} email - Email do usuário
+ * @param {string} login - Login do usuário
  * @param {string} senha - Senha em texto puro
- * @param {string} tipo - Tipo de usuário ('admin', 'aluno', etc)
+ * @param {string} tipo - Tipo de usuário ('administrador', 'aluno', etc)
  * @returns {Object|null} Objeto com usuário se autenticado, null caso contrário
  */
-const verificarCredenciais = async (email, senha, tipo) => {
+const verificarCredenciais = async (login, senha, tipo) => {
   try {
-    let usuario;
-    
-    // Busca o usuário de acordo com seu tipo
-    if (tipo === 'admin') {
-      usuario = await Administrador.findOne({ where: { email } });
-    } else if (tipo === 'aluno') {
-      usuario = await Aluno.findOne({ where: { email } });
-    } else {
-      throw new Error(`Tipo de usuário não suportado: ${tipo}`);
-    }
+    // Busca o usuário na tabela principal
+    const usuario = await Usuario.findOne({
+      where: { 
+        login,
+        situacao: true
+      },
+      include: [
+        { 
+          model: GrupoUsuario, 
+          as: 'grupoUsuario',
+          where: { nome: tipo }
+        },
+        { model: AlunoInfo, as: 'alunoInfo' },
+        { model: AdministradorInfo, as: 'adminInfo' }
+      ]
+    });
     
     // Verifica se o usuário existe
     if (!usuario) {
@@ -190,15 +194,15 @@ const verificarCredenciais = async (email, senha, tipo) => {
  * Realiza o login de um usuário
  * 
  * @param {Object} credentials - Credenciais do usuário
- * @param {string} tipo - Tipo de usuário ('admin', 'aluno', etc)
+ * @param {string} tipo - Tipo de usuário ('administrador', 'aluno', etc)
  * @returns {Object} Dados do usuário e token
  */
 const realizarLogin = async (credentials, tipo) => {
   try {
-    const { email, senha } = credentials;
+    const { login, senha } = credentials;
     
     // Verifica as credenciais
-    const usuario = await verificarCredenciais(email, senha, tipo);
+    const usuario = await verificarCredenciais(login, senha, tipo);
     
     if (!usuario) {
       throw new Error('Credenciais inválidas');

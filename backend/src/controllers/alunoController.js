@@ -5,7 +5,6 @@
  * incluindo criação, consulta, atualização e remoção (CRUD).
  * Implementa regras de negócio e validação de dados.
  */
-const Aluno = require('../models/Aluno');
 const { Op } = require('sequelize');
 const bcrypt = require('bcryptjs');
 const Usuario = require('../models/Usuario');
@@ -142,13 +141,41 @@ exports.getAllAlunos = async (req, res) => {
  */
 exports.getAlunoById = async (req, res) => {
   try {
-    const aluno = await Aluno.findByPk(req.params.id, {
-      attributes: { exclude: ['senha'] } // Exclui o campo senha da resposta
+    const aluno = await Usuario.findOne({
+      where: { 
+        IdUsuario: req.params.id,
+        situacao: true
+      },
+      include: [
+        {
+          model: GrupoUsuario,
+          as: 'grupoUsuario',
+          where: { nome: 'aluno' },
+          attributes: []
+        },
+        {
+          model: AlunoInfo,
+          as: 'alunoInfo'
+        }
+      ],
+      attributes: ['IdUsuario', 'login', 'situacao', 'nome', 'cpf']
     });
+    
     if (!aluno) {
       return res.status(404).json({ message: 'Aluno não encontrado' });
     }
-    res.json(aluno);
+    
+    // Formatar resposta
+    const alunoFormatado = {
+      id: aluno.IdUsuario,
+      email: aluno.login,
+      situacao: aluno.situacao,
+      nome: aluno.nome || '',
+      cpf: aluno.cpf || '',
+      info: aluno.alunoInfo || {}
+    };
+    
+    res.json(alunoFormatado);
   } catch (error) {
     console.error('Erro ao buscar aluno:', error);
     res.status(500).json({ 
@@ -315,14 +342,32 @@ exports.updateAluno = async (req, res) => {
 exports.deleteAluno = async (req, res) => {
   try {
     // Verifica se o aluno existe
-    const aluno = await Aluno.findByPk(req.params.id);
+    const aluno = await Usuario.findOne({
+      where: { 
+        IdUsuario: req.params.id,
+        situacao: true
+      },
+      include: [
+        {
+          model: GrupoUsuario,
+          as: 'grupoUsuario',
+          where: { nome: 'aluno' },
+          attributes: []
+        }
+      ]
+    });
+    
     if (!aluno) {
       return res.status(404).json({ message: 'Aluno não encontrado' });
     }
 
-    // Remove o aluno
-    await aluno.destroy();
-    res.json({ message: 'Aluno deletado com sucesso' });
+    // Remove o aluno (soft delete - marca como inativo)
+    await Usuario.update(
+      { situacao: false },
+      { where: { IdUsuario: req.params.id } }
+    );
+    
+    res.json({ message: 'Aluno removido com sucesso' });
   } catch (error) {
     console.error('Erro ao deletar aluno:', error);
     res.status(500).json({ message: error.message });

@@ -1,6 +1,5 @@
 const SprintAtual = require('../models/SprintAtual');
 const Sprint = require('../models/Sprint');
-const Aluno = require('../models/Aluno');
 const Plano = require('../models/Plano');
 const AlunoPlano = require('../models/AlunoPlano');
 const Meta = require('../models/Meta');

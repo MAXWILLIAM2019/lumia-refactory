@@ -24,7 +24,6 @@
  * - Nunca delete registros, apenas marque como inativos
  */
 const AlunoPlano = require('../models/AlunoPlano');
-const Aluno = require('../models/Aluno');
 const Plano = require('../models/Plano');
 const Usuario = require('../models/Usuario');
 const Sprint = require('../models/Sprint');

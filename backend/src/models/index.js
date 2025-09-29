@@ -22,7 +22,6 @@
 const Plano = require('./Plano');
 const Disciplina = require('./Disciplina');
 const Assunto = require('./Assunto');
-const Aluno = require('./Aluno');
 const Sprint = require('./Sprint');
 const Meta = require('./Meta');
 const AlunoPlano = require('./AlunoPlano');
@@ -80,15 +79,9 @@ Sprint.hasMany(Meta, {
 });
 Meta.belongsTo(Sprint);
 
-// Relacionamento Aluno -> Plano (via AlunoPlano)
-console.log('Configurando relacionamento Aluno -> Plano');
-// Aluno.belongsToMany(Plano, { through: AlunoPlano, as: 'planos' });
-// Plano.belongsToMany(Aluno, { through: AlunoPlano, as: 'alunos' });
-
-// Relacionamento Aluno -> SprintAtual
-console.log('Configurando relacionamento Aluno -> SprintAtual');
-// Aluno.hasOne(SprintAtual, { foreignKey: 'AlunoId' });
-// SprintAtual.belongsTo(Aluno, { foreignKey: 'AlunoId' });
+// Relacionamento Usuario -> Plano (via AlunoPlano)
+console.log('Configurando relacionamento Usuario -> Plano via AlunoPlano');
+// Relacionamento já configurado via AlunoPlano com IdUsuario
 
 // Relacionamento Sprint -> SprintAtual
 console.log('Configurando relacionamento Sprint -> SprintAtual');
@@ -152,7 +145,6 @@ module.exports = {
   Plano,
   Disciplina,
   Assunto,
-  Aluno,
   Sprint,
   Meta,
   AlunoPlano,
