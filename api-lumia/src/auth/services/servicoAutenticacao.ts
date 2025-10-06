@@ -91,6 +91,7 @@ export class ServicoAutenticacao {
 
     // Gera o token JWT
     const payload = { 
+      sub: usuario.id, // Adicionado campo sub para compatibilidade com estratégia JWT
       id: usuario.id,
       email: usuario.login,
       role: usuario.grupo.nome,

@@ -76,7 +76,15 @@ export class AutenticacaoController {
     try {
       // Decodifica o token JWT manualmente
       const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-      const usuario = await this.servicoAutenticacao.obterUsuarioPorId(payload.sub);
+      // Usa sub ou id, o que estiver disponível
+      const userId = payload.sub || payload.id;
+      if (!userId) {
+        return {
+          success: false,
+          message: 'Token inválido - ID do usuário não encontrado',
+        };
+      }
+      const usuario = await this.servicoAutenticacao.obterUsuarioPorId(userId);
       
       return {
         success: true,

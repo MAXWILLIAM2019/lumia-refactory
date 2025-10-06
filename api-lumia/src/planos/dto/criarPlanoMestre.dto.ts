@@ -1,10 +1,16 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, Min, Max } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
+/**
+ * DTO para criação de plano mestre
+ * 
+ * Este DTO foi alinhado com a estrutura atual do banco de dados,
+ * contendo apenas os campos que existem na tabela PlanosMestre.
+ */
 export class CriarPlanoMestreDto {
   @ApiProperty({
     description: 'Nome do plano mestre',
-    example: 'Plano de Estudos - Desenvolvedor Full Stack',
+    example: 'Plano de Estudos - INSS Analista',
   })
   @IsString()
   @IsNotEmpty()
@@ -12,7 +18,7 @@ export class CriarPlanoMestreDto {
 
   @ApiProperty({
     description: 'Cargo alvo do plano',
-    example: 'Desenvolvedor Full Stack',
+    example: 'Analista de Seguro Social',
   })
   @IsString()
   @IsNotEmpty()
@@ -20,7 +26,7 @@ export class CriarPlanoMestreDto {
 
   @ApiProperty({
     description: 'Descrição detalhada do plano',
-    example: 'Plano completo para se tornar um desenvolvedor full stack com foco em React, Node.js e PostgreSQL',
+    example: 'Plano completo para aprovação no concurso do INSS para o cargo de Analista de Seguro Social',
   })
   @IsString()
   @IsNotEmpty()
@@ -35,28 +41,5 @@ export class CriarPlanoMestreDto {
   @IsNumber()
   @Min(1)
   @Max(104)
-  duracaoSemanas: number;
-
-  @ApiPropertyOptional({
-    description: 'Nível de dificuldade do plano',
-    example: 'Intermediário',
-  })
-  @IsString()
-  @IsOptional()
-  nivelDificuldade?: string;
-
-  @ApiPropertyOptional({
-    description: 'Tags para categorização do plano',
-    example: ['frontend', 'backend', 'fullstack'],
-  })
-  @IsOptional()
-  tags?: string[];
-
-  @ApiPropertyOptional({
-    description: 'Pré-requisitos para o plano',
-    example: 'Conhecimento básico em programação',
-  })
-  @IsString()
-  @IsOptional()
-  preRequisitos?: string;
+  duracao: number;
 }

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Usuario } from '../entities/usuario.entity';
 import { GrupoUsuario } from '../entities/grupoUsuario.entity';
@@ -33,6 +33,7 @@ export class ServicoUsuario {
     private alunoInfoRepository: Repository<AlunoInfo>,
     @InjectRepository(AdministradorInfo)
     private administradorInfoRepository: Repository<AdministradorInfo>,
+    private dataSource: DataSource,
   ) {}
 
   /**
@@ -86,40 +87,62 @@ export class ServicoUsuario {
       // Para outros grupos, a senha é obrigatória
       throw new BadRequestException('Senha é obrigatória para este tipo de usuário');
     }
-
-    // Cria o usuário
-    const novoUsuario = await this.usuarioRepository.save({
-      login: email,
-      senha: senhaCriptografada,
-      grupoId: grupoObj.id,
-      situacao: true,
-      nome,
-      cpf,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    // Cria info complementar baseado no grupo
-    if (grupo === 'aluno') {
-      await this.alunoInfoRepository.insert({
-        idusuario: novoUsuario.id,
-        email,
-        statusCadastro: StatusCadastro.PRE_CADASTRO,
-        statusPagamento: StatusPagamento.PENDENTE,
-        dataCriacao: new Date(),
-      });
-      
-      console.log(`✅ Aluno cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
-    } else if (grupo === 'administrador') {
-      await this.administradorInfoRepository.save({
-        idusuario: novoUsuario.id,
+    
+    // Usar transação para garantir que ambas as operações (criar usuário e info complementar) sejam concluídas com sucesso
+    // ou nenhuma delas seja realizada em caso de erro
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+    
+    let novoUsuario;
+    
+    try {
+      // Cria o usuário dentro da transação
+      novoUsuario = await queryRunner.manager.save('usuario', {
+        login: email,
+        senha: senhaCriptografada,
+        grupoId: grupoObj.id,
+        situacao: true,
         nome,
-        email,
-        dataCriacao: new Date(),
-        ativo: true,
+        cpf,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
+
+      // Cria info complementar baseado no grupo dentro da mesma transação
+      if (grupo === 'aluno') {
+        await queryRunner.manager.insert('aluno_info', {
+          idusuario: novoUsuario.id,
+          email,
+          statusCadastro: StatusCadastro.PRE_CADASTRO,
+          statusPagamento: StatusPagamento.PENDENTE,
+          data_criacao: new Date(), // Corrigido de dataCriacao para data_criacao
+        });
+        
+        console.log(`✅ Aluno cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
+      } else if (grupo === 'administrador') {
+        await queryRunner.manager.insert('administrador_info', {
+          idusuario: novoUsuario.id,
+          nome,
+          email,
+          data_criacao: new Date(),
+          ativo: true,
+        });
+        
+        console.log(`✅ Administrador cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
+      }
       
-      console.log(`✅ Administrador cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
+      // Confirma a transação se tudo ocorreu bem
+      await queryRunner.commitTransaction();
+      
+    } catch (error) {
+      // Reverte a transação em caso de erro
+      await queryRunner.rollbackTransaction();
+      console.error('Erro ao cadastrar usuário:', error);
+      throw new InternalServerErrorException('Erro ao cadastrar usuário. Por favor, tente novamente.');
+    } finally {
+      // Libera o queryRunner
+      await queryRunner.release();
     }
 
     return novoUsuario;

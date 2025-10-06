@@ -21,10 +21,15 @@ export class EstrategiaJwt extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any): Promise<Usuario> {
-    const { sub: id } = payload;
+    // Usa sub ou id, o que estiver disponível
+    const userId = payload.sub || payload.id;
+    
+    if (!userId) {
+      throw new UnauthorizedException('Token inválido - ID do usuário não encontrado');
+    }
     
     const usuario = await this.usuarioRepository.findOne({
-      where: { id },
+      where: { id: userId },
       relations: ['grupo', 'alunoInfo', 'administradorInfo'],
     });
 

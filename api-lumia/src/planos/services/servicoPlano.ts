@@ -39,7 +39,7 @@ export class ServicoPlano {
       nome: dadosPlanoMestre.nome,
       cargo: dadosPlanoMestre.cargo,
       descricao: dadosPlanoMestre.descricao,
-      duracao: dadosPlanoMestre.duracaoSemanas,
+      duracao: dadosPlanoMestre.duracao,
       ativo: true,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -74,7 +74,7 @@ export class ServicoPlano {
     if (dadosAtualizacao.nome) planoMestre.nome = dadosAtualizacao.nome;
     if (dadosAtualizacao.cargo) planoMestre.cargo = dadosAtualizacao.cargo;
     if (dadosAtualizacao.descricao) planoMestre.descricao = dadosAtualizacao.descricao;
-    if (dadosAtualizacao.duracaoSemanas) planoMestre.duracao = dadosAtualizacao.duracaoSemanas;
+    if (dadosAtualizacao.duracao) planoMestre.duracao = dadosAtualizacao.duracao;
     
     planoMestre.updatedAt = new Date();
 

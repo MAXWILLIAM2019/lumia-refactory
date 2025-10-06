@@ -20,10 +20,11 @@ import { AlterarSenhaDto } from '../dto/alterarSenha.dto';
 import { NotificacoesAlunoDto } from '../dto/notificacoesAluno.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { GuardAdministrador } from '../../common/guards/guardAdministrador';
+import { GuardProprioOuAdministrador } from '../../common/guards/guardProprioOuAdministrador';
 
 @ApiTags('Usuários')
 @Controller('usuarios')
-// @UseGuards(JwtAuthGuard) // Temporariamente removido - problema no guard
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class UsuarioController {
   constructor(private readonly servicoUsuario: ServicoUsuario) {}
@@ -47,7 +48,7 @@ export class UsuarioController {
   }
 
   @Get()
-  // @UseGuards(GuardAdministrador) // Temporariamente removido - problema no guard
+  @UseGuards(GuardAdministrador)
   @ApiOperation({ summary: 'Listar todos os usuários' })
   @ApiResponse({ status: 200, description: 'Lista de usuários retornada com sucesso' })
   async listarTodosUsuarios() {
@@ -79,6 +80,7 @@ export class UsuarioController {
   }
 
   @Get(':id')
+  @UseGuards(GuardProprioOuAdministrador)
   @ApiOperation({ summary: 'Buscar usuário por ID' })
   @ApiParam({ name: 'id', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Usuário encontrado' })
@@ -93,6 +95,7 @@ export class UsuarioController {
   }
 
   @Put(':id')
+  @UseGuards(GuardProprioOuAdministrador)
   @ApiOperation({ summary: 'Atualizar dados do usuário' })
   @ApiParam({ name: 'id', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Usuário atualizado com sucesso' })
@@ -124,6 +127,7 @@ export class UsuarioController {
   }
 
   @Put(':id/senha')
+  @UseGuards(GuardProprioOuAdministrador)
   @ApiOperation({ summary: 'Alterar senha do usuário' })
   @ApiParam({ name: 'id', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Senha alterada com sucesso' })
@@ -160,6 +164,7 @@ export class UsuarioController {
   }
 
   @Put(':id/notificacoes')
+  @UseGuards(GuardProprioOuAdministrador)
   @ApiOperation({ summary: 'Atualizar configurações de notificação do aluno' })
   @ApiParam({ name: 'id', description: 'ID do usuário' })
   @ApiResponse({ status: 200, description: 'Notificações atualizadas com sucesso' })
