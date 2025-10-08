@@ -45,8 +45,8 @@ import { RankingModule } from './ranking/ranking.module';
     // Módulo de alunos
     AlunosModule,
     
-    // Módulo de disciplinas (temporariamente desabilitado)
-    // DisciplinasModule,
+    // Módulo de disciplinas
+    DisciplinasModule,
     
     // Módulo de sprint atual
     SprintAtualModule,

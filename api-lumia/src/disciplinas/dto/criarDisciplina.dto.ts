@@ -30,15 +30,6 @@ export class CriarDisciplinaDto {
   descricao?: string;
 
   @ApiPropertyOptional({
-    description: 'Indica se a disciplina está ativa',
-    example: true,
-    default: true,
-  })
-  @IsBoolean()
-  @IsOptional()
-  ativa?: boolean;
-
-  @ApiPropertyOptional({
     description: 'Lista de assuntos da disciplina',
     type: [CriarAssuntoDto],
   })

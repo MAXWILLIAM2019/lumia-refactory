@@ -18,6 +18,9 @@ export class Disciplina {
   @Column({ type: 'varchar', length: 255 })
   nome: string;
 
+  @Column({ type: 'varchar', length: 20, unique: true })
+  codigo: string;
+
   @Column({ type: 'text', nullable: true })
   descricao: string;
 

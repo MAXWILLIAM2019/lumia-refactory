@@ -16,6 +16,9 @@ export class Assunto {
   @Column({ type: 'varchar', length: 255 })
   nome: string;
 
+  @Column({ type: 'varchar', length: 20, unique: true })
+  codigo: string;
+
   @Column({ name: 'disciplina_id' })
   disciplinaId: number;
 

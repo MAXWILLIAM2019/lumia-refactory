@@ -6,6 +6,8 @@ import { Assunto } from '../entities/assunto.entity';
 import { CriarDisciplinaDto } from '../dto/criarDisciplina.dto';
 import { AtualizarDisciplinaDto } from '../dto/atualizarDisciplina.dto';
 import { CriarVersaoDisciplinaDto } from '../dto/criarVersaoDisciplina.dto';
+import { ServicoCodigoDisciplina } from './servicoCodigoDisciplina';
+import { ServicoCodigoAssunto } from './servicoCodigoAssunto';
 
 @Injectable()
 export class ServicoDisciplina {
@@ -15,6 +17,8 @@ export class ServicoDisciplina {
     @InjectRepository(Assunto)
     private assuntoRepository: Repository<Assunto>,
     private dataSource: DataSource,
+    private servicoCodigoDisciplina: ServicoCodigoDisciplina,
+    private servicoCodigoAssunto: ServicoCodigoAssunto,
   ) {}
 
   // ===== MÉTODOS PARA DISCIPLINA =====
@@ -63,11 +67,24 @@ export class ServicoDisciplina {
     await queryRunner.startTransaction();
 
     try {
-      // Criar a disciplina
+      // Gerar código único para a disciplina (sempre automático)
+      const codigo = this.servicoCodigoDisciplina.gerarCodigoDisciplina(dadosDisciplina.nome);
+
+      // Verificar se o código já existe (dentro da transação)
+      const codigoExistente = await queryRunner.manager.findOne(Disciplina, {
+        where: { codigo }
+      });
+
+      if (codigoExistente) {
+        throw new ConflictException(`Já existe uma disciplina com o código '${codigo}'`);
+      }
+
+      // Criar a disciplina (sempre ativa por padrão)
       const disciplina = queryRunner.manager.create(Disciplina, {
         nome: dadosDisciplina.nome,
+        codigo: codigo,
         descricao: dadosDisciplina.descricao,
-        ativa: dadosDisciplina.ativa !== false,
+        ativa: true, // Sempre ativa no cadastro
         versao: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -77,12 +94,18 @@ export class ServicoDisciplina {
 
       // Se houver assuntos, adicioná-los
       if (dadosDisciplina.assuntos && dadosDisciplina.assuntos.length > 0) {
-        const assuntosData = dadosDisciplina.assuntos.map(assunto => ({
-          nome: assunto.nome,
-          disciplinaId: disciplinaSalva.id,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }));
+        const assuntosData = dadosDisciplina.assuntos.map(assunto => {
+          // Gerar código único para o assunto (sempre automático)
+          const codigoAssunto = this.servicoCodigoAssunto.gerarCodigoAssunto(assunto.nome);
+
+          return {
+            nome: assunto.nome,
+            codigo: codigoAssunto,
+            disciplinaId: disciplinaSalva.id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+        });
 
         await queryRunner.manager.save(Assunto, assuntosData);
       }
@@ -356,7 +379,7 @@ export class ServicoDisciplina {
       nome: nomeFormatado,
       descricao: dadosAtualizacao.descricao || disciplina.descricao,
       versao: novaVersao,
-      ativa: dadosAtualizacao.ativa !== false,
+      ativa: true, // Novas versões sempre ativas
       disciplinaOrigemId: idOrigem,
       createdAt: new Date(),
       updatedAt: new Date(),
