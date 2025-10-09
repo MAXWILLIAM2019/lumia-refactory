@@ -35,7 +35,7 @@ export class ServicoMeta {
    * - Se não houver metas na sprint, começa com posição 1
    */
   async criarMetaMestre(criarMetaMestreDto: CriarMetaMestreNovaDto): Promise<MetaMestre> {
-    const { disciplina, tipo, titulo, comandos, link, relevancia, sprintId } = criarMetaMestreDto;
+    const { disciplina, tipo, assunto, comandos, link, relevancia, sprintId } = criarMetaMestreDto;
 
     // Verificar se o sprintId foi fornecido
     if (!sprintId) {
@@ -54,7 +54,7 @@ export class ServicoMeta {
     const metaMestre = this.metaMestreRepository.create({
       disciplina,
       tipo,
-      titulo,
+      assunto,
       comandos,
       link,
       relevancia,
@@ -128,7 +128,7 @@ export class ServicoMeta {
    * Esta função é específica para instâncias de plano e é usada apenas na interface do aluno/mentor
    */
   async criarMetaInstancia(criarMetaDto: CriarMetaDto): Promise<Meta> {
-    const { disciplina, tipo, titulo, comandos, link, relevancia, sprintId } = criarMetaDto;
+    const { disciplina, tipo, assunto, comandos, link, relevancia, sprintId } = criarMetaDto;
 
     // Verificar se o sprintId foi fornecido
     if (!sprintId) {
@@ -147,7 +147,7 @@ export class ServicoMeta {
     const meta = this.metaRepository.create({
       disciplina,
       tipo,
-      titulo,
+      assunto,
       comandos,
       link,
       relevancia,

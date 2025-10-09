@@ -232,7 +232,7 @@ export class ServicoSprintAtual {
         id: meta.id,
         disciplina: meta.disciplina,
         tipo: meta.tipo,
-        titulo: meta.titulo,
+        assunto: meta.assunto,
         comandos: meta.comandos,
         link: meta.link,
         relevancia: meta.relevancia,

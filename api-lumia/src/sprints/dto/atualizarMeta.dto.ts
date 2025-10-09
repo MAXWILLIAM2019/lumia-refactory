@@ -1,15 +1,15 @@
-import { IsString, IsOptional, IsNumber, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 
 export class AtualizarMetaDto {
   @ApiPropertyOptional({
-    description: 'Disciplina da meta',
-    example: 'Matemática',
+    description: 'Código único da disciplina',
+    example: 'MATE20853',
   })
   @IsString()
   @IsOptional()
-  disciplina?: string;
+  codigoDisciplina?: string;
 
   @ApiPropertyOptional({
     description: 'Tipo da meta',
@@ -21,12 +21,12 @@ export class AtualizarMetaDto {
   tipo?: string;
 
   @ApiPropertyOptional({
-    description: 'Título da meta',
-    example: 'Álgebra Linear - Matrizes',
+    description: 'Código único do assunto',
+    example: 'MATEXXXXX',
   })
   @IsString()
   @IsOptional()
-  titulo?: string;
+  codigoAssunto?: string;
 
   @ApiPropertyOptional({
     description: 'Comandos/instruções da meta',
@@ -45,12 +45,16 @@ export class AtualizarMetaDto {
   link?: string;
 
   @ApiPropertyOptional({
-    description: 'Relevância da meta',
-    example: 'Alta',
+    description: 'Relevância da meta (1-3)',
+    example: 3,
+    minimum: 1,
+    maximum: 3,
   })
-  @IsString()
+  @IsNumber()
+  @Min(1)
+  @Max(3)
   @IsOptional()
-  relevancia?: string;
+  relevancia?: number;
 
   @ApiPropertyOptional({
     description: 'Tempo estudado na meta',

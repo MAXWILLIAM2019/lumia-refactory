@@ -1,5 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { SprintMestre } from '../../sprints/entities/sprintMestre.entity';
+import { Disciplina } from '../../disciplinas/entities/disciplina.entity';
+import { Assunto } from '../../disciplinas/entities/assunto.entity';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 import { TipoMeta } from '../../common/enums/tipoMeta.enum';
 
@@ -8,17 +10,20 @@ export class MetaMestre {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'disciplina_id' })
+  disciplinaId: number;
+
   @Column({ type: 'varchar', length: 255 })
   disciplina: string;
 
-  @Column({
-    type: 'enum',
-    enum: TipoMeta,
-  })
-  tipo: TipoMeta;
+  @Column({ type: 'varchar', length: 50 })
+  tipo: string;
+
+  @Column({ name: 'assunto_id' })
+  assuntoId: number;
 
   @Column({ type: 'varchar', length: 255 })
-  titulo: string;
+  assunto: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   comandos: string;
@@ -60,7 +65,15 @@ export class MetaMestre {
   @Column({ type: 'int', default: 0 })
   posicao: number;
 
-  // Relacionamento
+  // Relacionamentos
+  @ManyToOne(() => Disciplina, (disciplina) => disciplina.id)
+  @JoinColumn({ name: 'disciplina_id' })
+  disciplinaEntity: Disciplina;
+
+  @ManyToOne(() => Assunto, (assunto) => assunto.id)
+  @JoinColumn({ name: 'assunto_id' })
+  assuntoEntity: Assunto;
+
   @ManyToOne(() => SprintMestre, (sprintMestre) => sprintMestre.metasMestre)
   @JoinColumn({ name: 'sprint_mestre_id' })
   sprintMestre: SprintMestre;

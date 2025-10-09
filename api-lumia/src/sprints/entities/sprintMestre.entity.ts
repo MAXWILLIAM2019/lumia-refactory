@@ -1,9 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, Index } from 'typeorm';
 import { PlanoMestre } from '../../planos/entities/planoMestre.entity';
 import { MetaMestre } from '../../metas/entities/metaMestre.entity';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 
 @Entity('SprintsMestre')
+@Index(['planoMestreId', 'posicao'], { unique: true })
 export class SprintMestre {
   @PrimaryGeneratedColumn()
   id: number;

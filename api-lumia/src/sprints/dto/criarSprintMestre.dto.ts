@@ -1,32 +1,31 @@
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsDateString, IsArray, ValidateNested, Min } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsNumber, IsDateString, IsArray, ValidateNested, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class CriarMetaMestreDto {
   @ApiProperty({
-    description: 'Disciplina da meta',
-    example: 'Matemática',
+    description: 'Código único da disciplina',
+    example: 'MATE20853',
   })
   @IsString()
   @IsNotEmpty()
-  disciplina: string;
+  codigoDisciplina: string;
 
   @ApiProperty({
-    description: 'Tipo da meta',
+    description: 'Tipo da meta (ex: teoria, questões, revisão, reforço, simulado)',
     example: 'teoria',
-    enum: ['teoria', 'questoes', 'revisao', 'reforco'],
   })
   @IsString()
   @IsNotEmpty()
   tipo: string;
 
   @ApiProperty({
-    description: 'Título da meta',
-    example: 'Álgebra Linear - Matrizes',
+    description: 'Código único do assunto',
+    example: 'MATEXXXXX',
   })
   @IsString()
   @IsNotEmpty()
-  titulo: string;
+  codigoAssunto: string;
 
   @ApiPropertyOptional({
     description: 'Comandos/instruções da meta',
@@ -45,12 +44,15 @@ export class CriarMetaMestreDto {
   link?: string;
 
   @ApiProperty({
-    description: 'Relevância da meta',
-    example: 'Alta',
+    description: 'Relevância da meta (1-3)',
+    example: 3,
+    minimum: 1,
+    maximum: 3,
   })
-  @IsString()
-  @IsNotEmpty()
-  relevancia: string;
+  @IsNumber()
+  @Min(1)
+  @Max(3)
+  relevancia: number;
 
   @ApiPropertyOptional({
     description: 'Posição da meta na sprint',

@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, DataSource } from 'typeorm';
 import { SprintMestre } from '../entities/sprintMestre.entity';
 import { Sprint } from '../entities/sprint.entity';
 import { MetaMestre } from '../../metas/entities/metaMestre.entity';
 import { Meta } from '../../metas/entities/meta.entity';
 import { PlanoMestre } from '../../planos/entities/planoMestre.entity';
 import { Plano } from '../../planos/entities/plano.entity';
+import { Disciplina } from '../../disciplinas/entities/disciplina.entity';
+import { Assunto } from '../../disciplinas/entities/assunto.entity';
 import { CriarSprintMestreDto } from '../dto/criarSprintMestre.dto';
 import { AtualizarSprintMestreDto } from '../dto/atualizarSprintMestre.dto';
 import { AtualizarMetaDto } from '../dto/atualizarMeta.dto';
@@ -29,56 +31,71 @@ export class ServicoSprint {
     private planoMestreRepository: Repository<PlanoMestre>,
     @InjectRepository(Plano)
     private planoRepository: Repository<Plano>,
+    @InjectRepository(Disciplina)
+    private disciplinaRepository: Repository<Disciplina>,
+    @InjectRepository(Assunto)
+    private assuntoRepository: Repository<Assunto>,
+    private dataSource: DataSource,
   ) {}
 
   // ===== MÉTODOS PARA SPRINT MESTRE (TEMPLATES) =====
 
   async criarSprintMestre(dadosSprint: CriarSprintMestreDto): Promise<SprintMestre> {
-    // Verificar se o plano mestre existe
-    const planoMestre = await this.planoMestreRepository.findOne({
-      where: { id: dadosSprint.planoId },
-    });
+    return await this.dataSource.transaction(async (manager) => {
+      // Verificar se o plano mestre existe
+      const planoMestre = await manager.findOne(PlanoMestre, {
+        where: { id: dadosSprint.planoId },
+      });
 
-    if (!planoMestre) {
-      throw new NotFoundException('Plano mestre não encontrado');
-    }
+      if (!planoMestre) {
+        throw new NotFoundException('Plano mestre não encontrado');
+      }
 
-    // Determinar a próxima posição disponível para este plano mestre
-    const ultimaSprintMestre = await this.sprintMestreRepository.findOne({
-      where: { planoMestreId: dadosSprint.planoId },
-      order: { posicao: 'DESC' },
-    });
-    
-    const proximaPosicao = ultimaSprintMestre ? ultimaSprintMestre.posicao + 1 : 1;
+      // Validar disciplinas e assuntos das metas se houver metas
+      if (dadosSprint.metas && dadosSprint.metas.length > 0) {
+        await this.validarDisciplinasDasMetas(dadosSprint.planoId, dadosSprint.metas);
+      }
 
-    // Criar a sprint mestre
-    const sprintMestre = this.sprintMestreRepository.create({
-      nome: dadosSprint.nome,
-      dataInicio: dadosSprint.dataInicio ? new Date(dadosSprint.dataInicio) : null,
-      dataFim: dadosSprint.dataFim ? new Date(dadosSprint.dataFim) : null,
-      planoMestreId: dadosSprint.planoId,
-      posicao: proximaPosicao,
-      status: StatusMeta.PENDENTE,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+      // Determinar a próxima posição disponível para este plano mestre
+      const ultimaSprintMestre = await manager.findOne(SprintMestre, {
+        where: { planoMestreId: dadosSprint.planoId },
+        order: { posicao: 'DESC' },
+      });
 
-    const sprintMestreSalva = await this.sprintMestreRepository.save(sprintMestre);
+      const proximaPosicao = ultimaSprintMestre ? ultimaSprintMestre.posicao + 1 : 1;
 
-    // Criar as metas mestre associadas à sprint mestre
-    if (dadosSprint.metas && dadosSprint.metas.length > 0) {
-      await Promise.all(
-        dadosSprint.metas.map(async (meta, index) => {
+      // Criar a sprint mestre
+      const sprintMestre = manager.create(SprintMestre, {
+        nome: dadosSprint.nome,
+        dataInicio: dadosSprint.dataInicio ? new Date(dadosSprint.dataInicio) : null,
+        dataFim: dadosSprint.dataFim ? new Date(dadosSprint.dataFim) : null,
+        planoMestreId: dadosSprint.planoId,
+        posicao: proximaPosicao,
+        status: StatusMeta.PENDENTE,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const sprintMestreSalva = await manager.save(SprintMestre, sprintMestre);
+
+      // Criar as metas mestre associadas à sprint mestre
+      if (dadosSprint.metas && dadosSprint.metas.length > 0) {
+        for (const [index, meta] of dadosSprint.metas.entries()) {
           // Se a posição não foi fornecida ou é 0, usar o índice + 1
           const posicao = meta.posicao && meta.posicao > 0 ? meta.posicao : index + 1;
 
-          const novaMetaMestre = this.metaMestreRepository.create({
-            disciplina: meta.disciplina,
-            tipo: meta.tipo as any,
-            titulo: meta.titulo,
+          // Buscar nomes e IDs por códigos
+          const { disciplina, assunto, disciplinaId, assuntoId } = await this.validarCodigosMeta(meta.codigoDisciplina, meta.codigoAssunto);
+
+          const novaMetaMestre = manager.create(MetaMestre, {
+            disciplinaId: disciplinaId,
+            disciplina: disciplina,
+            tipo: meta.tipo,
+            assuntoId: assuntoId,
+            assunto: assunto,
             comandos: meta.comandos || '',
             link: meta.link || '',
-            relevancia: parseInt(meta.relevancia),
+            relevancia: meta.relevancia,
             tempoEstudado: '00:00',
             desempenho: 0,
             status: StatusMeta.PENDENTE,
@@ -90,12 +107,12 @@ export class ServicoSprint {
             updatedAt: new Date(),
           });
 
-          return await this.metaMestreRepository.save(novaMetaMestre);
-        })
-      );
-    }
+          await manager.save(MetaMestre, novaMetaMestre);
+        }
+      }
 
-    return sprintMestreSalva;
+      return sprintMestreSalva;
+    });
   }
 
   async listarSprintsMestre(): Promise<SprintMestre[]> {
@@ -226,13 +243,18 @@ export class ServicoSprint {
 
     // Criar as novas metas mestre
     const novasMetasMestre = await Promise.all(metas.map(async meta => {
+      // Buscar nomes e IDs por códigos
+      const { disciplina, assunto, disciplinaId, assuntoId } = await this.validarCodigosMeta(meta.codigoDisciplina, meta.codigoAssunto);
+
       const novaMetaMestre = this.metaMestreRepository.create({
-        disciplina: meta.disciplina,
-        tipo: meta.tipo as any,
-        titulo: meta.titulo,
+        disciplinaId: disciplinaId,
+        disciplina: disciplina,
+        tipo: meta.tipo,
+        assuntoId: assuntoId,
+        assunto: assunto,
         comandos: meta.comandos || '',
         link: meta.link || '',
-        relevancia: parseInt(meta.relevancia),
+        relevancia: meta.relevancia,
         tempoEstudado: '00:00',
         desempenho: 0,
         status: StatusMeta.PENDENTE,
@@ -258,8 +280,8 @@ export class ServicoSprint {
       for (const metaMestre of novasMetasMestre) {
         const novaMeta = this.metaRepository.create({
           disciplina: metaMestre.disciplina,
-          tipo: metaMestre.tipo as any,
-          titulo: metaMestre.titulo,
+          tipo: metaMestre.tipo,
+          assunto: metaMestre.assunto,
           comandos: metaMestre.comandos,
           link: metaMestre.link,
           relevancia: metaMestre.relevancia,
@@ -416,6 +438,71 @@ export class ServicoSprint {
           status: StatusMeta.EM_ANDAMENTO,
           updatedAt: new Date(),
         });
+      }
+    }
+  }
+
+  // ===== MÉTODOS AUXILIARES PARA VALIDAÇÃO =====
+
+  /**
+   * Busca as disciplinas disponíveis em um plano mestre
+   */
+  private async buscarDisciplinasDoPlano(planoMestreId: number): Promise<string[]> {
+    const disciplinas = await this.metaMestreRepository
+      .createQueryBuilder('mm')
+      .select('DISTINCT mm.disciplina', 'disciplina')
+      .innerJoin('mm.sprintMestre', 'sm')
+      .where('sm.plano_mestre_id = :planoId', { planoId: planoMestreId })
+      .getRawMany();
+
+    return disciplinas.map(d => d.disciplina);
+  }
+
+  /**
+   * Valida se os códigos de disciplina e assunto existem
+   */
+  private async validarCodigosMeta(codigoDisciplina: string, codigoAssunto: string): Promise<{disciplina: string, assunto: string, disciplinaId: number, assuntoId: number}> {
+    // Buscar disciplina por código
+    const disciplina = await this.disciplinaRepository.findOne({
+      where: { codigo: codigoDisciplina, ativa: true }
+    });
+
+    if (!disciplina) {
+      throw new BadRequestException(`Disciplina com código '${codigoDisciplina}' não encontrada ou inativa`);
+    }
+
+    // Buscar assunto por código
+    const assunto = await this.assuntoRepository.findOne({
+      where: { codigo: codigoAssunto, disciplinaId: disciplina.id }
+    });
+
+    if (!assunto) {
+      throw new BadRequestException(`Assunto com código '${codigoAssunto}' não encontrado para a disciplina '${disciplina.nome}'`);
+    }
+
+    return {
+      disciplina: disciplina.nome,
+      assunto: assunto.nome,
+      disciplinaId: disciplina.id,
+      assuntoId: assunto.id
+    };
+  }
+
+  /**
+   * Valida se as disciplinas das metas estão disponíveis no plano
+   */
+  private async validarDisciplinasDasMetas(planoMestreId: number, metas: any[]): Promise<void> {
+    const disciplinasDisponiveis = await this.buscarDisciplinasDoPlano(planoMestreId);
+
+    for (const meta of metas) {
+      // Primeiro validar se os códigos existem
+      const { disciplina } = await this.validarCodigosMeta(meta.codigoDisciplina, meta.codigoAssunto);
+
+      // Depois validar se a disciplina está disponível no plano
+      if (!disciplinasDisponiveis.includes(disciplina)) {
+        throw new BadRequestException(
+          `Disciplina '${disciplina}' não está disponível neste plano. Disciplinas disponíveis: ${disciplinasDisponiveis.join(', ')}`
+        );
       }
     }
   }

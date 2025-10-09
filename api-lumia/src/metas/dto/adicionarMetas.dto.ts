@@ -21,12 +21,12 @@ export class MetaMestreRequestDto {
   tipo: TipoMeta;
 
   @ApiProperty({
-    description: 'Título da meta',
+    description: 'Assunto da meta',
     example: 'Manipulação do DOM',
   })
   @IsString()
   @IsNotEmpty()
-  titulo: string;
+  assunto: string;
 
   @ApiPropertyOptional({
     description: 'Comandos ou instruções específicas para a meta',

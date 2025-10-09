@@ -22,12 +22,12 @@ export class AtualizarMetaInstanciaDto {
   tipo?: TipoMeta;
 
   @ApiPropertyOptional({
-    description: 'Título da meta',
+    description: 'Assunto da meta',
     example: 'Estrutura básica do HTML - Atualizada',
   })
   @IsOptional()
   @IsString()
-  titulo?: string;
+  assunto?: string;
 
   @ApiPropertyOptional({
     description: 'Comandos ou instruções específicas para a meta',

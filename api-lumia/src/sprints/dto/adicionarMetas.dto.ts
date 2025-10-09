@@ -1,15 +1,15 @@
-import { IsArray, ValidateNested, IsString, IsNotEmpty, IsNumber, Min, IsOptional } from 'class-validator';
+import { IsArray, ValidateNested, IsString, IsNotEmpty, IsNumber, Min, Max, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
 export class AdicionarMetaDto {
   @ApiProperty({
-    description: 'Disciplina da meta',
-    example: 'Matemática',
+    description: 'Código único da disciplina',
+    example: 'MATE20853',
   })
   @IsString()
   @IsNotEmpty()
-  disciplina: string;
+  codigoDisciplina: string;
 
   @ApiProperty({
     description: 'Tipo da meta',
@@ -21,12 +21,12 @@ export class AdicionarMetaDto {
   tipo: string;
 
   @ApiProperty({
-    description: 'Título da meta',
-    example: 'Álgebra Linear - Matrizes',
+    description: 'Código único do assunto',
+    example: 'MATEXXXXX',
   })
   @IsString()
   @IsNotEmpty()
-  titulo: string;
+  codigoAssunto: string;
 
   @ApiPropertyOptional({
     description: 'Comandos/instruções da meta',
@@ -45,12 +45,15 @@ export class AdicionarMetaDto {
   link?: string;
 
   @ApiProperty({
-    description: 'Relevância da meta',
-    example: 'Alta',
+    description: 'Relevância da meta (1-3)',
+    example: 3,
+    minimum: 1,
+    maximum: 3,
   })
-  @IsString()
-  @IsNotEmpty()
-  relevancia: string;
+  @IsNumber()
+  @Min(1)
+  @Max(3)
+  relevancia: number;
 
   @ApiProperty({
     description: 'Posição da meta na sprint',

@@ -20,12 +20,12 @@ export class CriarMetaDto {
   tipo: TipoMeta;
 
   @ApiProperty({
-    description: 'Título da meta',
+    description: 'Assunto da meta',
     example: 'Estrutura básica do HTML',
   })
   @IsString()
   @IsNotEmpty()
-  titulo: string;
+  assunto: string;
 
   @ApiPropertyOptional({
     description: 'Comandos ou instruções específicas para a meta',

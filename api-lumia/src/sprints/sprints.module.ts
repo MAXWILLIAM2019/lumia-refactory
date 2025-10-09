@@ -9,6 +9,8 @@ import { MetaMestre } from '../metas/entities/metaMestre.entity';
 import { Meta } from '../metas/entities/meta.entity';
 import { PlanoMestre } from '../planos/entities/planoMestre.entity';
 import { Plano } from '../planos/entities/plano.entity';
+import { Disciplina } from '../disciplinas/entities/disciplina.entity';
+import { Assunto } from '../disciplinas/entities/assunto.entity';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { Plano } from '../planos/entities/plano.entity';
       Meta,
       PlanoMestre,
       Plano,
+      Disciplina,
+      Assunto,
     ]),
   ],
   providers: [ServicoSprint],

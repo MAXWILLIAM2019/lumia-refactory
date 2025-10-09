@@ -12,20 +12,20 @@ export class CriarMetaMestreNovaDto {
   disciplina: string;
 
   @ApiProperty({
-    description: 'Tipo da meta',
-    enum: TipoMeta,
-    example: TipoMeta.TEORIA,
+    description: 'Tipo da meta (ex: teoria, questões, revisão, reforço, simulado)',
+    example: 'teoria',
   })
-  @IsEnum(TipoMeta)
-  tipo: TipoMeta;
+  @IsString()
+  @IsNotEmpty()
+  tipo: string;
 
   @ApiProperty({
-    description: 'Título da meta',
+    description: 'Assunto da meta',
     example: 'Estrutura básica do HTML',
   })
   @IsString()
   @IsNotEmpty()
-  titulo: string;
+  assunto: string;
 
   @ApiPropertyOptional({
     description: 'Comandos ou instruções específicas para a meta',
