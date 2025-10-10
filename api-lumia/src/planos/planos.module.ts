@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlanoController } from './controllers/planoController';
-import { PlanoRedirecionamentoController } from './controllers/planoRedirecionamentoController';
+import { PlanoAlunoController } from './controllers/planoAlunoController';
 import { ServicoPlano } from './services/servicoPlano';
 import { PlanoMestre } from './entities/planoMestre.entity';
 import { Plano } from './entities/plano.entity';
@@ -30,8 +30,8 @@ import { MetaMestre } from '../metas/entities/metaMestre.entity';
     ]),
   ],
   controllers: [
-    PlanoController,
-    PlanoRedirecionamentoController
+    PlanoController,                    // ✅ Apenas operações de mestres
+    PlanoAlunoController                // ✅ Novo: Operações de alunos
   ],
   providers: [ServicoPlano],
   exports: [ServicoPlano],

@@ -233,14 +233,7 @@ export class PlanoController {
     return await this.servicoPlano.associarAlunoPlano(dadosAssociacao);
   }
 
-  @Get('aluno/:alunoId')
-  @ApiOperation({ summary: 'Listar planos de um aluno específico' })
-  @ApiParam({ name: 'alunoId', description: 'ID do aluno', type: Number })
-  @ApiResponse({ status: 200, description: 'Planos do aluno retornados com sucesso' })
-  @ApiResponse({ status: 404, description: 'Aluno não encontrado' })
-  async listarPlanosDoAluno(@Param('alunoId', ParseIntPipe) alunoId: number) {
-    return await this.servicoPlano.listarPlanosDoAluno(alunoId);
-  }
+  // ===== ENDPOINTS DE ADMINISTRAÇÃO =====
 
   @Delete('aluno/:alunoId/plano/:planoId')
   @UseGuards(GuardAdministrador)
@@ -259,34 +252,18 @@ export class PlanoController {
     await this.servicoPlano.removerAssociacaoAlunoPlano(alunoId, planoId);
   }
 
-  // ===== ENDPOINTS ESPECÍFICOS DO SISTEMA =====
+  // ===== ENDPOINTS DE INSTANCIAÇÃO (Admin) =====
 
-  @Get('aluno-logado/:alunoId')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Buscar plano do aluno logado' })
+  @Get('admin/aluno/:alunoId')
+  @UseGuards(GuardAdministrador)
+  @ApiOperation({ summary: 'Admin: Listar planos de um aluno específico' })
   @ApiParam({ name: 'alunoId', description: 'ID do aluno', type: Number })
-  @ApiResponse({ status: 200, description: 'Plano do aluno retornado com sucesso' })
-  @ApiResponse({ status: 404, description: 'Aluno não possui planos atribuídos' })
+  @ApiResponse({ status: 200, description: 'Planos do aluno retornados com sucesso' })
+  @ApiResponse({ status: 404, description: 'Aluno não encontrado' })
   @ApiResponse({ status: 401, description: 'Não autorizado' })
-  async buscarPlanoDoAlunoLogado(@Param('alunoId', ParseIntPipe) alunoId: number) {
-    return await this.servicoPlano.buscarPlanoDoAlunoLogado(alunoId);
-  }
-
-  @Put('aluno/:alunoId/plano/:planoId/progresso')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Atualizar progresso do aluno no plano' })
-  @ApiParam({ name: 'alunoId', description: 'ID do aluno', type: Number })
-  @ApiParam({ name: 'planoId', description: 'ID do plano', type: Number })
-  @ApiResponse({ status: 200, description: 'Progresso atualizado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 404, description: 'Associação não encontrada' })
-  @ApiResponse({ status: 401, description: 'Não autorizado' })
-  async atualizarProgressoAluno(
-    @Param('alunoId', ParseIntPipe) alunoId: number,
-    @Param('planoId', ParseIntPipe) planoId: number,
-    @Body() dadosProgresso: { progresso?: number; status?: StatusPlano; observacoes?: string },
-  ) {
-    return await this.servicoPlano.atualizarProgressoAluno(alunoId, planoId, dadosProgresso);
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
+  async listarPlanosDoAlunoAdmin(@Param('alunoId', ParseIntPipe) alunoId: number) {
+    return await this.servicoPlano.listarPlanosDoAluno(alunoId);
   }
 
   // ===== ENDPOINTS DE ESTATÍSTICAS =====
