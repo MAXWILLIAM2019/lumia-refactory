@@ -78,6 +78,36 @@ export class PlanoController {
     return await this.servicoPlano.atualizarPlanoMestre(id, dadosAtualizacao);
   }
 
+  @Delete('mestre/:planoMestreId/disciplinas/:disciplinaId')
+  @UseGuards(JwtAuthGuard, GuardAdministrador)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Remover disciplina de um plano mestre',
+    description: 'Remove a associação entre uma disciplina e um plano mestre'
+  })
+  @ApiParam({
+    name: 'planoMestreId',
+    description: 'ID do plano mestre',
+    example: 1
+  })
+  @ApiParam({
+    name: 'disciplinaId',
+    description: 'ID da disciplina a ser removida',
+    example: 2
+  })
+  @ApiResponse({ status: 200, description: 'Disciplina removida com sucesso' })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
+  @ApiResponse({ status: 404, description: 'Associação não encontrada' })
+  @HttpCode(HttpStatus.OK)
+  async removerDisciplinaDoPlanoMestre(
+    @Param('planoMestreId', ParseIntPipe) planoMestreId: number,
+    @Param('disciplinaId', ParseIntPipe) disciplinaId: number,
+  ) {
+    await this.servicoPlano.removerDisciplinaDoPlanoMestre(planoMestreId, disciplinaId);
+    return { message: 'Disciplina removida do plano mestre com sucesso' };
+  }
+
   @Delete('mestre/:id')
   @UseGuards(GuardAdministrador)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -323,33 +353,4 @@ export class PlanoController {
     return { disciplinas };
   }
 
-  @Delete('mestre/:planoMestreId/disciplinas/:disciplinaId')
-  @UseGuards(JwtAuthGuard, GuardAdministrador)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Remover disciplina de um plano mestre',
-    description: 'Remove a associação entre uma disciplina e um plano mestre'
-  })
-  @ApiParam({
-    name: 'planoMestreId',
-    description: 'ID do plano mestre',
-    example: 1
-  })
-  @ApiParam({
-    name: 'disciplinaId',
-    description: 'ID da disciplina a ser removida',
-    example: 2
-  })
-  @ApiResponse({ status: 200, description: 'Disciplina removida com sucesso' })
-  @ApiResponse({ status: 401, description: 'Não autorizado' })
-  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
-  @ApiResponse({ status: 404, description: 'Associação não encontrada' })
-  @HttpCode(HttpStatus.OK)
-  async removerDisciplinaDoPlanoMestre(
-    @Param('planoMestreId', ParseIntPipe) planoMestreId: number,
-    @Param('disciplinaId', ParseIntPipe) disciplinaId: number,
-  ) {
-    await this.servicoPlano.removerDisciplinaDoPlanoMestre(planoMestreId, disciplinaId);
-    return { message: 'Disciplina removida do plano mestre com sucesso' };
-  }
 }
