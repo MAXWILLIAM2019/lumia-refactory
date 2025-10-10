@@ -5,11 +5,17 @@ import {
   Request,
   Query,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { ServicoRanking } from '../services/servicoRanking';
 import { RankingQueryDto } from '../dto/rankingQuery.dto';
 import { RankingResponseDto, MeuRankingResponseDto } from '../dto/rankingResponse.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
+
+interface RequestWithUser extends ExpressRequest {
+  user: Usuario;
+}
 
 @ApiTags('Ranking')
 @Controller('ranking')
@@ -48,10 +54,8 @@ export class RankingController {
   })
   @ApiResponse({ status: 401, description: 'Token de autenticação inválido ou ausente' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
-  async obterMeuRanking(@Request() req: any): Promise<MeuRankingResponseDto> {
-    // TODO: Implementar extração do ID do usuário do JWT quando reabilitado
-    // const usuarioId = req.user.id;
-    const usuarioId = 1; // Temporário para testes
+  async obterMeuRanking(@Request() req: RequestWithUser): Promise<MeuRankingResponseDto> {
+    const usuarioId = req.user.id;
 
     return await this.servicoRanking.obterMeuRanking(usuarioId);
   }

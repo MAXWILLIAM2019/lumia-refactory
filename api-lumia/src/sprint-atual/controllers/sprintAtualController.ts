@@ -9,10 +9,16 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ServicoSprintAtual } from '../services/servicoSprintAtual';
 import { AtualizarSprintAtualDto } from '../dto/atualizarSprintAtual.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
+
+interface RequestWithUser extends ExpressRequest {
+  user: Usuario;
+}
 
 @ApiTags('Sprint Atual')
 @Controller('sprint-atual')
@@ -26,10 +32,8 @@ export class SprintAtualController {
   @ApiResponse({ status: 200, description: 'Sprint atual encontrada com sucesso' })
   @ApiResponse({ status: 404, description: 'Usuário não possui plano de estudo com sprints' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
-  async buscarSprintAtual(@Request() req: any): Promise<any> {
-    // TODO: Implementar extração do ID do usuário do JWT quando reabilitado
-    // const usuarioId = req.user.id;
-    const usuarioId = 1; // Temporário para testes
+  async buscarSprintAtual(@Request() req: RequestWithUser): Promise<any> {
+    const usuarioId = req.user.id;
 
     return await this.servicoSprintAtual.buscarSprintAtual(usuarioId);
   }
@@ -42,12 +46,10 @@ export class SprintAtualController {
   @ApiResponse({ status: 404, description: 'Sprint não encontrada' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   async atualizarSprintAtual(
-    @Request() req: any,
+    @Request() req: RequestWithUser,
     @Body() dadosAtualizacao: AtualizarSprintAtualDto,
   ): Promise<any> {
-    // TODO: Implementar extração do ID do usuário do JWT quando reabilitado
-    // const usuarioId = req.user.id;
-    const usuarioId = 1; // Temporário para testes
+    const usuarioId = req.user.id;
 
     return await this.servicoSprintAtual.atualizarSprintAtual(usuarioId, dadosAtualizacao);
   }
@@ -59,10 +61,8 @@ export class SprintAtualController {
   @ApiResponse({ status: 400, description: 'Usuário já possui sprint atual' })
   @ApiResponse({ status: 404, description: 'Usuário não possui plano de estudo com sprints' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
-  async inicializarSprintAtual(@Request() req: any): Promise<any> {
-    // TODO: Implementar extração do ID do usuário do JWT quando reabilitado
-    // const usuarioId = req.user.id;
-    const usuarioId = 1; // Temporário para testes
+  async inicializarSprintAtual(@Request() req: RequestWithUser): Promise<any> {
+    const usuarioId = req.user.id;
 
     return await this.servicoSprintAtual.inicializarSprintAtual(usuarioId);
   }
