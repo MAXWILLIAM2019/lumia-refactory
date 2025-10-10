@@ -7,11 +7,12 @@ export class CreatePlanoMestreDisciplina1759784069725 implements MigrationInterf
     // Criar tabela PlanoMestreDisciplina
     await queryRunner.query(`
       CREATE TABLE "PlanoMestreDisciplina" (
+        "id" SERIAL NOT NULL,
         "plano_mestre_id" integer NOT NULL,
         "disciplina_id" integer NOT NULL,
         "createdAt" timestamptz NOT NULL,
         "updatedAt" timestamptz NOT NULL,
-        CONSTRAINT "PK_PlanoMestreDisciplina" PRIMARY KEY ("plano_mestre_id", "disciplina_id")
+        CONSTRAINT "PK_PlanoMestreDisciplina" PRIMARY KEY ("id")
       )
     `);
 
@@ -30,7 +31,12 @@ export class CreatePlanoMestreDisciplina1759784069725 implements MigrationInterf
       ON DELETE CASCADE ON UPDATE CASCADE
     `);
 
-    // Adicionar índices para performance
+    // Adicionar índices para performance e unicidade
+    await queryRunner.query(`
+      CREATE UNIQUE INDEX "IDX_PlanoMestreDisciplina_unique"
+      ON "PlanoMestreDisciplina" ("plano_mestre_id", "disciplina_id")
+    `);
+
     await queryRunner.query(`
       CREATE INDEX "IDX_PlanoMestreDisciplina_plano_mestre_id"
       ON "PlanoMestreDisciplina" ("plano_mestre_id")
@@ -46,12 +52,13 @@ export class CreatePlanoMestreDisciplina1759784069725 implements MigrationInterf
     // Remover índices
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PlanoMestreDisciplina_disciplina_id"`);
     await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PlanoMestreDisciplina_plano_mestre_id"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "IDX_PlanoMestreDisciplina_unique"`);
 
     // Remover FKs
     await queryRunner.query(`ALTER TABLE "PlanoMestreDisciplina" DROP CONSTRAINT IF EXISTS "PlanoMestreDisciplina_DisciplinaId_fkey"`);
     await queryRunner.query(`ALTER TABLE "PlanoMestreDisciplina" DROP CONSTRAINT IF EXISTS "PlanoMestreDisciplina_PlanoMestreId_fkey"`);
 
     // Remover tabela
-    await queryRunner.query(`DROP TABLE "PlanoMestreDisciplina"`);
+    await queryRunner.query(`DROP TABLE IF EXISTS "PlanoMestreDisciplina"`);
   }
 }

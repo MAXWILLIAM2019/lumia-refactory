@@ -34,4 +34,8 @@ export class PlanoMestre {
   // Relacionamento com sprints mestre
   @OneToMany(() => SprintMestre, (sprintMestre) => sprintMestre.planoMestre)
   sprintsMestre: SprintMestre[];
+
+  // Relacionamento com disciplinas
+  @OneToMany(() => PlanoMestreDisciplina, d => d.planoMestre, { cascade: true })
+  planoMestreDisciplinas: PlanoMestreDisciplina[];
 }

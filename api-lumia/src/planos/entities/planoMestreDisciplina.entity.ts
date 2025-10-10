@@ -1,13 +1,16 @@
-import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { PlanoMestre } from './planoMestre.entity';
 import { Disciplina } from '../../disciplinas/entities/disciplina.entity';
 
 @Entity('PlanoMestreDisciplina')
 export class PlanoMestreDisciplina {
-  @PrimaryColumn({ name: 'plano_mestre_id' })
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column({ name: 'plano_mestre_id' })
   planoMestreId: number;
 
-  @PrimaryColumn({ name: 'disciplina_id' })
+  @Column({ name: 'disciplina_id' })
   disciplinaId: number;
 
   @Column({ name: 'createdAt', type: 'timestamptz' })
@@ -21,7 +24,7 @@ export class PlanoMestreDisciplina {
   @JoinColumn({ name: 'plano_mestre_id' })
   planoMestre: PlanoMestre;
 
-  @ManyToOne(() => Disciplina, { createForeignKeyConstraints: false })
+  @ManyToOne(() => Disciplina, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'disciplina_id' })
   disciplina: Disciplina;
 }

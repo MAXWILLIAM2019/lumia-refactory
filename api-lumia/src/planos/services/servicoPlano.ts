@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
 import { Repository, In, DataSource } from 'typeorm';
 import { PlanoMestre } from '../entities/planoMestre.entity';
 import { Plano } from '../entities/plano.entity';
@@ -44,8 +44,13 @@ export class ServicoPlano {
     private metaRepository: Repository<Meta>,
     @InjectRepository(MetaMestre)
     private metaMestreRepository: Repository<MetaMestre>,
+    @InjectDataSource()
     private dataSource: DataSource,
-  ) {}
+  ) {
+    // LOG de validação (remover depois):
+    console.log('ENTIDADES:', this.dataSource.entityMetadatas.map(m => m.name));
+    console.log('Tem PlanoMestreDisciplina?', !!this.dataSource.entityMetadatas.find(e => e.name === 'PlanoMestreDisciplina'));
+  }
 
   // ===== MÉTODOS PARA PLANO MESTRE (TEMPLATES) =====
 
