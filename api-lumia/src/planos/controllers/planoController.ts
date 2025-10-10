@@ -20,7 +20,8 @@ import { AtualizarPlanoMestreDto } from '../dto/atualizarPlanoMestre.dto';
 import { CriarPlanoDto } from '../dto/criarPlano.dto';
 import { AtualizarPlanoDto } from '../dto/atualizarPlano.dto';
 import { AssociarAlunoPlanoDto } from '../dto/associarAlunoPlano.dto';
-import { AssociarDisciplinaPlanoDto } from '../dto/associarDisciplinaPlanoDto';
+import { AssociarDisciplinaPlanoMestreDto } from '../dto/associarDisciplinaPlanoMestre.dto';
+import { CriarInstanciaDto } from '../dto/criarInstancia.dto';
 import { StatusPlano } from '../../common/enums/statusPlano.enum';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { GuardAdministrador } from '../../common/guards/guardAdministrador';
@@ -88,6 +89,39 @@ export class PlanoController {
   @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
   async desativarPlanoMestre(@Param('id', ParseIntPipe) id: number) {
     await this.servicoPlano.desativarPlanoMestre(id);
+  }
+
+  @Post('criar-instancia')
+  @UseGuards(GuardAdministrador)
+  @ApiOperation({
+    summary: 'Criar instância personalizada de plano mestre',
+    description: 'Cria uma instância personalizada de um plano mestre para um aluno específico. Transforma templates em planos de estudo reais.'
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Instância criada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Instância criada com sucesso' },
+        plano: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 1 },
+            nome: { type: 'string', example: 'Plano de Desenvolvimento Web Frontend' },
+            templateOrigemId: { type: 'number', example: 1 },
+            totalSprints: { type: 'number', example: 3 }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Dados inválidos ou campos obrigatórios faltando' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
+  @ApiResponse({ status: 404, description: 'Plano mestre não encontrado' })
+  async criarInstanciaPlano(@Body() dados: CriarInstanciaDto) {
+    return await this.servicoPlano.criarInstanciaPlano(dados);
   }
 
   // ===== ENDPOINTS PARA PLANO (INSTÂNCIAS) =====
@@ -237,129 +271,85 @@ export class PlanoController {
     return await this.servicoPlano.obterEstatisticasPlanos();
   }
 
-  // ===== ENDPOINTS PARA GERENCIAR DISCIPLINAS DE UM PLANO =====
 
-  @Post(':planoId/disciplinas')
-  @UseGuards(GuardAdministrador)
-  @ApiOperation({ summary: 'Associar disciplinas a um plano' })
-  @ApiParam({ name: 'planoId', description: 'ID do plano', type: 'number' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Disciplinas associadas com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Disciplinas associadas com sucesso' }
-      }
-    }
+  // ===== ENDPOINTS PARA PLANOS MESTRE =====
+
+  @Post('mestre/:planoMestreId/associar-disciplinas')
+  @UseGuards(JwtAuthGuard, GuardAdministrador)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Associar disciplinas a um plano mestre',
+    description: 'Define quais disciplinas são permitidas em um plano mestre. Isso permite criar sprints com essas disciplinas.'
   })
-  @ApiResponse({ status: 400, description: 'Dados inválidos ou disciplinas não encontradas' })
-  @ApiResponse({ status: 404, description: 'Plano não encontrado' })
+  @ApiParam({
+    name: 'planoMestreId',
+    description: 'ID do plano mestre',
+    example: 1
+  })
+  @ApiResponse({ status: 200, description: 'Disciplinas associadas com sucesso' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos' })
   @ApiResponse({ status: 401, description: 'Não autorizado' })
   @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
+  @ApiResponse({ status: 404, description: 'Plano mestre não encontrado' })
   @HttpCode(HttpStatus.OK)
-  async associarDisciplinasAoPlano(
-    @Param('planoId', ParseIntPipe) planoId: number,
-    @Body() dadosAssociacao: AssociarDisciplinaPlanoDto,
+  async associarDisciplinasAoPlanoMestre(
+    @Param('planoMestreId', ParseIntPipe) planoMestreId: number,
+    @Body() dados: AssociarDisciplinaPlanoMestreDto,
   ) {
-    await this.servicoPlano.associarDisciplinasAoPlano(planoId, dadosAssociacao);
-    return { message: 'Disciplinas associadas com sucesso' };
+    await this.servicoPlano.associarDisciplinasAoPlanoMestre(planoMestreId, dados.disciplinaIds);
+    return { message: 'Disciplinas associadas ao plano mestre com sucesso' };
   }
 
-  @Get(':planoId/disciplinas')
-  @ApiOperation({ summary: 'Listar disciplinas de um plano' })
-  @ApiParam({ name: 'planoId', description: 'ID do plano', type: 'number' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Lista de disciplinas retornada com sucesso',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'number', example: 1 },
-          nome: { type: 'string', example: 'Matemática' },
-          descricao: { type: 'string', example: 'Disciplina de matemática básica' },
-          versao: { type: 'number', example: 1 },
-          ativa: { type: 'boolean', example: true },
-          disciplinaOrigemId: { type: 'number', example: null },
-          assuntos: { 
-            type: 'array', 
-            items: {
-              type: 'object',
-              properties: {
-                id: { type: 'number', example: 1 },
-                nome: { type: 'string', example: 'Álgebra Linear' },
-                descricao: { type: 'string', example: 'Estudo de álgebra linear' }
-              }
-            },
-            example: [
-              { id: 1, nome: 'Álgebra Linear', descricao: 'Estudo de álgebra linear' },
-              { id: 2, nome: 'Cálculo Diferencial', descricao: 'Estudo de cálculo diferencial' }
-            ]
-          }
-        }
-      },
-      example: [
-        {
-          id: 1,
-          nome: 'Matemática',
-          descricao: 'Disciplina de matemática básica',
-          versao: 1,
-          ativa: true,
-          disciplinaOrigemId: null,
-          assuntos: [
-            { id: 1, nome: 'Álgebra Linear', descricao: 'Estudo de álgebra linear' },
-            { id: 2, nome: 'Cálculo Diferencial', descricao: 'Estudo de cálculo diferencial' }
-          ]
-        },
-        {
-          id: 2,
-          nome: 'Física',
-          descricao: 'Disciplina de física básica',
-          versao: 1,
-          ativa: true,
-          disciplinaOrigemId: null,
-          assuntos: [
-            { id: 3, nome: 'Mecânica Clássica', descricao: 'Estudo de mecânica clássica' },
-            { id: 4, nome: 'Termodinâmica', descricao: 'Estudo de termodinâmica' }
-          ]
-        }
-      ]
-    }
+  @Get('mestre/:planoMestreId/disciplinas')
+  @UseGuards(JwtAuthGuard, GuardAdministrador)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Listar disciplinas de um plano mestre',
+    description: 'Retorna todas as disciplinas associadas a um plano mestre'
   })
-  @ApiResponse({ status: 404, description: 'Plano não encontrado' })
-  @ApiResponse({ status: 401, description: 'Não autorizado' })
-  async listarDisciplinasDoPlano(
-    @Param('planoId', ParseIntPipe) planoId: number,
-  ) {
-    return await this.servicoPlano.listarDisciplinasDoPlano(planoId);
-  }
-
-  @Delete(':planoId/disciplinas/:disciplinaId')
-  @UseGuards(GuardAdministrador)
-  @ApiOperation({ summary: 'Remover uma disciplina de um plano' })
-  @ApiParam({ name: 'planoId', description: 'ID do plano', type: 'number' })
-  @ApiParam({ name: 'disciplinaId', description: 'ID da disciplina', type: 'number' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Disciplina removida com sucesso',
-    schema: {
-      type: 'object',
-      properties: {
-        message: { type: 'string', example: 'Disciplina removida do plano com sucesso' }
-      }
-    }
+  @ApiParam({
+    name: 'planoMestreId',
+    description: 'ID do plano mestre',
+    example: 1
   })
-  @ApiResponse({ status: 404, description: 'Plano ou associação não encontrada' })
+  @ApiResponse({ status: 200, description: 'Lista de disciplinas retornada com sucesso' })
   @ApiResponse({ status: 401, description: 'Não autorizado' })
   @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
+  @ApiResponse({ status: 404, description: 'Plano mestre não encontrado' })
+  async listarDisciplinasDoPlanoMestre(
+    @Param('planoMestreId', ParseIntPipe) planoMestreId: number,
+  ) {
+    const disciplinas = await this.servicoPlano.listarDisciplinasDoPlanoMestre(planoMestreId);
+    return { disciplinas };
+  }
+
+  @Delete('mestre/:planoMestreId/disciplinas/:disciplinaId')
+  @UseGuards(JwtAuthGuard, GuardAdministrador)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Remover disciplina de um plano mestre',
+    description: 'Remove a associação entre uma disciplina e um plano mestre'
+  })
+  @ApiParam({
+    name: 'planoMestreId',
+    description: 'ID do plano mestre',
+    example: 1
+  })
+  @ApiParam({
+    name: 'disciplinaId',
+    description: 'ID da disciplina a ser removida',
+    example: 2
+  })
+  @ApiResponse({ status: 200, description: 'Disciplina removida com sucesso' })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
+  @ApiResponse({ status: 404, description: 'Associação não encontrada' })
   @HttpCode(HttpStatus.OK)
-  async removerDisciplinaDoPlano(
-    @Param('planoId', ParseIntPipe) planoId: number,
+  async removerDisciplinaDoPlanoMestre(
+    @Param('planoMestreId', ParseIntPipe) planoMestreId: number,
     @Param('disciplinaId', ParseIntPipe) disciplinaId: number,
   ) {
-    await this.servicoPlano.removerDisciplinaDoPlano(planoId, disciplinaId);
-    return { message: 'Disciplina removida do plano com sucesso' };
+    await this.servicoPlano.removerDisciplinaDoPlanoMestre(planoMestreId, disciplinaId);
+    return { message: 'Disciplina removida do plano mestre com sucesso' };
   }
 }

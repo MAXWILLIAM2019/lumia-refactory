@@ -1,18 +1,24 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, DataSource } from 'typeorm';
 import { PlanoMestre } from '../entities/planoMestre.entity';
 import { Plano } from '../entities/plano.entity';
 import { AlunoPlanos } from '../entities/alunoPlanos.entity';
-import { PlanoDisciplina } from '../entities/planoDisciplina.entity';
+import { PlanoMestreDisciplina } from '../entities/planoMestreDisciplina.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { Disciplina } from '../../disciplinas/entities/disciplina.entity';
+import { Sprint } from '../../sprints/entities/sprint.entity';
+import { SprintMestre } from '../../sprints/entities/sprintMestre.entity';
+import { Meta } from '../../metas/entities/meta.entity';
+import { MetaMestre } from '../../metas/entities/metaMestre.entity';
+import { StatusMeta } from '../../common/enums/statusMeta.enum';
 import { CriarPlanoMestreDto } from '../dto/criarPlanoMestre.dto';
 import { AtualizarPlanoMestreDto } from '../dto/atualizarPlanoMestre.dto';
 import { CriarPlanoDto } from '../dto/criarPlano.dto';
 import { AtualizarPlanoDto } from '../dto/atualizarPlano.dto';
 import { AssociarAlunoPlanoDto } from '../dto/associarAlunoPlano.dto';
 import { AssociarDisciplinaPlanoDto } from '../dto/associarDisciplinaPlanoDto';
+import { CriarInstanciaDto } from '../dto/criarInstancia.dto';
 import { StatusPlano } from '../../common/enums/statusPlano.enum';
 
 @Injectable()
@@ -24,12 +30,21 @@ export class ServicoPlano {
     private planoRepository: Repository<Plano>,
     @InjectRepository(AlunoPlanos)
     private alunoPlanosRepository: Repository<AlunoPlanos>,
-    @InjectRepository(PlanoDisciplina)
-    private planoDisciplinaRepository: Repository<PlanoDisciplina>,
+    @InjectRepository(PlanoMestreDisciplina)
+    private planoMestreDisciplinaRepository: Repository<PlanoMestreDisciplina>,
     @InjectRepository(Usuario)
     private usuarioRepository: Repository<Usuario>,
     @InjectRepository(Disciplina)
     private disciplinaRepository: Repository<Disciplina>,
+    @InjectRepository(Sprint)
+    private sprintRepository: Repository<Sprint>,
+    @InjectRepository(SprintMestre)
+    private sprintMestreRepository: Repository<SprintMestre>,
+    @InjectRepository(Meta)
+    private metaRepository: Repository<Meta>,
+    @InjectRepository(MetaMestre)
+    private metaMestreRepository: Repository<MetaMestre>,
+    private dataSource: DataSource,
   ) {}
 
   // ===== MÉTODOS PARA PLANO MESTRE (TEMPLATES) =====
@@ -402,61 +417,67 @@ export class ServicoPlano {
   /**
    * Associa disciplinas a um plano
    */
-  async associarDisciplinasAoPlano(
-    planoId: number,
-    dadosAssociacao: AssociarDisciplinaPlanoDto,
+
+  // ===== MÉTODOS PARA GERENCIAR DISCIPLINAS DE PLANOS MESTRE =====
+
+  /**
+   * Associa disciplinas a um plano mestre
+   */
+  async associarDisciplinasAoPlanoMestre(
+    planoMestreId: number,
+    disciplinaIds: number[],
   ): Promise<void> {
-    // Verificar se o plano existe
-    const plano = await this.planoRepository.findOne({
-      where: { id: planoId },
+    // Verificar se o plano mestre existe
+    const planoMestre = await this.planoMestreRepository.findOne({
+      where: { id: planoMestreId },
     });
 
-    if (!plano) {
-      throw new NotFoundException(`Plano com ID ${planoId} não encontrado`);
+    if (!planoMestre) {
+      throw new NotFoundException(`Plano mestre com ID ${planoMestreId} não encontrado`);
     }
 
-    // Verificar se todas as disciplinas existem
+    // Verificar se todas as disciplinas existem e estão ativas
     const disciplinas = await this.disciplinaRepository.find({
-      where: { id: In(dadosAssociacao.disciplinaIds) },
+      where: { id: In(disciplinaIds), ativa: true },
     });
 
-    if (disciplinas.length !== dadosAssociacao.disciplinaIds.length) {
-      throw new BadRequestException('Uma ou mais disciplinas não foram encontradas');
+    if (disciplinas.length !== disciplinaIds.length) {
+      throw new BadRequestException('Uma ou mais disciplinas não foram encontradas ou não estão ativas');
     }
 
     // Criar as associações
     const agora = new Date();
     const associacoes = disciplinas.map(disciplina => ({
-      planoId: plano.id,
+      planoMestreId: planoMestre.id,
       disciplinaId: disciplina.id,
       createdAt: agora,
       updatedAt: agora,
     }));
 
     // Remover associações existentes para evitar duplicatas
-    await this.planoDisciplinaRepository.delete({ planoId: plano.id });
+    await this.planoMestreDisciplinaRepository.delete({ planoMestreId: planoMestre.id });
 
     // Salvar novas associações
-    await this.planoDisciplinaRepository.save(associacoes);
+    await this.planoMestreDisciplinaRepository.save(associacoes);
   }
 
   /**
-   * Lista as disciplinas associadas a um plano
+   * Lista as disciplinas associadas a um plano mestre
    */
-  async listarDisciplinasDoPlano(planoId: number): Promise<Disciplina[]> {
-    // Verificar se o plano existe
-    const plano = await this.planoRepository.findOne({
-      where: { id: planoId },
+  async listarDisciplinasDoPlanoMestre(planoMestreId: number): Promise<Disciplina[]> {
+    // Verificar se o plano mestre existe
+    const planoMestre = await this.planoMestreRepository.findOne({
+      where: { id: planoMestreId },
     });
 
-    if (!plano) {
-      throw new NotFoundException(`Plano com ID ${planoId} não encontrado`);
+    if (!planoMestre) {
+      throw new NotFoundException(`Plano mestre com ID ${planoMestreId} não encontrado`);
     }
 
     // Buscar as associações com disciplinas
-    const associacoes = await this.planoDisciplinaRepository.find({
-      where: { planoId },
-      relations: ['disciplina', 'disciplina.assuntos'],
+    const associacoes = await this.planoMestreDisciplinaRepository.find({
+      where: { planoMestreId },
+      relations: ['disciplina'],
     });
 
     // Extrair as disciplinas das associações
@@ -464,19 +485,195 @@ export class ServicoPlano {
   }
 
   /**
-   * Remove uma disciplina de um plano
+   * Remove uma disciplina de um plano mestre
    */
-  async removerDisciplinaDoPlano(planoId: number, disciplinaId: number): Promise<void> {
+  async removerDisciplinaDoPlanoMestre(planoMestreId: number, disciplinaId: number): Promise<void> {
     // Verificar se a associação existe
-    const associacao = await this.planoDisciplinaRepository.findOne({
-      where: { planoId, disciplinaId },
+    const associacao = await this.planoMestreDisciplinaRepository.findOne({
+      where: { planoMestreId, disciplinaId },
     });
 
     if (!associacao) {
-      throw new NotFoundException(`Disciplina não está associada ao plano`);
+      throw new NotFoundException(`Disciplina não está associada ao plano mestre`);
     }
 
     // Remover a associação
-    await this.planoDisciplinaRepository.remove(associacao);
+    await this.planoMestreDisciplinaRepository.remove(associacao);
+  }
+
+  // ===== MÉTODO PARA CRIAR INSTÂNCIA DE PLANO MESTRE =====
+
+  /**
+   * Cria uma instância personalizada de um plano mestre para um aluno
+   * Transforma templates (mestre) em instâncias reais de estudo
+   *
+   * @param dados - Dados da instanciação (planoMestreId, idUsuario, etc.)
+   * @returns Resultado da operação com informações do plano criado
+   */
+  async criarInstanciaPlano(dados: CriarInstanciaDto): Promise<any> {
+    // Validação de dados obrigatórios
+    if (!dados.planoMestreId || !dados.idUsuario) {
+      throw new BadRequestException('planoMestreId e idUsuario são obrigatórios');
+    }
+
+    // Buscar o plano mestre com sua estrutura completa
+    const planoMestre = await this.planoMestreRepository.findOne({
+      where: { id: dados.planoMestreId, ativo: true },
+      relations: ['sprintsMestre', 'sprintsMestre.metasMestre']
+    });
+
+    if (!planoMestre) {
+      throw new NotFoundException('Plano mestre não encontrado ou inativo');
+    }
+
+    // Validação adicional: plano mestre deve ter sprints
+    if (!planoMestre.sprintsMestre || planoMestre.sprintsMestre.length === 0) {
+      throw new BadRequestException('Plano mestre deve ter pelo menos uma sprint');
+    }
+
+    // Iniciar transação para garantir atomicidade
+    return await this.dataSource.transaction(async (manager) => {
+      // 1. Criar o plano personalizado baseado no mestre
+      const novoPlano = await manager.save(Plano, {
+        nome: planoMestre.nome,
+        cargo: planoMestre.cargo,
+        descricao: planoMestre.descricao || `Instância de: ${planoMestre.nome}`,
+        duracao: planoMestre.duracao,
+        planoMestreId: planoMestre.id,  // FK para template
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      // 2. Criar as sprints baseadas nos templates
+      let dataInicioAtual = new Date(dados.dataInicio || new Date());
+      const sprintsCriadas = [];
+
+      for (const sprintMestre of planoMestre.sprintsMestre.sort((a, b) => a.posicao - b.posicao)) {
+        console.log(`Criando sprint: ${sprintMestre.nome}`);
+
+        // Calcular duração da sprint (7 dias padrão ou baseado nas datas do template)
+        const duracaoDias = sprintMestre.dataInicio && sprintMestre.dataFim
+          ? Math.ceil((new Date(sprintMestre.dataFim).getTime() - new Date(sprintMestre.dataInicio).getTime()) / (1000 * 60 * 60 * 24))
+          : 7;
+
+        const dataFimAtual = new Date(dataInicioAtual);
+        dataFimAtual.setDate(dataFimAtual.getDate() + duracaoDias);
+
+        const novaSprint = await manager.save(Sprint, {
+          nome: sprintMestre.nome,
+          dataInicio: dataInicioAtual,
+          dataFim: dataFimAtual,
+          posicao: sprintMestre.posicao,
+          status: StatusMeta.PENDENTE,
+          planoId: novoPlano.id,           // FK para plano instância
+          sprintMestreId: sprintMestre.id, // FK para template
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        // 3. Criar as metas baseadas nos templates
+        const metasCriadas = [];
+        for (const metaMestre of sprintMestre.metasMestre.sort((a, b) => a.posicao - b.posicao)) {
+          console.log(`Criando meta: ${metaMestre.assunto}`);
+
+          await manager.save(Meta, {
+            disciplina: metaMestre.disciplina,
+            disciplinaId: metaMestre.disciplinaId,  // FK adicionada recentemente
+            assunto: metaMestre.assunto,
+            assuntoId: metaMestre.assuntoId,        // FK adicionada recentemente
+            tipo: metaMestre.tipo,
+            comandos: metaMestre.comandos,
+            link: metaMestre.link,
+            relevancia: metaMestre.relevancia,
+            posicao: metaMestre.posicao,
+            status: StatusMeta.PENDENTE,
+            tempoEstudado: '00:00',
+            desempenho: 0,
+            totalQuestoes: 0,
+            questoesCorretas: 0,
+            sprintId: novaSprint.id,           // FK para sprint instância
+            metaMestreId: metaMestre.id,       // FK para template
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+
+          metasCriadas.push({
+            disciplina: metaMestre.disciplina,
+            assunto: metaMestre.assunto,
+            tipo: metaMestre.tipo,
+            templateOrigemId: metaMestre.id
+          });
+        }
+
+        sprintsCriadas.push({
+          id: novaSprint.id,
+          nome: novaSprint.nome,
+          posicao: novaSprint.posicao,
+          templateOrigemId: sprintMestre.id,
+          totalMetas: metasCriadas.length,
+          metas: metasCriadas
+        });
+
+        // Próxima sprint começa no dia seguinte
+        dataInicioAtual = new Date(dataFimAtual);
+        dataInicioAtual.setDate(dataInicioAtual.getDate() + 1);
+      }
+
+      // 4. Criar associação aluno-plano
+      // Converter string para enum StatusPlano
+      let statusPlano: StatusPlano;
+      if (dados.status) {
+        switch (dados.status) {
+          case 'não iniciado':
+            statusPlano = StatusPlano.NAO_INICIADO;
+            break;
+          case 'em andamento':
+            statusPlano = StatusPlano.EM_ANDAMENTO;
+            break;
+          case 'concluído':
+            statusPlano = StatusPlano.CONCLUIDO;
+            break;
+          case 'cancelado':
+            statusPlano = StatusPlano.CANCELADO;
+            break;
+          default:
+            statusPlano = StatusPlano.NAO_INICIADO;
+        }
+      } else {
+        statusPlano = StatusPlano.NAO_INICIADO;
+      }
+
+      const alunoPlano = manager.create(AlunoPlanos, {
+        usuarioId: dados.idUsuario,    // Usar o nome do campo da entidade
+        planoId: novoPlano.id,
+        dataInicio: new Date(dados.dataInicio || new Date()),
+        dataPrevisaoTermino: null, // Calcular baseado na duração do plano
+        progresso: 0,
+        status: statusPlano,
+        observacoes: dados.observacoes || `Plano instanciado do template: ${planoMestre.nome}`,
+        ativo: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+
+      await manager.save(AlunoPlanos, alunoPlano);
+
+      return {
+        message: 'Instanciação completa realizada com sucesso',
+        plano: {
+          id: novoPlano.id,
+          nome: novoPlano.nome,
+          templateOrigemId: planoMestre.id,
+          totalSprints: sprintsCriadas.length,
+          totalMetas: sprintsCriadas.reduce((total, sprint) => total + sprint.totalMetas, 0)
+        },
+        sprints: sprintsCriadas,
+        aluno: {
+          id: dados.idUsuario,
+          status: statusPlano,
+          ativo: true
+        }
+      };
+    });
   }
 }

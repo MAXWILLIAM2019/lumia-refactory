@@ -8,7 +8,7 @@ export { AdministradorInfo } from '../usuarios/entities/administradorInfo.entity
 export { PlanoMestre } from '../planos/entities/planoMestre.entity';
 export { Plano } from '../planos/entities/plano.entity';
 export { AlunoPlanos } from '../planos/entities/alunoPlanos.entity';
-export { PlanoDisciplina } from '../planos/entities/planoDisciplina.entity';
+export { PlanoMestreDisciplina } from '../planos/entities/planoMestreDisciplina.entity';
 
 // Entidade AlunoPlano foi removida pois é duplicada (usamos AlunoPlanos)
 

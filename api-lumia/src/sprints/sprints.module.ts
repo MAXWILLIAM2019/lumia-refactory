@@ -9,6 +9,7 @@ import { MetaMestre } from '../metas/entities/metaMestre.entity';
 import { Meta } from '../metas/entities/meta.entity';
 import { PlanoMestre } from '../planos/entities/planoMestre.entity';
 import { Plano } from '../planos/entities/plano.entity';
+import { PlanoMestreDisciplina } from '../planos/entities/planoMestreDisciplina.entity';
 import { Disciplina } from '../disciplinas/entities/disciplina.entity';
 import { Assunto } from '../disciplinas/entities/assunto.entity';
 
@@ -21,6 +22,7 @@ import { Assunto } from '../disciplinas/entities/assunto.entity';
       Meta,
       PlanoMestre,
       Plano,
+      PlanoMestreDisciplina,
       Disciplina,
       Assunto,
     ]),

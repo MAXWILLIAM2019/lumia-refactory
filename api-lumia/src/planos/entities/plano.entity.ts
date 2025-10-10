@@ -1,7 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { PlanoMestre } from './planoMestre.entity';
 import { Sprint } from '../../sprints/entities/sprint.entity';
-import { PlanoDisciplina } from './planoDisciplina.entity';
 
 @Entity('Plano')
 export class Plano {
@@ -36,7 +35,4 @@ export class Plano {
 
   @OneToMany(() => Sprint, (sprint) => sprint.plano)
   sprints: Sprint[];
-  
-  @OneToMany(() => PlanoDisciplina, (planoDisciplina) => planoDisciplina.plano)
-  planoDisciplinas: PlanoDisciplina[];
 }

@@ -7,6 +7,7 @@ import { MetaMestre } from '../../metas/entities/metaMestre.entity';
 import { Meta } from '../../metas/entities/meta.entity';
 import { PlanoMestre } from '../../planos/entities/planoMestre.entity';
 import { Plano } from '../../planos/entities/plano.entity';
+import { PlanoMestreDisciplina } from '../../planos/entities/planoMestreDisciplina.entity';
 import { Disciplina } from '../../disciplinas/entities/disciplina.entity';
 import { Assunto } from '../../disciplinas/entities/assunto.entity';
 import { CriarSprintMestreDto } from '../dto/criarSprintMestre.dto';
@@ -31,6 +32,8 @@ export class ServicoSprint {
     private planoMestreRepository: Repository<PlanoMestre>,
     @InjectRepository(Plano)
     private planoRepository: Repository<Plano>,
+    @InjectRepository(PlanoMestreDisciplina)
+    private planoMestreDisciplinaRepository: Repository<PlanoMestreDisciplina>,
     @InjectRepository(Disciplina)
     private disciplinaRepository: Repository<Disciplina>,
     @InjectRepository(Assunto)
@@ -448,14 +451,12 @@ export class ServicoSprint {
    * Busca as disciplinas disponíveis em um plano mestre
    */
   private async buscarDisciplinasDoPlano(planoMestreId: number): Promise<string[]> {
-    const disciplinas = await this.metaMestreRepository
-      .createQueryBuilder('mm')
-      .select('DISTINCT mm.disciplina', 'disciplina')
-      .innerJoin('mm.sprintMestre', 'sm')
-      .where('sm.plano_mestre_id = :planoId', { planoId: planoMestreId })
-      .getRawMany();
+    const associacoes = await this.planoMestreDisciplinaRepository.find({
+      where: { planoMestreId },
+      relations: ['disciplina'],
+    });
 
-    return disciplinas.map(d => d.disciplina);
+    return associacoes.map(a => a.disciplina.nome);
   }
 
   /**

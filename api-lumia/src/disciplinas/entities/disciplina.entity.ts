@@ -1,6 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Assunto } from './assunto.entity';
-import { PlanoDisciplina } from '../../planos/entities/planoDisciplina.entity';
+import { PlanoMestreDisciplina } from '../../planos/entities/planoMestreDisciplina.entity';
 
 /**
  * Entidade Disciplina
@@ -43,8 +43,6 @@ export class Disciplina {
   @OneToMany(() => Assunto, (assunto) => assunto.disciplina)
   assuntos: Assunto[];
 
-  @OneToMany(() => PlanoDisciplina, (planoDisciplina) => planoDisciplina.disciplina)
-  planoDisciplinas: PlanoDisciplina[];
 
   // Auto-relacionamento para versionamento
   @ManyToOne(() => Disciplina, (disciplina) => disciplina.versoes)

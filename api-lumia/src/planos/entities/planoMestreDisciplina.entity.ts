@@ -1,11 +1,11 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Plano } from './plano.entity';
+import { PlanoMestre } from './planoMestre.entity';
 import { Disciplina } from '../../disciplinas/entities/disciplina.entity';
 
-@Entity('PlanoDisciplina')
-export class PlanoDisciplina {
-  @PrimaryColumn({ name: 'plano_id' })
-  planoId: number;
+@Entity('PlanoMestreDisciplina')
+export class PlanoMestreDisciplina {
+  @PrimaryColumn({ name: 'plano_mestre_id' })
+  planoMestreId: number;
 
   @PrimaryColumn({ name: 'disciplina_id' })
   disciplinaId: number;
@@ -17,13 +17,11 @@ export class PlanoDisciplina {
   updatedAt: Date;
 
   // Relacionamentos
-  @ManyToOne(() => Plano, (plano) => plano.planoDisciplinas)
-  @JoinColumn({ name: 'plano_id' })
-  plano: Plano;
+  @ManyToOne(() => PlanoMestre, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'plano_mestre_id' })
+  planoMestre: PlanoMestre;
 
-  @ManyToOne(() => Disciplina, (disciplina) => disciplina.planoDisciplinas)
+  @ManyToOne(() => Disciplina, { createForeignKeyConstraints: false })
   @JoinColumn({ name: 'disciplina_id' })
   disciplina: Disciplina;
 }
-
-

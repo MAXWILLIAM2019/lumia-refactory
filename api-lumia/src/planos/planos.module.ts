@@ -6,9 +6,13 @@ import { ServicoPlano } from './services/servicoPlano';
 import { PlanoMestre } from './entities/planoMestre.entity';
 import { Plano } from './entities/plano.entity';
 import { AlunoPlanos } from './entities/alunoPlanos.entity';
-import { PlanoDisciplina } from './entities/planoDisciplina.entity';
+import { PlanoMestreDisciplina } from './entities/planoMestreDisciplina.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { Disciplina } from '../disciplinas/entities/disciplina.entity';
+import { Sprint } from '../sprints/entities/sprint.entity';
+import { SprintMestre } from '../sprints/entities/sprintMestre.entity';
+import { Meta } from '../metas/entities/meta.entity';
+import { MetaMestre } from '../metas/entities/metaMestre.entity';
 
 @Module({
   imports: [
@@ -16,9 +20,13 @@ import { Disciplina } from '../disciplinas/entities/disciplina.entity';
       PlanoMestre,
       Plano,
       AlunoPlanos,
-      PlanoDisciplina,
+      PlanoMestreDisciplina,
       Usuario,
       Disciplina,
+      Sprint,
+      SprintMestre,
+      Meta,
+      MetaMestre,
     ]),
   ],
   controllers: [

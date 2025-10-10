@@ -1,5 +1,6 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { SprintMestre } from '../../sprints/entities/sprintMestre.entity';
+import { PlanoMestreDisciplina } from './planoMestreDisciplina.entity';
 
 @Entity('PlanosMestre')
 export class PlanoMestre {
