@@ -9,6 +9,7 @@ import { AlunoPlanos } from '../../planos/entities/alunoPlanos.entity';
 import { Meta } from '../../metas/entities/meta.entity';
 import { AtualizarSprintAtualDto } from '../dto/atualizarSprintAtual.dto';
 import { MetricasSprintDto } from '../dto/metricasSprint.dto';
+import { DashboardSprintDto } from '../dto/dashboardSprint.dto';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 
 @Injectable()
@@ -296,6 +297,54 @@ export class ServicoSprintAtual {
       questoesTotaisResolvidas,
       mediaHorasDiaria,
       totalDisciplinas,
+    };
+  }
+
+  /**
+   * Busca dados completos do dashboard da sprint atual
+   * Retorna sprint, metas e métricas calculadas em uma única resposta
+   */
+  async buscarDashboardSprintAtual(usuarioId: number): Promise<DashboardSprintDto> {
+    // Buscar sprint atual do usuário (registro da tabela SprintAtual)
+    const sprintAtualRegistro = await this.sprintAtualRepository.findOne({
+      where: { usuarioId },
+      relations: ['sprint', 'sprint.metas'],
+    });
+
+    if (!sprintAtualRegistro || !sprintAtualRegistro.sprint) {
+      throw new NotFoundException('Usuário não possui sprint atual');
+    }
+
+    const sprint = sprintAtualRegistro.sprint;
+
+    // Verificar se a sprint tem metas
+    if (!sprint.metas || sprint.metas.length === 0) {
+      throw new NotFoundException('Sprint atual não possui metas');
+    }
+
+    // Calcular métricas da sprint
+    const metricas = await this.calcularMetricasSprintAtual(usuarioId);
+
+    // Formatar dados da sprint (versão simplificada)
+    const sprintFormatada = {
+      id: sprint.id,
+      nome: sprint.nome,
+      posicao: sprint.posicao,
+      dataInicio: sprint.dataInicio && sprint.dataInicio instanceof Date
+        ? sprint.dataInicio.toISOString().split('T')[0]
+        : null,
+      dataFim: sprint.dataFim && sprint.dataFim instanceof Date
+        ? sprint.dataFim.toISOString().split('T')[0]
+        : null,
+      planoId: sprint.planoId,
+      status: sprint.status,
+    };
+
+    // Retornar dados completos do dashboard
+    return {
+      sprint: sprintFormatada,
+      metas: sprint.metas,
+      metricas,
     };
   }
 
