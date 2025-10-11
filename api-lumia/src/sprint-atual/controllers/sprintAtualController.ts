@@ -13,6 +13,7 @@ import { Request as ExpressRequest } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ServicoSprintAtual } from '../services/servicoSprintAtual';
 import { AtualizarSprintAtualDto } from '../dto/atualizarSprintAtual.dto';
+import { MetricasSprintDto } from '../dto/metricasSprint.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
@@ -36,6 +37,30 @@ export class SprintAtualController {
     const usuarioId = req.user.id;
 
     return await this.servicoSprintAtual.buscarSprintAtual(usuarioId);
+  }
+
+  @Get('metricas')
+  @ApiOperation({
+    summary: 'Obter métricas da sprint atual',
+    description: 'Retorna estatísticas calculadas da sprint atual do aluno, incluindo desempenho médio, horas estudadas, progresso e outras métricas agregadas'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Métricas calculadas com sucesso',
+    type: MetricasSprintDto
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuário não possui sprint atual com metas'
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token inválido ou não fornecido'
+  })
+  async obterMetricasSprintAtual(@Request() req: RequestWithUser): Promise<MetricasSprintDto> {
+    const usuarioId = req.user.id;
+
+    return await this.servicoSprintAtual.calcularMetricasSprintAtual(usuarioId);
   }
 
   @Put()

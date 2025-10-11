@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException as HttpNotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { SprintAtual } from '../entities/sprintAtual.entity';
@@ -7,6 +8,7 @@ import { Plano } from '../../planos/entities/plano.entity';
 import { AlunoPlanos } from '../../planos/entities/alunoPlanos.entity';
 import { Meta } from '../../metas/entities/meta.entity';
 import { AtualizarSprintAtualDto } from '../dto/atualizarSprintAtual.dto';
+import { MetricasSprintDto } from '../dto/metricasSprint.dto';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 
 @Injectable()
@@ -215,6 +217,86 @@ export class ServicoSprintAtual {
     });
 
     return this.formatarSprintResposta(sprintCompleta);
+  }
+
+  /**
+   * Calcula métricas estatísticas da sprint atual do usuário
+   * Fornece dados agregados para dashboard e relatórios de progresso
+   */
+  async calcularMetricasSprintAtual(usuarioId: number): Promise<MetricasSprintDto> {
+    // Buscar sprint atual do usuário
+    const sprintAtual = await this.buscarSprintAtual(usuarioId);
+
+    if (!sprintAtual || !sprintAtual.metas) {
+      throw new NotFoundException('Usuário não possui sprint atual com metas');
+    }
+
+    const metas = sprintAtual.metas;
+    const totalMetas = metas.length;
+
+    // Contar metas concluídas
+    const metasConcluidas = metas.filter(meta => meta.status === StatusMeta.CONCLUIDA).length;
+
+    // Calcular percentual de conclusão
+    const percentualConclusao = totalMetas > 0 ? (metasConcluidas / totalMetas) * 100 : 0;
+
+    // Calcular desempenho médio apenas das metas concluídas com desempenho válido
+    const metasComDesempenho = metas.filter(meta =>
+      meta.status === StatusMeta.CONCLUIDA &&
+      meta.desempenho !== undefined &&
+      meta.desempenho !== null &&
+      !isNaN(parseFloat(meta.desempenho.toString()))
+    );
+
+    let desempenhoMedio = 0;
+    if (metasComDesempenho.length > 0) {
+      const somaDesempenhos = metasComDesempenho.reduce((acc, meta) =>
+        acc + parseFloat(meta.desempenho.toString()), 0
+      );
+      desempenhoMedio = somaDesempenhos / metasComDesempenho.length;
+    }
+
+    // Calcular total de horas estudadas
+    const totalMinutos = metas.reduce((acc, meta) => {
+      const tempoEstudado = meta.tempoEstudado || '00:00';
+      const [horas, minutos] = tempoEstudado.split(':').map(Number);
+      return acc + (horas * 60) + minutos;
+    }, 0);
+
+    const horasTotais = Math.floor(totalMinutos / 60);
+    const minutosTotais = totalMinutos % 60;
+    const totalHorasEstudadas = `${horasTotais.toString().padStart(2, '0')}:${minutosTotais.toString().padStart(2, '0')}`;
+
+    // Calcular média diária (desde o início da sprint)
+    const dataInicio = new Date(sprintAtual.dataInicio);
+    const hoje = new Date();
+    const diasDecorridos = Math.max(1, Math.ceil((hoje.getTime() - dataInicio.getTime()) / (1000 * 60 * 60 * 24)));
+
+    const minutosDiarios = totalMinutos / diasDecorridos;
+    const horasDiarias = Math.floor(minutosDiarios / 60);
+    const minutosDiariosRestantes = Math.floor(minutosDiarios % 60);
+    const mediaHorasDiaria = `${horasDiarias.toString().padStart(2, '0')}:${minutosDiariosRestantes.toString().padStart(2, '0')}`;
+
+    // Contar disciplinas únicas
+    const disciplinasUnicas = new Set(metas.map(meta => meta.disciplina));
+    const totalDisciplinas = disciplinasUnicas.size;
+
+    // Calcular total de questões resolvidas
+    const questoesTotaisResolvidas = metas
+      .filter(meta => meta.status === StatusMeta.CONCLUIDA)
+      .reduce((acc, meta) => acc + (meta.totalQuestoes || 0), 0);
+
+    return {
+      sprintId: sprintAtual.id,
+      totalMetas,
+      metasConcluidas,
+      percentualConclusao: Math.round(percentualConclusao * 100) / 100, // 2 casas decimais
+      desempenhoMedio: Math.round(desempenhoMedio * 100) / 100, // 2 casas decimais
+      totalHorasEstudadas,
+      questoesTotaisResolvidas,
+      mediaHorasDiaria,
+      totalDisciplinas,
+    };
   }
 
   // ===== MÉTODOS AUXILIARES =====
