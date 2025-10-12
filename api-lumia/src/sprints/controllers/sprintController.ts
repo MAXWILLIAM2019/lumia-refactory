@@ -122,7 +122,10 @@ export class SprintController {
   // ===== ENDPOINTS PARA META (INSTÂNCIA) =====
 
   @Put('meta/:id')
-  @ApiOperation({ summary: 'Atualizar Meta instanciada' })
+  @ApiOperation({
+    summary: 'Atualizar Meta instanciada',
+    description: 'Atualiza uma meta. Se tempoEstudado, totalQuestoes e questoesCorretas forem fornecidos juntos, calcula automaticamente o desempenho e marca a meta como concluída.'
+  })
   @ApiParam({ name: 'id', description: 'ID da Meta', type: Number })
   @ApiResponse({ status: 200, description: 'Meta atualizada com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos' })

@@ -7,6 +7,12 @@ import { MetricasSprintDto } from './metricasSprint.dto';
  */
 export class DashboardSprintDto {
   @ApiProperty({
+    description: 'Nome do plano de estudo ao qual a sprint pertence',
+    example: 'Plano de Estudos - Teste Final'
+  })
+  nomePlano: string;
+
+  @ApiProperty({
     description: 'Dados básicos da sprint atual',
     example: {
       id: 15,

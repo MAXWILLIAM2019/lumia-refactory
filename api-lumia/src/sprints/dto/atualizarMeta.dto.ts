@@ -57,7 +57,7 @@ export class AtualizarMetaDto {
   relevancia?: number;
 
   @ApiPropertyOptional({
-    description: 'Tempo estudado na meta',
+    description: 'Tempo estudado na meta. Quando fornecido junto com totalQuestoes e questoesCorretas, calcula automaticamente o desempenho e marca a meta como concluída',
     example: '02:30',
   })
   @IsString()
@@ -84,7 +84,7 @@ export class AtualizarMetaDto {
   status?: StatusMeta;
 
   @ApiPropertyOptional({
-    description: 'Total de questões da meta',
+    description: 'Total de questões da meta. Quando fornecido junto com tempoEstudado e questoesCorretas, calcula automaticamente o desempenho e marca a meta como concluída',
     example: 20,
     minimum: 0,
   })
@@ -93,7 +93,7 @@ export class AtualizarMetaDto {
   totalQuestoes?: number;
 
   @ApiPropertyOptional({
-    description: 'Questões corretas da meta',
+    description: 'Questões corretas da meta. Quando fornecido junto com tempoEstudado e totalQuestoes, calcula automaticamente o desempenho e marca a meta como concluída',
     example: 17,
     minimum: 0,
   })

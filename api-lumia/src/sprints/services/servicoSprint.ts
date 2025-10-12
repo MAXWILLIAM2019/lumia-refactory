@@ -336,14 +336,35 @@ export class ServicoSprint {
       throw new NotFoundException('Meta não encontrada');
     }
 
+    // Lógica inteligente: se forneceu tempoEstudado, totalQuestoes E questoesCorretas,
+    // calcular automaticamente o desempenho e marcar como concluída
+    const camposParaConclusaoAutomatica = [
+      dadosAtualizacao.tempoEstudado,
+      dadosAtualizacao.totalQuestoes,
+      dadosAtualizacao.questoesCorretas
+    ];
+
+    const todosCamposFornecidos = camposParaConclusaoAutomatica.every(
+      campo => campo !== undefined && campo !== null
+    );
+
+    if (todosCamposFornecidos && dadosAtualizacao.totalQuestoes > 0) {
+      // Calcular desempenho automaticamente
+      const desempenhoCalculado = (dadosAtualizacao.questoesCorretas / dadosAtualizacao.totalQuestoes) * 100;
+
+      // Adicionar cálculos automáticos aos dados de atualização
+      dadosAtualizacao.desempenho = Math.round(desempenhoCalculado * 100) / 100; // 2 casas decimais
+      dadosAtualizacao.status = StatusMeta.CONCLUIDA;
+    }
+
     Object.assign(meta, dadosAtualizacao);
     meta.updatedAt = new Date();
 
     const metaAtualizada = await this.metaRepository.save(meta);
 
-    // Se a meta foi concluída, verificar se todas as metas da sprint foram concluídas
+    // Se a meta foi concluída (manualmente ou automaticamente), verificar se todas as metas da sprint foram concluídas
     // ou se é a primeira meta concluída para atualizar o status da sprint
-    if (dadosAtualizacao.status === StatusMeta.CONCLUIDA) {
+    if (dadosAtualizacao.status === StatusMeta.CONCLUIDA || metaAtualizada.status === StatusMeta.CONCLUIDA) {
       await this.atualizarStatusSprint(meta.sprint.id);
     }
 
