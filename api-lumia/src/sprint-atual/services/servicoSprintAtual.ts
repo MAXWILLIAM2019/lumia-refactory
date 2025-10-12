@@ -308,7 +308,7 @@ export class ServicoSprintAtual {
     // Buscar sprint atual do usuário (registro da tabela SprintAtual)
     const sprintAtualRegistro = await this.sprintAtualRepository.findOne({
       where: { usuarioId },
-      relations: ['sprint', 'sprint.metas'],
+      relations: ['sprint', 'sprint.metas', 'sprint.plano'],
     });
 
     if (!sprintAtualRegistro || !sprintAtualRegistro.sprint) {
@@ -320,6 +320,11 @@ export class ServicoSprintAtual {
     // Verificar se a sprint tem metas
     if (!sprint.metas || sprint.metas.length === 0) {
       throw new NotFoundException('Sprint atual não possui metas');
+    }
+
+    // Verificar se o plano existe
+    if (!sprint.plano) {
+      throw new NotFoundException('Sprint atual não possui plano associado');
     }
 
     // Calcular métricas da sprint
@@ -342,6 +347,7 @@ export class ServicoSprintAtual {
 
     // Retornar dados completos do dashboard
     return {
+      nomePlano: sprint.plano.nome,
       sprint: sprintFormatada,
       metas: sprint.metas,
       metricas,
