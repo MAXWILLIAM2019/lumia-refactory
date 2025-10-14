@@ -10,6 +10,11 @@ import { HistoricoSprintsResumoDto } from '../dto/historicoSprintsResumo.dto';
 import { SprintAtualResumoDto } from '../dto/sprintAtualResumo.dto';
 import { SprintPendenteResumoDto } from '../dto/sprintPendenteResumo.dto';
 import { SprintFinalizadaResumoDto } from '../dto/sprintFinalizadaResumo.dto';
+import { DetalhesSprintResponseDto } from '../dto/detalhesSprintResponse.dto';
+import { SprintDetalhesResumoDto } from '../dto/sprintDetalhesResumo.dto';
+import { SprintDetalhesMetasDto } from '../dto/sprintDetalhesMetas.dto';
+import { SprintDetalhesComplementoDto } from '../dto/sprintDetalhesComplemento.dto';
+import { MetaDisciplinaDto } from '../dto/metaDisciplina.dto';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 
 @Injectable()
@@ -193,5 +198,269 @@ export class ServicoSprintHistorico {
 
     // Fallback: data atual se não encontrar nada
     return new Date().toISOString().split('T')[0];
+  }
+
+  /**
+   * Busca os detalhes completos de uma sprint específica do aluno
+   * @param sprintId ID da sprint
+   * @param usuarioId ID do usuário (para validação de permissão)
+   * @returns Dados organizados em 3 cards estruturais
+   */
+  async buscarDetalhesSprint(sprintId: number, usuarioId: number): Promise<DetalhesSprintResponseDto> {
+    // Buscar sprint com validação de permissão
+    const sprint = await this.validarAcessoSprint(sprintId, usuarioId);
+
+    // Buscar plano da sprint
+    const plano = await this.planoRepository.findOne({
+      where: { id: sprint.planoId }
+    });
+
+    if (!plano) {
+      throw new NotFoundException('Plano da sprint não encontrado');
+    }
+
+    // Buscar todas as metas da sprint
+    const metas = await this.metaRepository.find({
+      where: { sprintId },
+      order: { posicao: 'ASC' }
+    });
+
+    // Calcular métricas
+    const metricas = await this.calcularMetricasDetalhesSprint(sprintId, metas);
+
+    // Preparar dados dos 3 cards
+    const cardResumo: SprintDetalhesResumoDto = {
+      status: this.mapearStatusSprint(sprint.status),
+      nomeSprint: sprint.nome,
+      cargoPlano: plano.nome,
+      desempenhoSprint: metricas.desempenhoSprint,
+      metaPendentes: metricas.metaPendentes,
+      totalMetas: metas.length,
+      totalDisciplinas: metricas.totalDisciplinas,
+      ultimaAtualizacao: metricas.ultimaAtualizacao
+    };
+
+    const cardMetas: SprintDetalhesMetasDto = {
+      listaMetas: metas.map(meta => ({
+        idMeta: meta.id,
+        nomeDisciplina: meta.disciplina || 'Disciplina não informada'
+      }))
+    };
+
+    const cardComplemento: SprintDetalhesComplementoDto = {
+      progressoSprint: metricas.progressoSprint,
+      dataInicio: this.formatarData(sprint.dataInicio),
+      dataFim: this.formatarData(sprint.dataFim),
+      tempoMedioMeta: metricas.tempoMedioMeta
+    };
+
+    return {
+      cardResumo,
+      cardMetas,
+      cardComplemento
+    };
+  }
+
+  /**
+   * Valida se o usuário tem acesso à sprint (pertence ao plano ativo do usuário)
+   * @param sprintId ID da sprint
+   * @param usuarioId ID do usuário
+   * @returns Sprint validada
+   */
+  private async validarAcessoSprint(sprintId: number, usuarioId: number): Promise<Sprint> {
+    // Buscar sprint
+    const sprint = await this.sprintRepository.findOne({
+      where: { id: sprintId }
+    });
+
+    if (!sprint) {
+      throw new NotFoundException('Sprint não encontrada');
+    }
+
+    // Verificar se sprint pertence ao plano ativo do usuário
+    const alunoPlano = await this.alunoPlanosRepository.findOne({
+      where: {
+        usuarioId,
+        planoId: sprint.planoId,
+        ativo: true
+      }
+    });
+
+    if (!alunoPlano) {
+      throw new NotFoundException('Usuário não tem acesso a esta sprint');
+    }
+
+    return sprint;
+  }
+
+  /**
+   * Calcula todas as métricas necessárias para os detalhes da sprint
+   * @param sprintId ID da sprint
+   * @param metas Lista de metas da sprint
+   * @returns Objeto com todas as métricas calculadas
+   */
+  private async calcularMetricasDetalhesSprint(sprintId: number, metas: Meta[]) {
+    const totalMetas = metas.length;
+    const metasConcluidas = metas.filter(meta => meta.status === StatusMeta.CONCLUIDA);
+    const metaPendentes = totalMetas - metasConcluidas.length;
+
+    // Calcular progresso
+    const progressoSprint = totalMetas > 0 ? Math.round((metasConcluidas.length / totalMetas) * 100 * 100) / 100 : 0;
+
+    // Calcular desempenho (rendimento de acertos das metas concluídas)
+    const desempenhoSprint = this.calcularDesempenhoSprint(metasConcluidas);
+
+    // Calcular total de disciplinas distintas
+    const disciplinasUnicas = new Set(metas.map(meta => meta.disciplina).filter(Boolean));
+    const totalDisciplinas = disciplinasUnicas.size;
+
+    // Calcular última atualização
+    const ultimaAtualizacao = await this.calcularUltimaAtualizacaoSprint(sprintId);
+
+    // Calcular tempo médio por meta
+    const tempoMedioMeta = this.calcularTempoMedioMeta(metas);
+
+    return {
+      progressoSprint,
+      desempenhoSprint,
+      metaPendentes,
+      totalDisciplinas,
+      ultimaAtualizacao,
+      tempoMedioMeta
+    };
+  }
+
+  /**
+   * Calcula o desempenho global da sprint (rendimento de acertos)
+   * @param metasConcluidas Lista de metas concluídas
+   * @returns Percentual de rendimento ou null se não houver dados
+   */
+  private calcularDesempenhoSprint(metasConcluidas: Meta[]): number | null {
+    if (metasConcluidas.length === 0) {
+      return null;
+    }
+
+    let totalQuestoesCorretas = 0;
+    let totalQuestoes = 0;
+
+    for (const meta of metasConcluidas) {
+      if (meta.totalQuestoes && meta.totalQuestoes > 0) {
+        totalQuestoes += meta.totalQuestoes;
+        totalQuestoesCorretas += meta.questoesCorretas || 0;
+      }
+    }
+
+    if (totalQuestoes === 0) {
+      return null;
+    }
+
+    return Math.round((totalQuestoesCorretas / totalQuestoes) * 100 * 100) / 100;
+  }
+
+  /**
+   * Calcula a última atualização da sprint (data da última meta concluída)
+   * @param sprintId ID da sprint
+   * @returns Data formatada ou null
+   */
+  private async calcularUltimaAtualizacaoSprint(sprintId: number): Promise<string | null> {
+    const ultimaMetaConcluida = await this.metaRepository.findOne({
+      where: {
+        sprintId,
+        status: StatusMeta.CONCLUIDA
+      },
+      order: { updatedAt: 'DESC' }
+    });
+
+    return ultimaMetaConcluida?.updatedAt?.toISOString() || null;
+  }
+
+  /**
+   * Calcula o tempo médio estudado por meta
+   * @param metas Lista de todas as metas da sprint
+   * @returns Tempo médio formatado (HH:MM) ou null
+   */
+  private calcularTempoMedioMeta(metas: Meta[]): string | null {
+    if (metas.length === 0) {
+      return null;
+    }
+
+    // Somar todos os tempos estudados (em minutos)
+    let totalMinutos = 0;
+    let metasComTempo = 0;
+
+    for (const meta of metas) {
+      if (meta.tempoEstudado) {
+        // Converter HH:MM para minutos
+        const [horas, minutos] = meta.tempoEstudado.split(':').map(Number);
+        totalMinutos += (horas * 60) + minutos;
+        metasComTempo++;
+      }
+    }
+
+    if (metasComTempo === 0) {
+      return null;
+    }
+
+    // Calcular média
+    const mediaMinutos = totalMinutos / metasComTempo;
+    const horas = Math.floor(mediaMinutos / 60);
+    const minutos = Math.round(mediaMinutos % 60);
+
+    return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Mapeia o status da entidade Sprint para o formato do frontend
+   * @param statusSprint Status da entidade Sprint
+   * @returns Status formatado para o frontend
+   */
+  private mapearStatusSprint(statusSprint: string): string {
+    switch (statusSprint) {
+      case StatusMeta.CONCLUIDA:
+        return 'concluida';
+      case StatusMeta.EM_ANDAMENTO:
+        return 'em andamento';
+      case StatusMeta.PENDENTE:
+      default:
+        return 'pendente';
+    }
+  }
+
+  /**
+   * Formata uma data (Date ou string) para o formato YYYY-MM-DD
+   * Trata casos onde a data pode ser Date, string ou null
+   * @param data Data a ser formatada
+   * @returns Data formatada ou null
+   */
+  private formatarData(data: any): string | null {
+    if (!data) {
+      return null;
+    }
+
+    try {
+      // Se já é um objeto Date
+      if (data instanceof Date) {
+        return data.toISOString().split('T')[0];
+      }
+
+      // Se é uma string, tenta converter
+      if (typeof data === 'string') {
+        // Se já está no formato YYYY-MM-DD, retorna como está
+        if (/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+          return data;
+        }
+
+        // Se é uma string ISO, converte para Date e formata
+        const dateObj = new Date(data);
+        if (!isNaN(dateObj.getTime())) {
+          return dateObj.toISOString().split('T')[0];
+        }
+      }
+
+      return null;
+    } catch (error) {
+      // Em caso de erro, retorna null
+      return null;
+    }
   }
 }

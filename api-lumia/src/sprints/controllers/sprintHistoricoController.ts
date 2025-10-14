@@ -4,12 +4,15 @@ import {
   Request,
   HttpStatus,
   HttpCode,
+  Param,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UseGuards } from '@nestjs/common';
 import { ServicoSprintHistorico } from '../services/servicoSprintHistorico';
 import { HistoricoSprintsResumoDto } from '../dto/historicoSprintsResumo.dto';
+import { DetalhesSprintResponseDto } from '../dto/detalhesSprintResponse.dto';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 interface RequestWithUser extends Request {
@@ -73,5 +76,78 @@ export class SprintHistoricoController {
   async buscarHistoricoSprints(@Request() req: RequestWithUser): Promise<HistoricoSprintsResumoDto> {
     const usuarioId = req.user.id;
     return await this.servicoSprintHistorico.buscarResumoHistoricoSprint(usuarioId);
+  }
+
+  @Get('historico/detalhes/:sprintId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Buscar detalhes completos de uma sprint específica',
+    description: 'Retorna informações detalhadas de uma sprint organizada em 3 cards: resumo, metas e informações complementares. Usado quando o aluno clica em "visualizar" uma sprint no histórico.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detalhes da sprint retornados com sucesso',
+    type: DetalhesSprintResponseDto,
+    schema: {
+      example: {
+        cardResumo: {
+          status: 'em andamento',
+          nomeSprint: 'Sprint 1 - Fundamentos do Sistema',
+          cargoPlano: 'Analista',
+          desempenhoSprint: 87.5,
+          metaPendentes: 2,
+          totalMetas: 6,
+          totalDisciplinas: 3,
+          ultimaAtualizacao: '2025-10-15T14:30:00.000Z'
+        },
+        cardMetas: {
+          listaMetas: [
+            {
+              idMeta: 123,
+              nomeDisciplina: 'Matemática Básica'
+            },
+            {
+              idMeta: 124,
+              nomeDisciplina: 'Física Fundamental'
+            }
+          ]
+        },
+        cardComplemento: {
+          progressoSprint: 33.33,
+          dataInicio: '2025-10-09',
+          dataFim: '2025-10-16',
+          tempoMedioMeta: '00:45'
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ID da sprint inválido'
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token de autenticação inválido ou expirado'
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Sprint não encontrada ou usuário não tem acesso'
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro interno do servidor'
+  })
+  async buscarDetalhesSprint(
+    @Param('sprintId') sprintId: string,
+    @Request() req: RequestWithUser
+  ): Promise<DetalhesSprintResponseDto> {
+    const usuarioId = req.user.id;
+    const sprintIdNumber = parseInt(sprintId, 10);
+
+    if (isNaN(sprintIdNumber)) {
+      throw new BadRequestException('ID da sprint deve ser um número válido');
+    }
+
+    return await this.servicoSprintHistorico.buscarDetalhesSprint(sprintIdNumber, usuarioId);
   }
 }
