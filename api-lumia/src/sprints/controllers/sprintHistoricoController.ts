@@ -48,11 +48,12 @@ export class SprintHistoricoController {
           progressoSprint: 33.33
         },
         sprintsPendentes: [
-          { nomeSprint: 'Sprint 2 - Conceitos Avançados' },
-          { nomeSprint: 'Sprint 3 - Especialização' }
+          { id: 16, nomeSprint: 'Sprint 2 - Conceitos Avançados' },
+          { id: 17, nomeSprint: 'Sprint 3 - Especialização' }
         ],
         sprintsFinalizadas: [
           {
+            id: 15,
             nomeSprint: 'Sprint 1 - Fundamentos Básicos',
             cargoPlano: 'Analista',
             dataConclusaoSprint: '2025-10-15',

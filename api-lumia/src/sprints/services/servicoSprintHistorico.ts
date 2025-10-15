@@ -121,6 +121,7 @@ export class ServicoSprintHistorico {
     });
 
     return sprints.map(sprint => ({
+      id: sprint.id,
       nomeSprint: sprint.nome
     }));
   }
@@ -157,6 +158,7 @@ export class ServicoSprintHistorico {
         const dataConclusao = await this.calcularDataConclusaoSprint(sprint.id);
 
         resultado.push({
+          id: sprint.id,
           nomeSprint: sprint.nome,
           cargoPlano: sprint.plano?.nome || 'N/A',
           dataConclusaoSprint: dataConclusao,
