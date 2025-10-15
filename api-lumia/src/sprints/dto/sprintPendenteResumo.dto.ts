@@ -9,7 +9,7 @@ export class SprintPendenteResumoDto {
     description: 'ID da sprint pendente',
     example: 16
   })
-  id: number;
+  idSprint: number;
 
   @ApiProperty({
     description: 'Nome da sprint pendente',
