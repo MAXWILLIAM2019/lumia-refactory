@@ -13,6 +13,7 @@ import { UseGuards } from '@nestjs/common';
 import { ServicoSprintHistorico } from '../services/servicoSprintHistorico';
 import { HistoricoSprintsResumoDto } from '../dto/historicoSprintsResumo.dto';
 import { DetalhesSprintResponseDto } from '../dto/detalhesSprintResponse.dto';
+import { DetalhesMetaResponseDto } from '../dto/detalhesMetaResponse.dto';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 interface RequestWithUser extends Request {
@@ -149,5 +150,63 @@ export class SprintHistoricoController {
     }
 
     return await this.servicoSprintHistorico.buscarDetalhesSprint(sprintIdNumber, usuarioId);
+  }
+
+  @Get('historico/detalhes/:sprintId/meta/:metaId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Buscar detalhes de uma meta específica dentro de uma sprint',
+    description: 'Retorna informações detalhadas sobre uma meta específica dentro de uma sprint, incluindo desempenho e comandos do mentor. Usado quando o aluno clica em "ver detalhes" de uma meta.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detalhes da meta retornados com sucesso',
+    type: DetalhesMetaResponseDto,
+    schema: {
+      example: {
+        disciplina: 'Matemática Básica',
+        status: 'Concluída',
+        assunto: 'Equações do 2º grau',
+        tipoEstudo: 'teoria',
+        comandosMentor: 'Estude os conceitos fundamentais de equações do segundo grau. Foque na fórmula de Bhaskara e pratique a resolução de pelo menos 10 exercícios.',
+        relevancia: 2,
+        desempenho: 90.0
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ID da sprint ou meta inválido'
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Token de autenticação inválido ou expirado'
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Sprint não encontrada, meta não encontrada, ou usuário não tem acesso'
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro interno do servidor'
+  })
+  async buscarDetalhesMeta(
+    @Param('sprintId') sprintId: string,
+    @Param('metaId') metaId: string,
+    @Request() req: RequestWithUser
+  ): Promise<DetalhesMetaResponseDto> {
+    const usuarioId = req.user.id;
+    const sprintIdNumber = parseInt(sprintId, 10);
+    const metaIdNumber = parseInt(metaId, 10);
+
+    if (isNaN(sprintIdNumber)) {
+      throw new BadRequestException('ID da sprint deve ser um número válido');
+    }
+
+    if (isNaN(metaIdNumber)) {
+      throw new BadRequestException('ID da meta deve ser um número válido');
+    }
+
+    return await this.servicoSprintHistorico.buscarDetalhesMeta(sprintIdNumber, metaIdNumber, usuarioId);
   }
 }

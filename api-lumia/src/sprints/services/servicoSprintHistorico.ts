@@ -15,6 +15,7 @@ import { SprintDetalhesResumoDto } from '../dto/sprintDetalhesResumo.dto';
 import { SprintDetalhesMetasDto } from '../dto/sprintDetalhesMetas.dto';
 import { SprintDetalhesComplementoDto } from '../dto/sprintDetalhesComplemento.dto';
 import { MetaDisciplinaDto } from '../dto/metaDisciplina.dto';
+import { DetalhesMetaResponseDto } from '../dto/detalhesMetaResponse.dto';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 
 @Injectable()
@@ -423,6 +424,84 @@ export class ServicoSprintHistorico {
       case StatusMeta.PENDENTE:
       default:
         return 'pendente';
+    }
+  }
+
+  /**
+   * Busca os detalhes de uma meta específica dentro de uma sprint
+   * @param sprintId ID da sprint
+   * @param metaId ID da meta
+   * @param usuarioId ID do usuário (para validação de permissão)
+   * @returns Detalhes completos da meta
+   */
+  async buscarDetalhesMeta(sprintId: number, metaId: number, usuarioId: number): Promise<DetalhesMetaResponseDto> {
+    // Validar acesso à sprint (que já valida se usuário tem plano ativo)
+    const sprint = await this.validarAcessoSprint(sprintId, usuarioId);
+
+    // Buscar meta com validações
+    const meta = await this.metaRepository.findOne({
+      where: { id: metaId },
+      relations: ['metaMestre']
+    });
+
+    if (!meta) {
+      throw new NotFoundException('Meta não encontrada');
+    }
+
+    // Validar que a meta pertence à sprint informada
+    if (meta.sprintId !== sprintId) {
+      throw new NotFoundException('Meta não pertence à sprint informada');
+    }
+
+    // Calcular desempenho
+    const desempenho = this.calcularDesempenhoMeta(meta);
+
+    // Mapear status para formato frontend
+    const statusMapeado = this.mapearStatusMeta(meta.status);
+
+    return {
+      disciplina: meta.disciplina || 'Disciplina não informada',
+      status: statusMapeado,
+      assunto: meta.assunto || 'Assunto não informado',
+      tipoEstudo: meta.tipo,
+      comandosMentor: meta.comandos || null,
+      relevancia: meta.relevancia || 1,
+      desempenho
+    };
+  }
+
+  /**
+   * Calcula o desempenho de uma meta específica
+   * @param meta Instância da meta
+   * @returns Percentual de desempenho (0-100)
+   */
+  private calcularDesempenhoMeta(meta: Meta): number {
+    // Se não há questões, retorna 0
+    if (!meta.totalQuestoes || meta.totalQuestoes === 0) {
+      return 0;
+    }
+
+    // Calcular percentual de acertos
+    const percentual = (meta.questoesCorretas / meta.totalQuestoes) * 100;
+
+    // Arredondar para 1 casa decimal
+    return Math.round(percentual * 10) / 10;
+  }
+
+  /**
+   * Mapeia o status da entidade Meta para o formato do frontend
+   * @param statusMeta Status da entidade Meta
+   * @returns Status formatado para o frontend
+   */
+  private mapearStatusMeta(statusMeta: StatusMeta): string {
+    switch (statusMeta) {
+      case StatusMeta.CONCLUIDA:
+        return 'Concluída';
+      case StatusMeta.EM_ANDAMENTO:
+        return 'Em Andamento';
+      case StatusMeta.PENDENTE:
+      default:
+        return 'Pendente';
     }
   }
 
