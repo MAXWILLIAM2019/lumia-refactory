@@ -97,6 +97,7 @@ export class ServicoSprintHistorico {
     const progressoSprint = totalMetas > 0 ? (metasConcluidas / totalMetas) * 100 : 0;
 
     return {
+      idSprint: sprint.id,
       nomeSprint: sprint.nome,
       cargoPlano: sprint.plano?.nome || 'N/A',
       metaPendentes: totalMetas - metasConcluidas,

@@ -40,6 +40,7 @@ export class SprintHistoricoController {
     schema: {
       example: {
         sprintAtual: {
+          idSprint: 15,
           nomeSprint: 'Sprint 1 - Fundamentos do Sistema',
           cargoPlano: 'Analista',
           metaPendentes: 2,

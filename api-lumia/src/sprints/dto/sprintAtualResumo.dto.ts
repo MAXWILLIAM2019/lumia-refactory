@@ -6,6 +6,12 @@ import { ApiProperty } from '@nestjs/swagger';
  */
 export class SprintAtualResumoDto {
   @ApiProperty({
+    description: 'ID da sprint atual',
+    example: 15
+  })
+  idSprint: number;
+
+  @ApiProperty({
     description: 'Nome da sprint atual',
     example: 'Sprint 1 - Fundamentos do Sistema'
   })
