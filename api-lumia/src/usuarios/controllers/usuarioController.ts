@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ServicoUsuario } from '../services/servicoUsuario';
-import { CriarUsuarioDto } from '../dto/criarUsuario.dto';
+import { CriarUsuarioDto, CadastroCompletoDto } from '../dto/criarUsuario.dto';
 import { AtualizarUsuarioDto } from '../dto/atualizarUsuario.dto';
 import { AlterarSenhaDto } from '../dto/alterarSenha.dto';
 import { NotificacoesAlunoDto } from '../dto/notificacoesAluno.dto';
@@ -37,14 +37,73 @@ export class UsuarioController {
   @ApiResponse({ status: 409, description: 'Email ou CPF já existente' })
   async criarUsuario(@Body() dadosUsuario: CriarUsuarioDto) {
     const usuario = await this.servicoUsuario.criarUsuario(dadosUsuario);
-    
+
     // Remove a senha da resposta
     const { senha, ...usuarioSemSenha } = usuario;
-    
+
     return {
       message: 'Usuário criado com sucesso',
       usuario: usuarioSemSenha,
     };
+  }
+
+  @Post('cadastro-completo')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Cadastro completo de usuário com associação opcional de plano',
+    description: 'Cria usuário e opcionalmente associa a um plano de forma atômica. Garante que apenas um plano esteja ativo por aluno.'
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Usuário criado com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Usuário criado e plano associado com sucesso' },
+        usuario: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 25 },
+            nome: { type: 'string', example: 'João Silva' },
+            email: { type: 'string', example: 'joao@email.com' },
+            cpf: { type: 'string', example: '12345678900' },
+            situacao: { type: 'boolean', example: true }
+          }
+        },
+        plano: {
+          type: 'object',
+          properties: {
+            id: { type: 'number', example: 10 },
+            planoId: { type: 'number', example: 15 },
+            planoMestreId: { type: 'number', example: 5 },
+            nome: { type: 'string', example: 'Plano de Desenvolvimento Web' },
+            totalSprints: { type: 'number', example: 3 },
+            status: { type: 'string', example: 'não iniciado' },
+            ativo: { type: 'boolean', example: true },
+            dataInicio: { type: 'string', format: 'date-time' }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou grupo não encontrado'
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Plano não encontrado'
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Email, CPF já existente ou aluno já possui vínculo com este plano'
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Erro interno do servidor'
+  })
+  async cadastroCompleto(@Body() dadosCadastro: CadastroCompletoDto) {
+    return await this.servicoUsuario.cadastroCompleto(dadosCadastro);
   }
 
   @Get()

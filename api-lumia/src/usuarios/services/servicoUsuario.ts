@@ -6,9 +6,17 @@ import { Usuario } from '../entities/usuario.entity';
 import { GrupoUsuario } from '../entities/grupoUsuario.entity';
 import { AlunoInfo } from '../entities/alunoInfo.entity';
 import { AdministradorInfo } from '../entities/administradorInfo.entity';
+import { AlunoPlanos } from '../../planos/entities/alunoPlanos.entity';
+import { Plano } from '../../planos/entities/plano.entity';
+import { PlanoMestre } from '../../planos/entities/planoMestre.entity';
+import { Sprint } from '../../sprints/entities/sprint.entity';
+import { Meta } from '../../metas/entities/meta.entity';
+import { ServicoPlano } from '../../planos/services/servicoPlano';
 import { StatusCadastro } from '../../common/enums/statusCadastro.enum';
 import { StatusPagamento } from '../../common/enums/statusPagamento.enum';
-import { CriarUsuarioDto } from '../dto/criarUsuario.dto';
+import { StatusPlano } from '../../common/enums/statusPlano.enum';
+import { StatusMeta } from '../../common/enums/statusMeta.enum';
+import { CriarUsuarioDto, CadastroCompletoDto } from '../dto/criarUsuario.dto';
 import { AtualizarUsuarioDto } from '../dto/atualizarUsuario.dto';
 import { AlterarSenhaDto } from '../dto/alterarSenha.dto';
 import { NotificacoesAlunoDto } from '../dto/notificacoesAluno.dto';
@@ -44,6 +52,17 @@ export class ServicoUsuario {
     private alunoInfoRepository: Repository<AlunoInfo>,
     @InjectRepository(AdministradorInfo)
     private administradorInfoRepository: Repository<AdministradorInfo>,
+    @InjectRepository(AlunoPlanos)
+    private alunoPlanosRepository: Repository<AlunoPlanos>,
+    @InjectRepository(Plano)
+    private planoRepository: Repository<Plano>,
+    @InjectRepository(PlanoMestre)
+    private planoMestreRepository: Repository<PlanoMestre>,
+    @InjectRepository(Sprint)
+    private sprintRepository: Repository<Sprint>,
+    @InjectRepository(Meta)
+    private metaRepository: Repository<Meta>,
+    private servicoPlano: ServicoPlano,
     private dataSource: DataSource,
   ) {}
 
@@ -326,6 +345,259 @@ export class ServicoUsuario {
     const senhaGerada = Math.random().toString(36).slice(-8);
 
     return senhaGerada;
+  }
+
+  /**
+   * Cadastro completo de usuário com associação opcional de plano
+   * Garante atomicidade quando plano é associado
+   *
+   * @param dadosCadastro - Dados completos do cadastro
+   * @returns Usuário criado e informações do plano (se associado)
+   */
+  async cadastroCompleto(dadosCadastro: CadastroCompletoDto): Promise<any> {
+    const { nome, email, cpf, senha, grupo, dataNascimento, planoMestreId, associarPlano } = dadosCadastro;
+
+    // Limpa o CPF removendo pontos e hífen
+    const cpfLimpo = this.limparCpf(cpf);
+
+    // Validações iniciais (fora da transação)
+    const usuarioExistente = await this.usuarioRepository.findOne({
+      where: { login: email },
+    });
+    if (usuarioExistente) {
+      throw new ConflictException('Já existe um usuário com este email');
+    }
+
+    const cpfExistente = await this.usuarioRepository.findOne({
+      where: { cpf: cpfLimpo },
+    });
+    if (cpfExistente) {
+      throw new ConflictException('Já existe um usuário com este CPF');
+    }
+
+    // Busca o grupo
+    const grupoObj = await this.grupoRepository.findOne({
+      where: { nome: grupo },
+    });
+    if (!grupoObj) {
+      throw new BadRequestException(`Grupo de usuário "${grupo}" não encontrado`);
+    }
+
+    // Se vai associar plano, valida se plano mestre existe
+    if (associarPlano && planoMestreId) {
+      const planoMestreExistente = await this.planoMestreRepository.findOne({
+        where: { id: planoMestreId, ativo: true },
+        relations: ['sprintsMestre']
+      });
+      if (!planoMestreExistente) {
+        throw new NotFoundException(`Plano mestre com ID ${planoMestreId} não encontrado ou inativo`);
+      }
+      if (!planoMestreExistente.sprintsMestre || planoMestreExistente.sprintsMestre.length === 0) {
+        throw new BadRequestException(`Plano mestre ${planoMestreId} não possui sprints configuradas`);
+      }
+    }
+
+    // Criptografa a senha
+    const senhaCriptografada = await bcrypt.hash(senha, 10);
+
+    // Inicia transação atômica
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    let novoUsuario;
+    let planoAssociado = null;
+
+    try {
+      // 1. Criar usuário
+      novoUsuario = await queryRunner.manager.save('usuario', {
+        login: email,
+        senha: senhaCriptografada,
+        grupoId: grupoObj.id,
+        situacao: true,
+        nome,
+        cpf: cpfLimpo,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      // 2. Criar aluno_info (se for aluno)
+      if (grupo === 'aluno') {
+        await queryRunner.manager.insert('aluno_info', {
+          idusuario: novoUsuario.id,
+          email,
+          cpf: cpfLimpo,
+          data_nascimento: dataNascimento ? dataNascimento : null,
+          status_cadastro: StatusCadastro.PRE_CADASTRO,
+          status_pagamento: StatusPagamento.PENDENTE,
+          data_criacao: new Date(),
+        });
+      } else if (grupo === 'administrador') {
+        await queryRunner.manager.insert('administrador_info', {
+          idusuario: novoUsuario.id,
+          nome,
+          email,
+          data_criacao: new Date(),
+          ativo: true,
+        });
+      }
+
+      // 3. Se solicitado, criar instância do plano mestre e associar
+      if (associarPlano && planoMestreId && grupo === 'aluno') {
+        // Buscar plano mestre com estrutura completa
+        const planoMestre: any = await queryRunner.manager.findOne('PlanoMestre', {
+          where: { id: planoMestreId, ativo: true },
+          relations: ['sprintsMestre', 'sprintsMestre.metasMestre']
+        });
+
+        if (!planoMestre) {
+          throw new NotFoundException(`Plano mestre ${planoMestreId} não encontrado`);
+        }
+
+        // Verifica se aluno já tem plano ativo deste mestre
+        const planoExistenteDoMestre: any = await queryRunner.manager.findOne('AlunoPlanos', {
+          where: {
+            usuarioId: novoUsuario.id,  // Propriedade da entidade
+            ativo: true
+          },
+          relations: ['plano']
+        });
+
+        if (planoExistenteDoMestre?.plano?.planoMestreId === planoMestreId) {
+          throw new ConflictException(`Aluno já possui plano ativo baseado neste plano mestre.`);
+        }
+
+        // Criar instância personalizada do plano
+        const novoPlano: any = await queryRunner.manager.save('Plano', {
+          nome: planoMestre.nome,
+          cargo: planoMestre.cargo,
+          descricao: planoMestre.descricao || `Instância personalizada de: ${planoMestre.nome}`,
+          duracao: planoMestre.duracao,
+          planoMestreId: planoMestre.id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+
+        // Criar sprints baseadas nos templates
+        const sprintsCriadas = [];
+        let dataInicioAtual = new Date();
+
+        for (const sprintMestre of planoMestre.sprintsMestre.sort((a, b) => a.posicao - b.posicao)) {
+          const duracaoDias = sprintMestre.dataInicio && sprintMestre.dataFim
+            ? Math.ceil((new Date(sprintMestre.dataFim).getTime() - new Date(sprintMestre.dataInicio).getTime()) / (1000 * 60 * 60 * 24))
+            : 7;
+
+          const dataFimAtual = new Date(dataInicioAtual);
+          dataFimAtual.setDate(dataFimAtual.getDate() + duracaoDias);
+
+          const novaSprint: any = await queryRunner.manager.save('Sprint', {
+            nome: sprintMestre.nome,
+            dataInicio: dataInicioAtual,
+            dataFim: dataFimAtual,
+            posicao: sprintMestre.posicao,
+            status: StatusMeta.PENDENTE,
+            planoId: novoPlano.id,
+            sprintMestreId: sprintMestre.id,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          });
+
+          // Criar metas baseadas nos templates
+          if (sprintMestre.metasMestre) {
+            for (const metaMestre of sprintMestre.metasMestre.sort((a, b) => a.posicao - b.posicao)) {
+              await queryRunner.manager.save('Meta', {
+                disciplinaId: metaMestre.disciplinaId,
+                disciplina: metaMestre.disciplina,
+                tipo: metaMestre.tipo,
+                assuntoId: metaMestre.assuntoId,
+                assunto: metaMestre.assunto,
+                comandos: metaMestre.comandos,
+                link: metaMestre.link,
+                relevancia: metaMestre.relevancia,
+                tempoEstudado: metaMestre.tempoEstudado || '00:00',
+                status: StatusMeta.PENDENTE,
+                totalQuestoes: metaMestre.totalQuestoes || 0,
+                questoesCorretas: 0,
+                posicao: metaMestre.posicao,
+                sprintId: novaSprint.id,
+                metaMestreId: metaMestre.id,
+                createdAt: new Date(),
+                updatedAt: new Date()
+              });
+            }
+          }
+
+          sprintsCriadas.push(novaSprint);
+          dataInicioAtual = new Date(dataFimAtual);
+          dataInicioAtual.setDate(dataInicioAtual.getDate() + 1); // Próxima sprint começa no dia seguinte
+        }
+
+        // Desabilitar plano anterior ativo (se existir)
+        await queryRunner.manager.update('AlunoPlanos',
+          { usuarioId: novoUsuario.id, ativo: true },  // Propriedade da entidade
+          { ativo: false, dataConclusao: new Date(), updatedAt: new Date() }  // Propriedade da entidade
+        );
+
+        // Associar nova instância ao aluno
+        const novaAssociacao = await queryRunner.manager.insert('AlunoPlanos', {
+          usuarioId: novoUsuario.id,  // Propriedade da entidade
+          planoId: novoPlano.id,      // Propriedade da entidade
+          dataInicio: new Date(),     // Propriedade da entidade
+          progresso: 0,
+          status: StatusPlano.NAO_INICIADO,
+          ativo: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        });
+
+        planoAssociado = {
+          id: novaAssociacao.identifiers[0],
+          planoId: novoPlano.id,
+          planoMestreId: planoMestreId,
+          nome: novoPlano.nome,
+          totalSprints: sprintsCriadas.length,
+          status: StatusPlano.NAO_INICIADO,
+          ativo: true,
+          dataInicio: new Date(),
+        };
+
+        console.log(`✅ Instância do plano mestre ${planoMestreId} criada e associada ao aluno ${nome} (ID: ${novoUsuario.id})`);
+      }
+
+      // Confirma transação
+      await queryRunner.commitTransaction();
+
+      const result: any = {
+        message: associarPlano && planoMestreId ? 'Usuário criado e plano associado com sucesso' : 'Usuário criado com sucesso',
+        usuario: {
+          id: novoUsuario.id,
+          nome: novoUsuario.nome,
+          email: novoUsuario.login,
+          cpf: novoUsuario.cpf,
+          situacao: novoUsuario.situacao,
+        }
+      };
+
+      if (planoAssociado) {
+        result.plano = planoAssociado;
+      }
+
+      console.log(`✅ Cadastro completo realizado: ${nome} (${email}) - ID: ${novoUsuario.id}`);
+      return result;
+
+    } catch (error) {
+      // Rollback em caso de erro
+      await queryRunner.rollbackTransaction();
+      console.error('Erro no cadastro completo:', error);
+
+      if (error instanceof ConflictException || error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Erro ao realizar cadastro. Por favor, tente novamente.');
+    } finally {
+      await queryRunner.release();
+    }
   }
 
 
