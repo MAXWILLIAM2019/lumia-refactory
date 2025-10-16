@@ -12,6 +12,7 @@ import { AlunosModule } from './alunos/alunos.module';
 import { DisciplinasModule } from './disciplinas/disciplinas.module';
 import { SprintAtualModule } from './sprint-atual/sprint-atual.module';
 import { RankingModule } from './ranking/ranking.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -53,6 +54,9 @@ import { RankingModule } from './ranking/ranking.module';
     
     // Módulo de ranking
     RankingModule,
+
+    // Módulo administrativo
+    AdminModule,
   ],
   controllers: [],
   providers: [],

@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMan
 import { Plano } from '../../planos/entities/plano.entity';
 import { SprintMestre } from './sprintMestre.entity';
 import { Meta } from '../../metas/entities/meta.entity';
+import { SprintAtual } from '../../sprint-atual/entities/sprintAtual.entity';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 
 @Entity('Sprints')
@@ -51,4 +52,7 @@ export class Sprint {
 
   @OneToMany(() => Meta, (meta) => meta.sprint)
   metas: Meta[];
+
+  @OneToMany(() => SprintAtual, (sprintAtual) => sprintAtual.sprint)
+  sprintAtual: SprintAtual[];
 }

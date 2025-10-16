@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne, OneToMany } from 'typeorm';
 import { GrupoUsuario } from './grupoUsuario.entity';
 import { AlunoInfo } from './alunoInfo.entity';
 import { AdministradorInfo } from './administradorInfo.entity';
+import { AlunoPlanos } from '../../planos/entities/alunoPlanos.entity';
 
 @Entity('usuario')
 export class Usuario {
@@ -42,4 +43,7 @@ export class Usuario {
 
   @OneToOne('AdministradorInfo', 'usuario')
   administradorInfo: AdministradorInfo;
+
+  @OneToMany(() => AlunoPlanos, (alunoPlano) => alunoPlano.usuario)
+  alunoPlanos: AlunoPlanos[];
 }
