@@ -148,17 +148,30 @@ export class UsuarioController {
     return { message };
   }
 
-  @Post(':id/gerar-senha')
+
+  @Post('gerar-senha')
   @UseGuards(GuardAdministrador)
-  @ApiOperation({ summary: 'Gerar senha aleatória para o usuário' })
-  @ApiParam({ name: 'id', description: 'ID do usuário' })
-  @ApiResponse({ status: 200, description: 'Senha gerada com sucesso' })
-  @ApiResponse({ status: 404, description: 'Usuário não encontrado' })
-  async gerarSenha(@Param('id', ParseIntPipe) id: number) {
-    const senhaGerada = await this.servicoUsuario.gerarSenha(id);
-    
+  @ApiOperation({ summary: 'Gerar senha aleatória para formulários de cadastro' })
+  @ApiResponse({
+    status: 200,
+    description: 'Senha gerada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        senha: {
+          type: 'string',
+          example: 'a1b2c3d4',
+          description: 'Senha aleatória gerada de 8 caracteres'
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Não autorizado' })
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
+  async gerarSenhaCadastro() {
+    const senhaGerada = await this.servicoUsuario.gerarSenhaAleatoria();
+
     return {
-      message: 'Senha gerada com sucesso',
       senha: senhaGerada,
     };
   }

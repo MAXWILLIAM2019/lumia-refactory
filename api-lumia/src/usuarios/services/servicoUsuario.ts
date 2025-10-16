@@ -318,35 +318,16 @@ export class ServicoUsuario {
   }
 
   /**
-   * Gera uma senha aleatória para um usuário
-   * 
-   * @param {number} id - ID do usuário
-   * @returns {Promise<{senha: string, message: string}>} Senha gerada e mensagem de sucesso
-   * @throws {NotFoundException} Se o usuário não for encontrado
+   * Gera uma senha aleatória para formulários de cadastro (sem persistir)
+   *
+   * @returns {Promise<string>} Senha aleatória de 8 caracteres
    */
-  async gerarSenha(id: number): Promise<{senha: string, message: string}> {
-    const usuario = await this.usuarioRepository.findOne({
-      where: { id },
-      relations: ['grupo'],
-    });
-
-    if (!usuario) {
-      throw new NotFoundException('Usuário não encontrado');
-    }
-
+  async gerarSenhaAleatoria(): Promise<string> {
     const senhaGerada = Math.random().toString(36).slice(-8);
-    const senhaCriptografada = await bcrypt.hash(senhaGerada, 10);
-    
-    await this.usuarioRepository.update(id, { senha: senhaCriptografada });
-    
-    const tipoUsuario = usuario.grupo?.nome === 'aluno' ? 'aluno' : 'usuário';
-    console.log(`✅ Senha gerada com sucesso para ${tipoUsuario} ID ${id}: ${senhaGerada}`);
-    
-    return {
-      senha: senhaGerada,
-      message: `Senha gerada com sucesso para ${tipoUsuario}`
-    };
+
+    return senhaGerada;
   }
+
 
   /**
    * Atualiza as configurações de notificação de um aluno
