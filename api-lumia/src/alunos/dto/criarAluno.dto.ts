@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsNotEmpty, MinLength, Matches } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsNotEmpty, MinLength, Matches, IsDateString } from 'class-validator';
 
 export class CriarAlunoDto {
   @ApiProperty({
@@ -18,7 +18,7 @@ export class CriarAlunoDto {
   email: string;
 
   @ApiProperty({
-    description: 'CPF do aluno (deve ser único)',
+    description: 'CPF do aluno (aceita com ou sem formatação - pontos e hífen serão removidos automaticamente)',
     example: '12345678901',
   })
   @IsString()
@@ -29,14 +29,21 @@ export class CriarAlunoDto {
   cpf: string;
 
   @ApiPropertyOptional({
-    description: 'Senha do aluno (opcional - se não fornecida, será gerada automaticamente)',
+    description: 'Data de nascimento do aluno (opcional)',
+    example: '1990-01-15',
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Data de nascimento deve estar no formato YYYY-MM-DD' })
+  dataNascimento?: string;
+
+  @ApiProperty({
+    description: 'Senha do aluno',
     example: 'minhasenha123',
     minLength: 6,
   })
-  @IsOptional()
   @IsString()
   @MinLength(6, {
     message: 'Senha deve ter pelo menos 6 caracteres',
   })
-  senha?: string;
+  senha: string;
 }

@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, MinLength, MaxLength, IsIn } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsBoolean, MinLength, MaxLength, IsIn, IsDateString } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CriarUsuarioDto {
@@ -21,8 +21,8 @@ export class CriarUsuarioDto {
   email: string;
 
   @ApiProperty({
-    description: 'CPF do usuário',
-    example: '123.456.789-00',
+    description: 'CPF do usuário (aceita com ou sem formatação - pontos e hífen serão removidos automaticamente)',
+    example: '12345678900',
     minLength: 11,
     maxLength: 14,
   })
@@ -32,14 +32,21 @@ export class CriarUsuarioDto {
   cpf: string;
 
   @ApiPropertyOptional({
-    description: 'Senha do usuário (opcional)',
+    description: 'Data de nascimento do usuário (opcional)',
+    example: '1990-01-15',
+  })
+  @IsOptional()
+  @IsDateString({}, { message: 'Data de nascimento deve estar no formato YYYY-MM-DD' })
+  dataNascimento?: string;
+
+  @ApiProperty({
+    description: 'Senha do usuário',
     example: '123456',
     minLength: 6,
   })
-  @IsOptional()
   @IsString()
   @MinLength(6)
-  senha?: string;
+  senha: string;
 
   @ApiProperty({
     description: 'Grupo do usuário',

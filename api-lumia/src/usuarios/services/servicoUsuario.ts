@@ -15,15 +15,26 @@ import { NotificacoesAlunoDto } from '../dto/notificacoesAluno.dto';
 
 /**
  * Serviço central para gerenciamento de usuários
- * 
+ *
  * Este serviço contém todas as operações relacionadas a usuários,
  * incluindo operações específicas para alunos e administradores.
- * 
+ *
  * Foi consolidado para evitar duplicação de código e centralizar
  * a lógica de negócio relacionada a usuários.
  */
 @Injectable()
 export class ServicoUsuario {
+
+  /**
+   * Limpa o CPF removendo pontos e hífen
+   *
+   * @param cpf - CPF com ou sem formatação
+   * @returns CPF limpo contendo apenas números
+   */
+  private limparCpf(cpf: string): string {
+    if (!cpf) return cpf;
+    return cpf.replace(/[.\-]/g, '');
+  }
   constructor(
     @InjectRepository(Usuario)
     private usuarioRepository: Repository<Usuario>,
@@ -45,7 +56,10 @@ export class ServicoUsuario {
    * @throws {BadRequestException} Se o grupo não for encontrado
    */
   async criarUsuario(dadosUsuario: CriarUsuarioDto): Promise<Usuario> {
-    const { nome, email, cpf, senha, grupo } = dadosUsuario;
+    const { nome, email, cpf, senha, grupo, dataNascimento } = dadosUsuario;
+
+    // Limpa o CPF removendo pontos e hífen
+    const cpfLimpo = this.limparCpf(cpf);
 
     // Verifica se já existe usuário com o mesmo email
     const usuarioExistente = await this.usuarioRepository.findOne({
@@ -58,7 +72,7 @@ export class ServicoUsuario {
 
     // Verifica se já existe usuário com o mesmo CPF
     const cpfExistente = await this.usuarioRepository.findOne({
-      where: { cpf },
+      where: { cpf: cpfLimpo },
     });
 
     if (cpfExistente) {
@@ -74,19 +88,8 @@ export class ServicoUsuario {
       throw new BadRequestException(`Grupo de usuário "${grupo}" não encontrado`);
     }
 
-    // Criptografa a senha se fornecida, ou gera uma senha padrão para alunos
-    let senhaCriptografada;
-    if (senha) {
-      senhaCriptografada = await bcrypt.hash(senha, 10);
-    } else if (grupo === 'aluno' && cpf) {
-      // Gera uma senha padrão baseada no CPF (últimos 6 dígitos) para alunos
-      const senhaPadrao = cpf.slice(-6);
-      senhaCriptografada = await bcrypt.hash(senhaPadrao, 10);
-      console.log(`Senha padrão gerada para o aluno ${nome} (${email}) usando os últimos 6 dígitos do CPF`);
-    } else {
-      // Para outros grupos, a senha é obrigatória
-      throw new BadRequestException('Senha é obrigatória para este tipo de usuário');
-    }
+    // Criptografa a senha (sempre obrigatória)
+    const senhaCriptografada = await bcrypt.hash(senha, 10);
     
     // Usar transação para garantir que ambas as operações (criar usuário e info complementar) sejam concluídas com sucesso
     // ou nenhuma delas seja realizada em caso de erro
@@ -104,20 +107,27 @@ export class ServicoUsuario {
         grupoId: grupoObj.id,
         situacao: true,
         nome,
-        cpf,
+        cpf: cpfLimpo, // Usa o CPF limpo (sem pontos e hífen)
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
       // Cria info complementar baseado no grupo dentro da mesma transação
       if (grupo === 'aluno') {
-        await queryRunner.manager.insert('aluno_info', {
-          idusuario: novoUsuario.id,
-          email,
-          statusCadastro: StatusCadastro.PRE_CADASTRO,
-          statusPagamento: StatusPagamento.PENDENTE,
-          data_criacao: new Date(), // Corrigido de dataCriacao para data_criacao
-        });
+        // Usa query SQL direta para garantir que a data seja inserida corretamente
+        const dataNascValue = dataNascimento && dataNascimento.trim() !== '' ? `'${dataNascimento}'` : 'NULL';
+
+        const insertQuery = `
+          INSERT INTO aluno_info (
+            idusuario, email, cpf, data_nascimento,
+            status_cadastro, status_pagamento, data_criacao
+          ) VALUES (
+            ${novoUsuario.id}, '${email}', '${cpfLimpo}', ${dataNascValue},
+            '${StatusCadastro.PRE_CADASTRO}', '${StatusPagamento.PENDENTE}', CURRENT_TIMESTAMP
+          )
+        `;
+
+        await queryRunner.query(insertQuery);
         
         console.log(`✅ Aluno cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
       } else if (grupo === 'administrador') {

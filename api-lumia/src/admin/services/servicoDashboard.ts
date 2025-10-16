@@ -6,6 +6,7 @@ import { GrupoUsuario } from '../../usuarios/entities/grupoUsuario.entity';
 import { Meta } from '../../metas/entities/meta.entity';
 import { AlunoPlanos } from '../../planos/entities/alunoPlanos.entity';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
+import { AlunosDashboardDto, AlunoDashboardDto } from '../dto/alunosDashboard.dto';
 
 /**
  * Serviço responsável por cálculos e métricas administrativas
@@ -199,6 +200,76 @@ export class ServicoDashboard {
     const minutos = totalMinutos % 60;
 
     return `${horas.toString().padStart(2, '0')}:${minutos.toString().padStart(2, '0')}`;
+  }
+
+  /**
+   * Busca lista de alunos para o dashboard administrativo
+   * Retorna dados paginados com informações completas dos alunos
+   *
+   * @param pagina Número da página (padrão: 1)
+   * @param limite Número de registros por página (padrão: 10)
+   * @returns Lista paginada de alunos com informações completas
+   */
+  async buscarAlunosDashboard(pagina: number = 1, limite: number = 10): Promise<AlunosDashboardDto> {
+    // Calcula offset para paginação
+    const offset = (pagina - 1) * limite;
+
+    // Query principal para buscar alunos com paginação
+    const query = this.usuarioRepository
+      .createQueryBuilder('u')
+      .innerJoin('u.grupo', 'g')
+      .leftJoin('u.alunoPlanos', 'ap')  // Left join pois nem todos alunos têm planos
+      .leftJoin('ap.plano', 'p')        // Left join para pegar nome do plano
+      .where('g.nome = :grupo', { grupo: 'aluno' })
+      .select([
+        'u.id as idAluno',
+        'u.nome as nomeAluno',
+        'u.login as emailAluno',
+        'u.cpf as cpfAluno',
+        'u.situacao as situacaoUsuario',
+        'u.createdAt as dataCadastro',
+        'p.nome as nomePlano'
+      ])
+      .orderBy('u.createdAt', 'DESC')
+      .offset(offset)
+      .limit(limite);
+
+    // Executa query paginada
+    const alunosRaw = await query.getRawMany();
+
+    // Query para contar total de alunos (sem paginação)
+    const totalQuery = this.usuarioRepository
+      .createQueryBuilder('u')
+      .innerJoin('u.grupo', 'g')
+      .where('g.nome = :grupo', { grupo: 'aluno' })
+      .select('COUNT(u.id)', 'total');
+
+    const totalResult = await totalQuery.getRawOne();
+    const total = parseInt(totalResult.total) || 0;
+
+    // Mapeia dados para DTO (usando nomes em minúsculo retornados pelo PostgreSQL)
+    const alunos: AlunoDashboardDto[] = alunosRaw.map(aluno => ({
+      idAluno: aluno.idaluno,
+      nomeAluno: aluno.nomealuno,
+      emailAluno: aluno.emailaluno,
+      cpfAluno: aluno.cpfaluno,
+      planoAtivo: aluno.nomeplano || null,
+      dataCadastro: aluno.datacadastro ? aluno.datacadastro.toISOString().split('T')[0] : null,
+      status: aluno.situacaousuario ? 'ativo' : 'inativo'
+    }));
+
+    // Calcula informações de paginação
+    const totalPaginas = Math.ceil(total / limite);
+
+    return {
+      alunos,
+      paginacao: {
+        pagina,
+        limite,
+        total,
+        totalPaginas
+      }
+    };
   }
 }
 
