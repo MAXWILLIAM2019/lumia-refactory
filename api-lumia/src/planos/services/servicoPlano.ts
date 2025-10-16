@@ -20,6 +20,7 @@ import { AssociarAlunoPlanoDto } from '../dto/associarAlunoPlano.dto';
 import { AssociarDisciplinaPlanoDto } from '../dto/associarDisciplinaPlanoDto';
 import { CriarInstanciaDto } from '../dto/criarInstancia.dto';
 import { StatusPlano } from '../../common/enums/statusPlano.enum';
+import { ServicoCodigoPlanoMestre } from './servicoCodigoPlanoMestre';
 
 @Injectable()
 export class ServicoPlano {
@@ -44,6 +45,7 @@ export class ServicoPlano {
     private metaRepository: Repository<Meta>,
     @InjectRepository(MetaMestre)
     private metaMestreRepository: Repository<MetaMestre>,
+    private servicoCodigoPlanoMestre: ServicoCodigoPlanoMestre,
     @InjectDataSource()
     private dataSource: DataSource,
   ) {
@@ -55,8 +57,21 @@ export class ServicoPlano {
   // ===== MÉTODOS PARA PLANO MESTRE (TEMPLATES) =====
 
   async criarPlanoMestre(dadosPlanoMestre: CriarPlanoMestreDto): Promise<PlanoMestre> {
+    // Gerar código único para o plano mestre (sempre automático)
+    const codigo = this.servicoCodigoPlanoMestre.gerarCodigoPlanoMestre(dadosPlanoMestre.nome);
+
+    // Verificar se o código já existe
+    const codigoExistente = await this.planoMestreRepository.findOne({
+      where: { codigo }
+    });
+
+    if (codigoExistente) {
+      throw new ConflictException(`Já existe um plano mestre com o código '${codigo}'`);
+    }
+
     const planoMestre = this.planoMestreRepository.create({
       nome: dadosPlanoMestre.nome,
+      codigo: codigo, // Código gerado automaticamente
       cargo: dadosPlanoMestre.cargo,
       descricao: dadosPlanoMestre.descricao,
       duracao: dadosPlanoMestre.duracao,

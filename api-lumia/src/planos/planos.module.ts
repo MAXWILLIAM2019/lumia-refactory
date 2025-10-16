@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PlanoController } from './controllers/planoController';
 import { PlanoAlunoController } from './controllers/planoAlunoController';
 import { ServicoPlano } from './services/servicoPlano';
+import { ServicoCodigoPlanoMestre } from './services/servicoCodigoPlanoMestre';
 import { PlanoMestre } from './entities/planoMestre.entity';
 import { Plano } from './entities/plano.entity';
 import { AlunoPlanos } from './entities/alunoPlanos.entity';
@@ -33,7 +34,7 @@ import { MetaMestre } from '../metas/entities/metaMestre.entity';
     PlanoController,                    // ✅ Apenas operações de mestres
     PlanoAlunoController                // ✅ Novo: Operações de alunos
   ],
-  providers: [ServicoPlano],
+  providers: [ServicoPlano, ServicoCodigoPlanoMestre],
   exports: [ServicoPlano],
 })
 export class PlanosModule {}

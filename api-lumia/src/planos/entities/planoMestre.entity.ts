@@ -10,6 +10,9 @@ export class PlanoMestre {
   @Column({ type: 'varchar', length: 255 })
   nome: string;
 
+  @Column({ type: 'varchar', length: 20, unique: true })
+  codigo: string;
+
   @Column({ type: 'varchar', length: 255 })
   cargo: string;
 
@@ -34,8 +37,4 @@ export class PlanoMestre {
   // Relacionamento com sprints mestre
   @OneToMany(() => SprintMestre, (sprintMestre) => sprintMestre.planoMestre)
   sprintsMestre: SprintMestre[];
-
-  // Relacionamento com disciplinas
-  @OneToMany(() => PlanoMestreDisciplina, d => d.planoMestre, { cascade: true })
-  planoMestreDisciplinas: PlanoMestreDisciplina[];
 }
