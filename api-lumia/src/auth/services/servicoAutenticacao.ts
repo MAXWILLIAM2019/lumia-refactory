@@ -7,8 +7,6 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 import { GrupoUsuario } from '../../usuarios/entities/grupoUsuario.entity';
 import { AlunoInfo } from '../../usuarios/entities/alunoInfo.entity';
 import { AdministradorInfo } from '../../usuarios/entities/administradorInfo.entity';
-import { StatusCadastro } from '../../common/enums/statusCadastro.enum';
-import { StatusPagamento } from '../../common/enums/statusPagamento.enum';
 
 export interface DadosLogin {
   login: string;

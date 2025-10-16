@@ -172,8 +172,6 @@ CREATE TABLE aluno_info (
 	data_nascimento date NULL,
 	data_criacao timestamp DEFAULT CURRENT_TIMESTAMP NULL,
 	telefone varchar(20) NULL,
-	status_cadastro public."enum_aluno_info_status_cadastro" DEFAULT 'PRE_CADASTRO' NOT NULL,
-	status_pagamento public."enum_aluno_info_status_pagamento" DEFAULT 'PENDENTE' NOT NULL,
 	cep varchar(9) NULL,
 	asaas_external_reference varchar(100) NULL,
 	biografia text NULL,

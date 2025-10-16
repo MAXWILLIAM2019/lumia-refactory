@@ -12,8 +12,6 @@ import { PlanoMestre } from '../../planos/entities/planoMestre.entity';
 import { Sprint } from '../../sprints/entities/sprint.entity';
 import { Meta } from '../../metas/entities/meta.entity';
 import { ServicoPlano } from '../../planos/services/servicoPlano';
-import { StatusCadastro } from '../../common/enums/statusCadastro.enum';
-import { StatusPagamento } from '../../common/enums/statusPagamento.enum';
 import { StatusPlano } from '../../common/enums/statusPlano.enum';
 import { StatusMeta } from '../../common/enums/statusMeta.enum';
 import { CriarUsuarioDto, CadastroCompletoDto } from '../dto/criarUsuario.dto';
@@ -139,10 +137,10 @@ export class ServicoUsuario {
         const insertQuery = `
           INSERT INTO aluno_info (
             idusuario, email, cpf, data_nascimento,
-            status_cadastro, status_pagamento, data_criacao
+            data_criacao
           ) VALUES (
             ${novoUsuario.id}, '${email}', '${cpfLimpo}', ${dataNascValue},
-            '${StatusCadastro.PRE_CADASTRO}', '${StatusPagamento.PENDENTE}', CURRENT_TIMESTAMP
+            CURRENT_TIMESTAMP
           )
         `;
 
@@ -428,8 +426,6 @@ export class ServicoUsuario {
           email,
           cpf: cpfLimpo,
           data_nascimento: dataNascimento ? dataNascimento : null,
-          status_cadastro: StatusCadastro.PRE_CADASTRO,
-          status_pagamento: StatusPagamento.PENDENTE,
           data_criacao: new Date(),
         });
       } else if (grupo === 'administrador') {

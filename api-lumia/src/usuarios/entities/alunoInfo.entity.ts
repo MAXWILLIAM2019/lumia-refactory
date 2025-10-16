@@ -1,7 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
 import { Usuario } from './usuario.entity';
-import { StatusCadastro } from '../../common/enums/statusCadastro.enum';
-import { StatusPagamento } from '../../common/enums/statusPagamento.enum';
 
 @Entity('aluno_info')
 export class AlunoInfo {
@@ -26,21 +24,6 @@ export class AlunoInfo {
   @Column({ type: 'varchar', length: 20, nullable: true })
   telefone: string;
 
-  @Column({
-    name: 'status_cadastro',
-    type: 'enum',
-    enum: StatusCadastro,
-    default: StatusCadastro.PRE_CADASTRO,
-  })
-  statusCadastro: StatusCadastro;
-
-  @Column({
-    name: 'status_pagamento',
-    type: 'enum',
-    enum: StatusPagamento,
-    default: StatusPagamento.PENDENTE,
-  })
-  statusPagamento: StatusPagamento;
 
   @Column({ type: 'varchar', length: 9, nullable: true })
   cep: string;

@@ -34,5 +34,3 @@ export { RankingSemanal } from '../ranking/entities/rankingSemanal.entity';
 export { StatusPlano } from '../common/enums/statusPlano.enum';
 export { StatusMeta } from '../common/enums/statusMeta.enum';
 export { TipoMeta } from '../common/enums/tipoMeta.enum';
-export { StatusCadastro } from '../common/enums/statusCadastro.enum';
-export { StatusPagamento } from '../common/enums/statusPagamento.enum';
