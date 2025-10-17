@@ -85,7 +85,6 @@ export class ServicoDisciplina {
       const disciplina = queryRunner.manager.create(Disciplina, {
         nome: dadosDisciplina.nome,
         codigo: codigo,
-        descricao: dadosDisciplina.descricao,
         ativa: true, // Sempre ativa no cadastro
         versao: 1,
         createdAt: new Date(),
@@ -193,7 +192,6 @@ export class ServicoDisciplina {
 
       const novaDisciplina = queryRunner.manager.create(Disciplina, {
         nome: nomeFormatado,
-        descricao: dadosVersao.descricao || disciplinaOriginal.descricao,
         versao: novaVersao,
         ativa: dadosVersao.ativa !== false,
         disciplinaOrigemId: idOrigem,
@@ -284,7 +282,7 @@ export class ServicoDisciplina {
     };
 
     // Comparar campos básicos
-    ['nome', 'descricao', 'ativa'].forEach(campo => {
+    ['nome', 'ativa'].forEach(campo => {
       if (disciplina1[campo] !== disciplina2[campo]) {
         diferencas.campos[campo] = {
           antes: disciplina1[campo],
@@ -379,7 +377,6 @@ export class ServicoDisciplina {
 
     const novaDisciplina = queryRunner.manager.create(Disciplina, {
       nome: nomeFormatado,
-      descricao: dadosAtualizacao.descricao || disciplina.descricao,
       versao: novaVersao,
       ativa: true, // Novas versões sempre ativas
       disciplinaOrigemId: idOrigem,

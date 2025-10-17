@@ -19,13 +19,6 @@ export class CriarVersaoDisciplinaDto {
   @IsString()
   nome: string;
 
-  @ApiPropertyOptional({
-    description: 'Descrição da nova versão da disciplina',
-    example: 'Versão atualizada com novos conceitos matemáticos',
-  })
-  @IsString()
-  @IsOptional()
-  descricao?: string;
 
   @ApiPropertyOptional({
     description: 'Indica se a disciplina está ativa',

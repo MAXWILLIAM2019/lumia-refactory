@@ -21,13 +21,6 @@ export class CriarDisciplinaDto {
   @IsNotEmpty()
   nome: string;
 
-  @ApiPropertyOptional({
-    description: 'Descrição da disciplina',
-    example: 'Disciplina que abrange conceitos matemáticos fundamentais',
-  })
-  @IsString()
-  @IsOptional()
-  descricao?: string;
 
   @ApiPropertyOptional({
     description: 'Lista de assuntos da disciplina',

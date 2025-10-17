@@ -21,9 +21,6 @@ export class Disciplina {
   @Column({ type: 'varchar', length: 20, unique: true })
   codigo: string;
 
-  @Column({ type: 'text', nullable: true })
-  descricao: string;
-
   @Column({ type: 'int', default: 1 })
   versao: number;
 
