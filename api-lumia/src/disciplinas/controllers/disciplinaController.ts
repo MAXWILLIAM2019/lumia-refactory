@@ -28,25 +28,41 @@ export class DisciplinaController {
   constructor(private readonly servicoDisciplina: ServicoDisciplina) {}
 
   @Get()
+  @UseGuards(GuardAdministrador)
   @ApiOperation({ summary: 'Listar todas as disciplinas' })
-  @ApiResponse({ status: 200, description: 'Lista de disciplinas retornada com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de disciplinas retornada com sucesso',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          idDisciplina: { type: 'number', example: 1 },
+          nome: { type: 'string', example: 'Matemática' },
+          codigo: { type: 'string', example: 'MAT001' },
+          status: { type: 'boolean', example: true },
+          totalAssuntos: { type: 'number', example: 5 },
+          dataCriacao: { type: 'string', format: 'date', example: '2025-01-15' }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   async listarDisciplinas(): Promise<any> {
     return await this.servicoDisciplina.listarDisciplinas();
   }
 
-  @Get('ativas')
-  @ApiOperation({ summary: 'Listar apenas disciplinas ativas' })
-  @ApiResponse({ status: 200, description: 'Lista de disciplinas ativas retornada com sucesso' })
-  @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
-  async listarDisciplinasAtivas(): Promise<any> {
-    return await this.servicoDisciplina.listarDisciplinasAtivas();
-  }
 
   @Get(':id')
+  @UseGuards(GuardAdministrador)
   @ApiOperation({ summary: 'Buscar disciplina por ID' })
   @ApiParam({ name: 'id', description: 'ID da disciplina', type: 'number' })
   @ApiResponse({ status: 200, description: 'Disciplina encontrada com sucesso' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
   @ApiResponse({ status: 404, description: 'Disciplina não encontrada' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   async buscarDisciplina(@Param('id', ParseIntPipe) id: number): Promise<any> {

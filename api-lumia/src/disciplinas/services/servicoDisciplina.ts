@@ -23,20 +23,22 @@ export class ServicoDisciplina {
 
   // ===== MÉTODOS PARA DISCIPLINA =====
 
-  async listarDisciplinas(): Promise<Disciplina[]> {
-    return await this.disciplinaRepository.find({
+  async listarDisciplinas(): Promise<any[]> {
+    const disciplinas = await this.disciplinaRepository.find({
       relations: ['assuntos'],
       order: { nome: 'ASC' },
     });
+
+    return disciplinas.map(disciplina => ({
+      idDisciplina: disciplina.id,
+      nome: disciplina.nome,
+      codigo: disciplina.codigo,
+      status: disciplina.ativa,
+      totalAssuntos: disciplina.assuntos ? disciplina.assuntos.length : 0,
+      dataCriacao: disciplina.createdAt.toISOString().split('T')[0], // Formato YYYY-MM-DD
+    }));
   }
 
-  async listarDisciplinasAtivas(): Promise<Disciplina[]> {
-    return await this.disciplinaRepository.find({
-      where: { ativa: true },
-      relations: ['assuntos'],
-      order: { nome: 'ASC' },
-    });
-  }
 
   async buscarDisciplinaPorId(id: number): Promise<Disciplina> {
     const disciplina = await this.disciplinaRepository.findOne({

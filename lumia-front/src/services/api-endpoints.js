@@ -26,7 +26,6 @@ export const OLD_ENDPOINTS = {
   // Módulo de Disciplinas
   DISCIPLINAS: {
     BASE: '/disciplinas',
-    ATIVAS: '/disciplinas/ativas',
     DETAIL: (id) => `/disciplinas/${id}`,
     VERSOES: (id) => `/disciplinas/${id}/versoes`,
     COMPARAR: (id1, id2) => `/disciplinas/comparar/${id1}/${id2}`,
@@ -74,7 +73,6 @@ export const NEW_ENDPOINTS = {
   // Módulo de Disciplinas
   DISCIPLINAS: {
     BASE: '/disciplinas',
-    ATIVAS: '/disciplinas/ativas',
     DETAIL: (id) => `/disciplinas/${id}`,
     VERSOES: (id) => `/disciplinas/${id}/versoes`,
     COMPARAR: (id1, id2) => `/disciplinas/comparar/${id1}/${id2}`,

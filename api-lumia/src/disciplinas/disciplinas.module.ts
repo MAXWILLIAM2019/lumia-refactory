@@ -4,7 +4,6 @@ import { ServicoDisciplina } from './services/servicoDisciplina';
 import { ServicoCodigoDisciplina } from './services/servicoCodigoDisciplina';
 import { ServicoCodigoAssunto } from './services/servicoCodigoAssunto';
 import { DisciplinaController } from './controllers/disciplinaController';
-import { DisciplinaRedirecionamentoController } from './controllers/disciplinaRedirecionamentoController';
 import { Disciplina } from './entities/disciplina.entity';
 import { Assunto } from './entities/assunto.entity';
 
@@ -16,8 +15,7 @@ import { Assunto } from './entities/assunto.entity';
     ]),
   ],
   controllers: [
-    DisciplinaController,
-    DisciplinaRedirecionamentoController
+    DisciplinaController
   ],
   providers: [ServicoDisciplina, ServicoCodigoDisciplina, ServicoCodigoAssunto],
   exports: [ServicoDisciplina, ServicoCodigoDisciplina, ServicoCodigoAssunto],

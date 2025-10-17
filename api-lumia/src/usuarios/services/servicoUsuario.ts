@@ -21,10 +21,10 @@ import { NotificacoesAlunoDto } from '../dto/notificacoesAluno.dto';
 
 /**
  * Serviço central para gerenciamento de usuários
- *
+ * 
  * Este serviço contém todas as operações relacionadas a usuários,
  * incluindo operações específicas para alunos e administradores.
- *
+ * 
  * Foi consolidado para evitar duplicação de código e centralizar
  * a lógica de negócio relacionada a usuários.
  */
@@ -119,18 +119,18 @@ export class ServicoUsuario {
     try {
       // Cria o usuário dentro da transação
       novoUsuario = await queryRunner.manager.save('usuario', {
-        login: email,
-        senha: senhaCriptografada,
-        grupoId: grupoObj.id,
-        situacao: true,
-        nome,
+      login: email,
+      senha: senhaCriptografada,
+      grupoId: grupoObj.id,
+      situacao: true,
+      nome,
         cpf: cpfLimpo, // Usa o CPF limpo (sem pontos e hífen)
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
       // Cria info complementar baseado no grupo dentro da mesma transação
-      if (grupo === 'aluno') {
+    if (grupo === 'aluno') {
         // Usa query SQL direta para garantir que a data seja inserida corretamente
         const dataNascValue = dataNascimento && dataNascimento.trim() !== '' ? `'${dataNascimento}'` : 'NULL';
 
@@ -145,18 +145,18 @@ export class ServicoUsuario {
         `;
 
         await queryRunner.query(insertQuery);
-        
-        console.log(`✅ Aluno cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
-      } else if (grupo === 'administrador') {
+      
+      console.log(`✅ Aluno cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
+    } else if (grupo === 'administrador') {
         await queryRunner.manager.insert('administrador_info', {
-          idusuario: novoUsuario.id,
-          nome,
-          email,
+        idusuario: novoUsuario.id,
+        nome,
+        email,
           data_criacao: new Date(),
-          ativo: true,
-        });
-        
-        console.log(`✅ Administrador cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
+        ativo: true,
+      });
+      
+      console.log(`✅ Administrador cadastrado com sucesso: ${nome} (${email}) - ID: ${novoUsuario.id}`);
       }
       
       // Confirma a transação se tudo ocorreu bem
