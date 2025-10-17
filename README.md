@@ -1,32 +1,32 @@
-# Sistema de Mentoria - Arquitetura de Templates
+# Sistema de Mentoria - API Backend
 
-Um sistema completo para gerenciamento de mentorias baseado em **templates reutilizáveis**, permitindo que administradores criem planos mestre que podem ser instanciados para múltiplos alunos com funcionalidades avançadas de acompanhamento e progresso.
+API REST completa para gerenciamento de mentorias baseado em arquitetura de templates vs instâncias, desenvolvida com NestJS + TypeORM. Permite que administradores criem planos mestre reutilizáveis que podem ser instanciados para múltiplos alunos, com acompanhamento avançado de progresso e sistema de ranking semanal.
 
-## 🏗️ Arquitetura do Sistema
+## Arquitetura do Sistema
 
 ### Conceito: Templates vs Instâncias
 
 O sistema trabalha com duas camadas distintas:
 
-#### 🎯 **Templates (Modelos Mestre)**
+#### Templates (Modelos Mestre)
 - **PlanoMestre**: Templates de planos criados por administradores
-- **SprintMestre**: Templates de sprints dentro dos planos mestre  
+- **SprintMestre**: Templates de sprints dentro dos planos mestre
 - **MetaMestre**: Templates de metas dentro das sprints mestre
 
-#### 👥 **Instâncias (Dados do Aluno)**
+#### Instâncias (Dados do Aluno)
 - **Plano**: Instância personalizada de um PlanoMestre para um aluno específico
 - **Sprint**: Instância de SprintMestre com datas e progresso real
 - **Meta**: Instância de MetaMestre com dados de execução e performance
 
 ### Benefícios da Arquitetura
 
-✅ **Reutilização**: Um template pode gerar múltiplas instâncias  
-✅ **Consistência**: Todos os alunos recebem a mesma estrutura base  
-✅ **Flexibilidade**: Instâncias podem ser personalizadas individualmente  
-✅ **Manutenção**: Atualizações nos templates não afetam instâncias existentes  
-✅ **Escalabilidade**: Suporte a milhares de alunos com performance otimizada
+- **Reutilização**: Um template pode gerar múltiplas instâncias
+- **Consistência**: Todos os alunos recebem a mesma estrutura base
+- **Flexibilidade**: Instâncias podem ser personalizadas individualmente
+- **Manutenção**: Atualizações nos templates não afetam instâncias existentes
+- **Escalabilidade**: Suporte a milhares de alunos com performance otimizada
 
-## 🚀 Fluxo de Trabalho
+## Fluxo de Trabalho
 
 ### 1. Administrador - Criação de Templates
 
@@ -40,7 +40,7 @@ Admin cria PlanoMestre → Admin adiciona SprintsMestre → Admin define MetasMe
 Admin associa aluno ao PlanoMestre → Sistema cria instâncias automáticas → Aluno recebe Plano personalizado → Sprints com datas calculadas → Metas prontas para execução
 ```
 
-## 📊 Estrutura do Banco de Dados
+## Estrutura do Banco de Dados
 
 ### Tabelas Mestre (Templates)
 
@@ -103,7 +103,7 @@ CREATE TABLE public."MetasMestre" (
 - Campos adicionais: referência ao template de origem
 - Datas e progresso **obrigatórios** para instâncias
 
-## 🔌 APIs Principais
+## APIs Principais
 
 ### Templates (Administrador)
 
@@ -152,94 +152,102 @@ POST /planos-mestre/criar-instancia
 4. ✅ Cria instâncias de todas as Metas de cada Sprint
 5. ✅ Associa o plano ao aluno via tabela `AlunoPlano`
 
-## 💻 Tecnologias
+## Tecnologias
 
-### Frontend
-- **React 18** + **Vite**
-- **React Router** para navegação
-- **Axios** para requisições HTTP
-- **React Quill** para editor de texto rico
-- **@dnd-kit** para drag and drop
-
-### Backend
-- **Node.js** + **Express**
-- **Sequelize ORM** com **PostgreSQL**
+### Backend (API)
+- **Node.js 18+** + **NestJS Framework**
+- **TypeORM** com **PostgreSQL**
 - **JWT** para autenticação
-- **bcryptjs** para criptografia
-- **CORS** e **dotenv**
+- **bcrypt** para criptografia
+- **Swagger/OpenAPI** para documentação
+- **Docker** para containerização
+- **Jest** para testes
+- **ESLint + Prettier** para qualidade de código
 
-## 🛠️ Instalação e Execução
+### Arquitetura
+- **Clean Architecture** com separação de camadas
+- **Domain-Driven Design (DDD)** principles
+- **SOLID** principles aplicados
+- **Repository Pattern** para acesso a dados
+- **CQRS** pattern em algumas operações
+
+## Instalação e Execução
 
 ### Pré-requisitos
-- Node.js (v14+)
-- PostgreSQL
-- npm ou yarn
+- **Node.js 18+**
+- **PostgreSQL 13+**
+- **npm** ou **yarn**
+- **Docker** (opcional, para containerização)
 
 ### Setup Completo
 
-1. **Clone e instale dependências**
+1. **Clone o repositório**
    ```bash
    git clone [URL_DO_REPOSITÓRIO]
-   cd sis-mentoria
-   
-   # Backend
-   cd backend
-   npm install
-   
-   # Frontend  
-   cd ../frontend2
+   cd lumia-refactory
+   ```
+
+2. **Instale as dependências**
+   ```bash
+   cd api-lumia
    npm install
    ```
 
-2. **Configure o banco PostgreSQL**
+3. **Configure o banco PostgreSQL**
    ```bash
    # Crie um banco PostgreSQL
-   createdb sis_mentoria
+   createdb lumia_mentoria
    ```
 
-3. **Configure variáveis de ambiente**
+4. **Configure variáveis de ambiente**
    ```bash
-   cd backend
-   cp .env.example .env
-   # Edite as configurações do banco
+   cp env.example .env
+   # Edite as configurações no arquivo .env
    ```
 
-4. **Execute as migrações do banco**
+5. **Execute as migrações do banco**
    ```bash
-   # As tabelas serão criadas automaticamente pelo Sequelize
-   npm run dev
+   # Executa migrações TypeORM
+   npm run migration:run
    ```
 
-5. **Inicie os serviços**
+6. **Inicie o servidor**
    ```bash
-   # Terminal 1 - Backend
-   cd backend
-   npm run dev
-   
-   # Terminal 2 - Frontend
-   cd frontend2  
-   npm run dev
+   # Modo desenvolvimento
+   npm run start:dev
+
+   # Ou modo produção
+   npm run build
+   npm run start:prod
    ```
 
 ### Estrutura de .env
 
 ```env
-# JWT
-JWT_SECRET=sua_chave_secreta_jwt_super_segura
+# Ambiente
+NODE_ENV=development
+
+# Servidor
+PORT=3000
 
 # Banco de Dados PostgreSQL
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=sis_mentoria
+DB_NAME=lumia_mentoria
 DB_USER=seu_usuario
 DB_PASS=sua_senha
 
-# Servidor
-PORT=3000
-NODE_ENV=development
+# JWT
+JWT_SECRET=sua_chave_secreta_jwt_super_segura_muito_longa
+JWT_EXPIRES_IN=24h
+
+# Swagger
+SWAGGER_TITLE=Sistema de Mentoria API
+SWAGGER_DESCRIPTION=API para gerenciamento de mentorias
+SWAGGER_VERSION=1.0
 ```
 
-## 📋 Fluxo de Uso Completo
+## Fluxo de Uso Completo
 
 ### Para Administradores
 
@@ -308,7 +316,7 @@ const associacao = {
 - ✅ Atualizar desempenho
 - ✅ Visualizar progresso geral
 
-## 🔐 Sistema de Autenticação
+## Sistema de Autenticação
 
 ### Arquitetura Centralizada
 
@@ -338,7 +346,7 @@ POST /auth/login       # Login unificado
 POST /auth/verify      # Validação de token
 ```
 
-## 🏃‍♂️ Casos de Uso Práticos
+## Casos de Uso Práticos
 
 ### Cenário 1: Preparatório para Concurso
 
@@ -364,7 +372,7 @@ POST /auth/verify      # Validação de token
 - Projetos progressivos
 - Acompanhamento individual
 
-## 🚨 Padrões e Boas Práticas
+## Padrões e Boas Práticas
 
 ### Compatibilidade Frontend
 - ✅ **Zero Breaking Changes**: Frontend usa mesmas rotas
@@ -381,52 +389,92 @@ POST /auth/verify      # Validação de token
 - ✅ **Versioning**: Controle de versões dos templates
 - ✅ **Isolamento**: Instâncias independentes
 
-## 🔧 Comandos Úteis
+## Comandos Úteis
 
+### Desenvolvimento
 ```bash
-# Desenvolvimento
-npm run dev              # Inicia backend em modo desenvolvimento
-npm run start           # Inicia backend em produção
-
-# Frontend
-npm run dev             # Inicia frontend
+# Servidor
+npm run start:dev        # Inicia em modo desenvolvimento (com hot reload)
+npm run start:debug      # Inicia em modo debug
+npm run start:prod       # Inicia em modo produção
 npm run build           # Build para produção
-npm run preview         # Preview do build
 
 # Banco de Dados
-npm run db:sync         # Sincroniza modelos com banco
-npm run db:reset        # Reset completo do banco
+npm run migration:run   # Executa migrações pendentes
+npm run migration:generate # Gera nova migração baseada em mudanças
+npm run migration:create # Cria arquivo de migração vazio
+npm run migration:revert # Reverte última migração
+
+# Testes
+npm run test            # Executa testes unitários
+npm run test:cov        # Executa testes com relatório de cobertura
+npm run test:e2e        # Executa testes end-to-end
+npm run test:watch      # Executa testes em modo watch
+
+# Qualidade de Código
+npm run lint            # Executa ESLint
+npm run lint:fix        # Executa ESLint e corrige problemas automáticos
+npm run format          # Executa Prettier para formatação
 ```
 
-## 📚 Documentação Adicional
+### Docker (Opcional)
+```bash
+# Build da imagem
+docker build -t lumia-mentoria-api .
+
+# Executa container
+docker run -p 3000:3000 lumia-mentoria-api
+
+# Com Docker Compose
+docker-compose up -d
+```
+
+## Documentação Adicional
 
 ### Estrutura de Arquivos
 ```
-sis-mentoria/
-├── backend/
+lumia-refactory/
+├── api-lumia/                          # Backend API (NestJS)
 │   ├── src/
-│   │   ├── controllers/
-│   │   │   ├── planoController.js      # Templates de planos
-│   │   │   ├── sprintController.js     # Templates de sprints  
-│   │   │   ├── planoMestreController.js # Criação de instâncias
-│   │   │   └── ...
-│   │   ├── models/
-│   │   │   ├── PlanoMestre.js          # Modelo template
-│   │   │   ├── SprintMestre.js         # Modelo template
-│   │   │   ├── MetaMestre.js           # Modelo template
-│   │   │   ├── Plano.js                # Modelo instância
-│   │   │   ├── Sprint.js               # Modelo instância  
-│   │   │   ├── Meta.js                 # Modelo instância
-│   │   │   └── ...
-│   │   └── routes/
-├── frontend2/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── RegisterPlan.jsx        # Cadastro de templates
-│   │   │   ├── RegisterSprint.jsx      # Cadastro de templates
-│   │   │   └── ...
-│   │   └── pages/
-└── README.md
+│   │   ├── modules/                    # Módulos do NestJS
+│   │   │   ├── auth/                   # Autenticação JWT
+│   │   │   │   ├── controllers/
+│   │   │   │   ├── services/
+│   │   │   │   ├── guards/
+│   │   │   │   ├── strategies/
+│   │   │   │   └── dto/
+│   │   │   ├── usuarios/               # Gestão de usuários
+│   │   │   ├── alunos/                 # Funcionalidades de alunos
+│   │   │   ├── planos/                 # Templates e instâncias
+│   │   │   ├── sprints/                # Gestão de sprints
+│   │   │   ├── metas/                  # Gestão de metas
+│   │   │   ├── disciplinas/            # Disciplinas acadêmicas
+│   │   │   ├── ranking/                # Sistema de ranking
+│   │   │   ├── sprint-atual/           # Sprint atual do aluno
+│   │   │   ├── aluno-plano/            # Associação aluno-plano
+│   │   │   └── database/               # Configuração do banco
+│   │   ├── common/                     # Código compartilhado
+│   │   │   ├── decorators/             # Decorators customizados
+│   │   │   ├── guards/                 # Guards de segurança
+│   │   │   ├── interceptors/           # Interceptors
+│   │   │   ├── pipes/                  # Pipes de validação
+│   │   │   ├── enums/                  # Enums do sistema
+│   │   │   └── filters/                # Exception filters
+│   │   ├── entities/                   # Entidades TypeORM
+│   │   ├── dto/                        # Data Transfer Objects
+│   │   └── utils/                      # Utilitários
+│   ├── database/
+│   │   └── migrations/                 # Migrações TypeORM
+│   ├── test/                          # Testes
+│   ├── docs/                          # Documentação adicional
+│   ├── .eslintrc.js                   # Config ESLint
+│   ├── .prettierrc                    # Config Prettier
+│   ├── jest.config.js                 # Config Jest
+│   ├── tsconfig.json                  # Config TypeScript
+│   ├── package.json                   # Dependências
+│   └── nest-cli.json                  # Config NestJS CLI
+├── .gitignore                         # Git ignore
+└── README.md                          # Esta documentação
 ```
 
 ### Relacionamentos Principais
@@ -446,7 +494,7 @@ MetaMestre 1:N Meta (via meta_mestre_id)
 Usuario N:M Plano (via AlunoPlano)
 ```
 
-## 🤝 Contribuindo
+##  Contribuindo
 
 1. Fork o projeto
 2. Crie sua feature branch (`git checkout -b feature/nova-funcionalidade`)
@@ -454,33 +502,44 @@ Usuario N:M Plano (via AlunoPlano)
 4. Push para a branch (`git push origin feature/nova-funcionalidade`)  
 5. Abra um Pull Request
 
-## 📄 Licença
+##  Licença
 
 Este projeto está licenciado sob a [MIT License](LICENSE).
 
 ---
 
-## 🎯 Status do Projeto
+##  Status do Projeto
 
-### ✅ Implementado
-- [x] **Arquitetura de Templates completa**
-- [x] **Sistema de autenticação centralizado**
-- [x] **APIs para criação de templates**
-- [x] **Criação automática de instâncias**  
-- [x] **Frontend compatível (zero breaking changes)**
-- [x] **Banco harmonizado e otimizado**
+### ✅ Implementado (Backend API)
+- **Arquitetura de Templates vs Instâncias completa**
+- **Sistema de autenticação JWT com guards baseados em roles**
+- **APIs RESTful com NestJS + TypeORM**
+- **Criação automática de instâncias a partir de templates**
+- **Sistema de ranking semanal automático**
+- **Controle de acesso baseado em roles (admin/aluno)**
+- **Documentação Swagger/OpenAPI automática**
+- **Migrações TypeORM para controle de schema**
+- **Validação de dados com class-validator**
+- **Testes unitários e e2e com Jest**
+- **Princípios SOLID aplicados na arquitetura**
+- **Clean Architecture com separação de camadas**
 
-### 🚧 Em Desenvolvimento
-- [ ] **Dashboard de progresso avançado**
-- [ ] **Relatórios e analytics**  
-- [ ] **Sistema de notificações**
-- [ ] **Mobile responsivo**
+###  Em Desenvolvimento
+- **Dashboard administrativo avançado**
+- **Relatórios e analytics detalhados**
+- **Sistema de notificações push**
+- **Cache com Redis para performance**
+- **Logs estruturados com Winston**
+- **Monitoramento com health checks**
 
-### 🔮 Roadmap Futuro
-- [ ] **Integração com SSO corporativo**
-- [ ] **Sistema de certificações**
-- [ ] **Gamificação e badges**
-- [ ] **IA para recomendações personalizadas**
+###  Roadmap Futuro
+- **API Gateway para microserviços**
+- **Integração com SSO corporativo**
+- **Sistema de certificações digitais**
+- **Gamificação e sistema de badges**
+- **IA para recomendações personalizadas**
+- **Mobile API otimizada**
+- **Webhooks para integrações externas**
 
 ---
 
@@ -491,16 +550,11 @@ Este projeto está licenciado sob a [MIT License](LICENSE).
 ### Nomenclatura Unificada
 Para manter consistência e clareza no sistema, adotamos os seguintes termos padrão:
 
-#### Frontend (Interface do Aluno)
-- **Metas**: Representa as tarefas/objetivos que o aluno precisa completar
-  - Anteriormente chamadas de "Atividades"
-  - Alteração feita para alinhar com a terminologia do backend
-  - Reflete melhor o conceito de objetivos a serem alcançados
-
-#### Arquivos Atualizados
-- `SprintHeader.jsx`: Exibição do total de metas
-- `Dashboard.jsx`: Estatísticas de metas concluídas e totais
-- `TodasSprints.jsx`: Contagem de metas por sprint
+#### Backend (API)
+- **Templates**: Modelos reutilizáveis (PlanoMestre, SprintMestre, MetaMestre)
+- **Instâncias**: Dados específicos do aluno criados a partir de templates
+- **Metas**: Tarefas/objetivos que o aluno precisa completar
+- **Guards**: Controle de acesso baseado em roles (admin/aluno)
 
 #### Benefícios da Padronização
 ✅ **Consistência**: Mesma terminologia em todo o sistema
@@ -510,7 +564,7 @@ Para manter consistência e clareza no sistema, adotamos os seguintes termos pad
 
 ## 📚 Diretrizes de Desenvolvimento
 
-### 🎯 Objetivo
+###  Objetivo
 Este documento estabelece as diretrizes fundamentais para o desenvolvimento do Sistema de Mentoria, visando criar um código educacional, limpo, compreensível e sustentável, priorizando o uso do idioma português.
 
 ### 🧹 Fundamentos Gerais
@@ -681,7 +735,7 @@ Antes de cada commit, verifique:
 - ✅ Princípios SOLID foram aplicados
 - ✅ Não há duplicação de código
 
-## 🤝 Contribuindo
+##  Contribuindo
 
 1. Fork o projeto
 2. Crie sua feature branch (`git checkout -b feature/nova-funcionalidade`)
@@ -689,33 +743,44 @@ Antes de cada commit, verifique:
 4. Push para a branch (`git push origin feature/nova-funcionalidade`)  
 5. Abra um Pull Request
 
-## 📄 Licença
+##  Licença
 
 Este projeto está licenciado sob a [MIT License](LICENSE).
 
 ---
 
-## 🎯 Status do Projeto
+##  Status do Projeto
 
-### ✅ Implementado
-- [x] **Arquitetura de Templates completa**
-- [x] **Sistema de autenticação centralizado**
-- [x] **APIs para criação de templates**
-- [x] **Criação automática de instâncias**  
-- [x] **Frontend compatível (zero breaking changes)**
-- [x] **Banco harmonizado e otimizado**
+### ✅ Implementado (Backend API)
+- **Arquitetura de Templates vs Instâncias completa**
+- **Sistema de autenticação JWT com guards baseados em roles**
+- **APIs RESTful com NestJS + TypeORM**
+- **Criação automática de instâncias a partir de templates**
+- **Sistema de ranking semanal automático**
+- **Controle de acesso baseado em roles (admin/aluno)**
+- **Documentação Swagger/OpenAPI automática**
+- **Migrações TypeORM para controle de schema**
+- **Validação de dados com class-validator**
+- **Testes unitários e e2e com Jest**
+- **Princípios SOLID aplicados na arquitetura**
+- **Clean Architecture com separação de camadas**
 
-### 🚧 Em Desenvolvimento
-- [ ] **Dashboard de progresso avançado**
-- [ ] **Relatórios e analytics**  
-- [ ] **Sistema de notificações**
-- [ ] **Mobile responsivo**
+###  Em Desenvolvimento
+- **Dashboard administrativo avançado**
+- **Relatórios e analytics detalhados**
+- **Sistema de notificações push**
+- **Cache com Redis para performance**
+- **Logs estruturados com Winston**
+- **Monitoramento com health checks**
 
-### 🔮 Roadmap Futuro
-- [ ] **Integração com SSO corporativo**
-- [ ] **Sistema de certificações**
-- [ ] **Gamificação e badges**
-- [ ] **IA para recomendações personalizadas**
+###  Roadmap Futuro
+- **API Gateway para microserviços**
+- **Integração com SSO corporativo**
+- **Sistema de certificações digitais**
+- **Gamificação e sistema de badges**
+- **IA para recomendações personalizadas**
+- **Mobile API otimizada**
+- **Webhooks para integrações externas**
 
 ---
 
@@ -726,16 +791,11 @@ Este projeto está licenciado sob a [MIT License](LICENSE).
 ### Nomenclatura Unificada
 Para manter consistência e clareza no sistema, adotamos os seguintes termos padrão:
 
-#### Frontend (Interface do Aluno)
-- **Metas**: Representa as tarefas/objetivos que o aluno precisa completar
-  - Anteriormente chamadas de "Atividades"
-  - Alteração feita para alinhar com a terminologia do backend
-  - Reflete melhor o conceito de objetivos a serem alcançados
-
-#### Arquivos Atualizados
-- `SprintHeader.jsx`: Exibição do total de metas
-- `Dashboard.jsx`: Estatísticas de metas concluídas e totais
-- `TodasSprints.jsx`: Contagem de metas por sprint
+#### Backend (API)
+- **Templates**: Modelos reutilizáveis (PlanoMestre, SprintMestre, MetaMestre)
+- **Instâncias**: Dados específicos do aluno criados a partir de templates
+- **Metas**: Tarefas/objetivos que o aluno precisa completar
+- **Guards**: Controle de acesso baseado em roles (admin/aluno)
 
 #### Benefícios da Padronização
 ✅ **Consistência**: Mesma terminologia em todo o sistema

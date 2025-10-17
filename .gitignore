@@ -115,6 +115,3 @@ pnpm-lock.yaml
 
 # Arquivos específicos do projeto
 database.sqlite
-
-# Frontend (removido do controle de versão)
-lumia-front/
