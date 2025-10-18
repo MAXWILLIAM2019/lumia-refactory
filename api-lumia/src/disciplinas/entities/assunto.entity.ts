@@ -22,6 +22,9 @@ export class Assunto {
   @Column({ name: 'disciplina_id' })
   disciplinaId: number;
 
+  @Column({ type: 'boolean', default: true })
+  ativo: boolean;
+
   @Column({ name: 'createdAt', type: 'timestamptz', default: () => 'now()' })
   createdAt: Date;
 

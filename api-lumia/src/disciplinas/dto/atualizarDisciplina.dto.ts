@@ -17,6 +17,14 @@ export class AtualizarAssuntoDto {
   @IsString()
   @IsOptional()
   nome?: string;
+
+  @ApiPropertyOptional({
+    description: 'Marcar assunto para exclusão (soft delete). Sempre permitido, independente de referências.',
+    example: true,
+  })
+  @IsBoolean()
+  @IsOptional()
+  excluir?: boolean;
 }
 
 export class AtualizarDisciplinaDto {

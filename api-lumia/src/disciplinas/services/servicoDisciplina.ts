@@ -28,6 +28,7 @@ export class ServicoDisciplina {
   async listarDisciplinas(): Promise<any[]> {
     const disciplinas = await this.disciplinaRepository.find({
       relations: ['assuntos'],
+      where: { ativa: true },
       order: { nome: 'ASC' },
     });
 
@@ -36,7 +37,7 @@ export class ServicoDisciplina {
       nome: disciplina.nome,
       codigo: disciplina.codigo,
       status: disciplina.ativa,
-      totalAssuntos: disciplina.assuntos ? disciplina.assuntos.length : 0,
+      totalAssuntos: disciplina.assuntos ? disciplina.assuntos.filter(assunto => assunto.ativo).length : 0,
       dataCriacao: disciplina.createdAt.toISOString().split('T')[0], // Formato YYYY-MM-DD
     }));
   }
@@ -50,6 +51,11 @@ export class ServicoDisciplina {
 
     if (!disciplina) {
       throw new NotFoundException('Disciplina não encontrada');
+    }
+
+    // Filtrar apenas assuntos ativos
+    if (disciplina.assuntos) {
+      disciplina.assuntos = disciplina.assuntos.filter(assunto => assunto.ativo);
     }
 
     return disciplina;
@@ -365,20 +371,29 @@ export class ServicoDisciplina {
             where: { id: assuntoDto.id, disciplinaId: id }
           });
 
-          if (assuntoExistente && assuntoDto.nome) {
-            const nomeAntigo = assuntoExistente.nome;
-            assuntoExistente.nome = assuntoDto.nome;
-            assuntoExistente.updatedAt = new Date();
-            await queryRunner.manager.save(assuntoExistente);
+          if (assuntoExistente) {
+            // Verificar se é uma solicitação de exclusão
+            if (assuntoDto.excluir) {
+              // Soft delete: marcar como inativo (sempre permitido)
+              assuntoExistente.ativo = false;
+              assuntoExistente.updatedAt = new Date();
+              await queryRunner.manager.save(assuntoExistente);
+            } else if (assuntoDto.nome) {
+              // Atualização normal do nome
+              const nomeAntigo = assuntoExistente.nome;
+              assuntoExistente.nome = assuntoDto.nome;
+              assuntoExistente.updatedAt = new Date();
+              await queryRunner.manager.save(assuntoExistente);
 
-            // Manter consistência: atualizar campos de texto nas tabelas relacionadas
-            // TODO: Futuramente usar recurso de notificações para avisar alunos sobre essas atualizações de nomes
-            await this.atualizarCamposTextoRelacionados(queryRunner, {
-              tipo: 'assunto',
-              id: assuntoDto.id,
-              nomeAntigo,
-              nomeNovo: assuntoDto.nome
-            });
+              // Manter consistência: atualizar campos de texto nas tabelas relacionadas
+              // TODO: Futuramente usar recurso de notificações para avisar alunos sobre essas atualizações de nomes
+              await this.atualizarCamposTextoRelacionados(queryRunner, {
+                tipo: 'assunto',
+                id: assuntoDto.id,
+                nomeAntigo,
+                nomeNovo: assuntoDto.nome
+              });
+            }
           }
         } else if (assuntoDto.nome) {
           // Criar novo assunto (se não fornecido ID)
@@ -458,6 +473,7 @@ export class ServicoDisciplina {
       await queryRunner.manager.save(Assunto, assuntosData);
     }
   }
+
 
   /**
    * Mantém a consistência dos campos de texto nas tabelas Meta e MetasMestre

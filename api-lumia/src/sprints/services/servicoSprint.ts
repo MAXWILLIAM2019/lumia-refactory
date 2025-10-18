@@ -493,13 +493,32 @@ export class ServicoSprint {
       throw new BadRequestException(`Disciplina com código '${codigoDisciplina}' não encontrada ou inativa`);
     }
 
-    // Buscar assunto por código
-    const assunto = await this.assuntoRepository.findOne({
-      where: { codigo: codigoAssunto, disciplinaId: disciplina.id }
+    // Buscar assunto por código (apenas ativos)
+    let assunto = await this.assuntoRepository.findOne({
+      where: { codigo: codigoAssunto, disciplinaId: disciplina.id, ativo: true }
     });
 
+    // Se não encontrou assunto ativo, verificar se existe inativo mas usado em MetasMestre
     if (!assunto) {
-      throw new BadRequestException(`Assunto com código '${codigoAssunto}' não encontrado para a disciplina '${disciplina.nome}'`);
+      const assuntoInativo = await this.assuntoRepository.findOne({
+        where: { codigo: codigoAssunto, disciplinaId: disciplina.id }
+      });
+
+      if (assuntoInativo) {
+        // Verificar se o assunto inativo está sendo usado em MetasMestre
+        const usoEmMetasMestre = await this.metaMestreRepository.count({
+          where: { assuntoId: assuntoInativo.id }
+        });
+
+        if (usoEmMetasMestre > 0) {
+          // Permitir uso de assunto inativo se já está em templates de plano
+          assunto = assuntoInativo;
+        }
+      }
+    }
+
+    if (!assunto) {
+      throw new BadRequestException(`Assunto com código '${codigoAssunto}' não encontrado ou não pertence à disciplina '${disciplina.nome}'`);
     }
 
     return {
