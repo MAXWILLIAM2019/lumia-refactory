@@ -70,9 +70,12 @@ export class DisciplinaController {
   }
 
   @Post()
-  @ApiOperation({ summary: 'Criar nova disciplina' })
+  @ApiOperation({
+    summary: 'Criar nova disciplina completa',
+    description: 'Cria uma disciplina com pelo menos um assunto. Uma disciplina sem assuntos não é permitida.'
+  })
   @ApiResponse({ status: 201, description: 'Disciplina criada com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos fornecidos' })
+  @ApiResponse({ status: 400, description: 'Dados inválidos fornecidos (disciplina deve ter pelo menos um assunto)' })
   @ApiResponse({ status: 409, description: 'Já existe uma disciplina com este nome' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   @UseGuards(GuardAdministrador)
