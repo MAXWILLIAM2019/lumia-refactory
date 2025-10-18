@@ -17,6 +17,7 @@ import { ServicoDisciplina } from '../services/servicoDisciplina';
 import { CriarDisciplinaDto } from '../dto/criarDisciplina.dto';
 import { AtualizarDisciplinaDto } from '../dto/atualizarDisciplina.dto';
 import { CriarVersaoDisciplinaDto } from '../dto/criarVersaoDisciplina.dto';
+import { ListarDisciplinasQueryDto } from '../dto/listarDisciplinasQuery.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { GuardAdministrador } from '../../common/guards/guardAdministrador';
 
@@ -29,30 +30,62 @@ export class DisciplinaController {
 
   @Get()
   @UseGuards(GuardAdministrador)
-  @ApiOperation({ summary: 'Listar todas as disciplinas' })
+  @ApiOperation({
+    summary: 'Listar disciplinas com paginação',
+    description: 'Retorna disciplinas ativas com paginação (5 itens por página por padrão)'
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Página atual (padrão: 1, mínimo: 1)',
+    example: 1
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página (padrão: 5, mínimo: 1, máximo: 100)',
+    example: 5
+  })
   @ApiResponse({
     status: 200,
-    description: 'Lista de disciplinas retornada com sucesso',
+    description: 'Lista paginada de disciplinas retornada com sucesso',
     schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          idDisciplina: { type: 'number', example: 1 },
-          nome: { type: 'string', example: 'Matemática' },
-          codigo: { type: 'string', example: 'MAT001' },
-          status: { type: 'boolean', example: true },
-          totalAssuntos: { type: 'number', example: 5 },
-          dataCriacao: { type: 'string', format: 'date', example: '2025-01-15' }
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              idDisciplina: { type: 'number', example: 1 },
+              nome: { type: 'string', example: 'Matemática' },
+              codigo: { type: 'string', example: 'MAT001' },
+              status: { type: 'boolean', example: true },
+              totalAssuntos: { type: 'number', example: 5 },
+              dataCriacao: { type: 'string', format: 'date', example: '2025-01-15' }
+            }
+          }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 25 },
+            page: { type: 'number', example: 1 },
+            limit: { type: 'number', example: 5 },
+            totalPages: { type: 'number', example: 5 }
+          }
         }
       }
     }
   })
+  @ApiResponse({ status: 400, description: 'Parâmetros de paginação inválidos' })
   @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
   @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
-  async listarDisciplinas(): Promise<any> {
-    return await this.servicoDisciplina.listarDisciplinas();
+  async listarDisciplinas(@Query() query: ListarDisciplinasQueryDto): Promise<any> {
+    return await this.servicoDisciplina.listarDisciplinas(query.page, query.limit);
   }
 
 

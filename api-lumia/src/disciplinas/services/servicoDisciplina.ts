@@ -25,14 +25,19 @@ export class ServicoDisciplina {
 
   // ===== MÉTODOS PARA DISCIPLINA =====
 
-  async listarDisciplinas(): Promise<any[]> {
-    const disciplinas = await this.disciplinaRepository.find({
+  async listarDisciplinas(page: number = 1, limit: number = 5): Promise<{
+    data: any[];
+    meta: { total: number; page: number; limit: number; totalPages: number; }
+  }> {
+    const [disciplinas, total] = await this.disciplinaRepository.findAndCount({
       relations: ['assuntos'],
       where: { ativa: true },
       order: { nome: 'ASC' },
+      take: limit,
+      skip: (page - 1) * limit,
     });
 
-    return disciplinas.map(disciplina => ({
+    const data = disciplinas.map(disciplina => ({
       idDisciplina: disciplina.id,
       nome: disciplina.nome,
       codigo: disciplina.codigo,
@@ -40,6 +45,16 @@ export class ServicoDisciplina {
       totalAssuntos: disciplina.assuntos ? disciplina.assuntos.filter(assunto => assunto.ativo).length : 0,
       dataCriacao: disciplina.createdAt.toISOString().split('T')[0], // Formato YYYY-MM-DD
     }));
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    };
   }
 
 
