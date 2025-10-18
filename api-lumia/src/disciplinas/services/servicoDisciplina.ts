@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
 import { Disciplina } from '../entities/disciplina.entity';
 import { Assunto } from '../entities/assunto.entity';
+import { Meta } from '../../metas/entities/meta.entity';
+import { MetaMestre } from '../../metas/entities/metaMestre.entity';
 import { CriarDisciplinaDto } from '../dto/criarDisciplina.dto';
 import { AtualizarDisciplinaDto } from '../dto/atualizarDisciplina.dto';
 import { CriarVersaoDisciplinaDto } from '../dto/criarVersaoDisciplina.dto';
@@ -322,29 +324,77 @@ export class ServicoDisciplina {
       }
     }
 
-    // Atualizar a disciplina
+    // Atualizar a disciplina (apenas propriedades diretas, excluir relações)
+    const { assuntos, ...dadosDisciplina } = dadosAtualizacao;
     const dadosAtualizacaoFinal = {
-      ...dadosAtualizacao,
+      ...dadosDisciplina,
       updatedAt: new Date(),
     };
 
+    // Verificar se o nome da disciplina foi alterado para manter consistência
+    let nomeDisciplinaAntigo: string | null = null;
+    let nomeDisciplinaNovo: string | null = null;
+
+    if (dadosAtualizacao.nome) {
+      const disciplinaAtual = await queryRunner.manager.findOne(Disciplina, { where: { id } });
+      if (disciplinaAtual && disciplinaAtual.nome !== dadosAtualizacao.nome) {
+        nomeDisciplinaAntigo = disciplinaAtual.nome;
+        nomeDisciplinaNovo = dadosAtualizacao.nome;
+      }
+    }
+
     await queryRunner.manager.update(Disciplina, id, dadosAtualizacaoFinal);
 
-    // Se houver assuntos, atualizá-los
+    // Se o nome da disciplina foi alterado, atualizar campos relacionados
+    if (nomeDisciplinaAntigo && nomeDisciplinaNovo) {
+      // TODO: Futuramente usar recurso de notificações para avisar alunos sobre essas atualizações de nomes
+      await this.atualizarCamposTextoRelacionados(queryRunner, {
+        tipo: 'disciplina',
+        id,
+        nomeAntigo: nomeDisciplinaAntigo,
+        nomeNovo: nomeDisciplinaNovo
+      });
+    }
+
+    // Se houver assuntos, atualizá-los (APENAS ADICIONAR/ATUALIZAR, NUNCA DELETAR)
     if (dadosAtualizacao.assuntos && Array.isArray(dadosAtualizacao.assuntos)) {
-      // Remover todos os assuntos existentes
-      await queryRunner.manager.delete(Assunto, { disciplinaId: id });
+      for (const assuntoDto of dadosAtualizacao.assuntos) {
+        if (assuntoDto.id) {
+          // Atualizar assunto existente (se fornecido ID)
+          const assuntoExistente = await queryRunner.manager.findOne(Assunto, {
+            where: { id: assuntoDto.id, disciplinaId: id }
+          });
 
-      // Adicionar os novos assuntos
-      if (dadosAtualizacao.assuntos.length > 0) {
-        const assuntosData = dadosAtualizacao.assuntos.map(assunto => ({
-          nome: assunto.nome,
-          disciplinaId: id,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }));
+          if (assuntoExistente && assuntoDto.nome) {
+            const nomeAntigo = assuntoExistente.nome;
+            assuntoExistente.nome = assuntoDto.nome;
+            assuntoExistente.updatedAt = new Date();
+            await queryRunner.manager.save(assuntoExistente);
 
-        await queryRunner.manager.save(Assunto, assuntosData);
+            // Manter consistência: atualizar campos de texto nas tabelas relacionadas
+            // TODO: Futuramente usar recurso de notificações para avisar alunos sobre essas atualizações de nomes
+            await this.atualizarCamposTextoRelacionados(queryRunner, {
+              tipo: 'assunto',
+              id: assuntoDto.id,
+              nomeAntigo,
+              nomeNovo: assuntoDto.nome
+            });
+          }
+        } else if (assuntoDto.nome) {
+          // Criar novo assunto (se não fornecido ID)
+          const assuntoNovo = queryRunner.manager.create(Assunto, {
+            nome: assuntoDto.nome,
+            disciplinaId: id,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+
+          // Gerar código para o novo assunto
+          const codigoAssunto = this.servicoCodigoAssunto.gerarCodigoAssunto(assuntoDto.nome);
+          assuntoNovo.codigo = codigoAssunto;
+
+          await queryRunner.manager.save(assuntoNovo);
+        }
       }
     }
   }
@@ -406,6 +456,33 @@ export class ServicoDisciplina {
       }));
 
       await queryRunner.manager.save(Assunto, assuntosData);
+    }
+  }
+
+  /**
+   * Mantém a consistência dos campos de texto nas tabelas Meta e MetasMestre
+   * quando nomes de disciplinas ou assuntos são alterados.
+   * TODO: Futuramente implementar notificações para alunos sobre essas mudanças.
+   */
+  private async atualizarCamposTextoRelacionados(
+    queryRunner: any,
+    params: {
+      tipo: 'disciplina' | 'assunto';
+      id: number;
+      nomeAntigo: string;
+      nomeNovo: string;
+    }
+  ): Promise<void> {
+    const { tipo, id, nomeNovo } = params;
+
+    if (tipo === 'assunto') {
+      // Atualizar campo 'assunto' nas tabelas Meta e MetasMestre
+      await queryRunner.manager.update(Meta, { assuntoId: id }, { assunto: nomeNovo, updatedAt: new Date() });
+      await queryRunner.manager.update(MetaMestre, { assuntoId: id }, { assunto: nomeNovo, updatedAt: new Date() });
+    } else if (tipo === 'disciplina') {
+      // Atualizar campo 'disciplina' nas tabelas Meta e MetasMestre
+      await queryRunner.manager.update(Meta, { disciplinaId: id }, { disciplina: nomeNovo, updatedAt: new Date() });
+      await queryRunner.manager.update(MetaMestre, { disciplinaId: id }, { disciplina: nomeNovo, updatedAt: new Date() });
     }
   }
 }

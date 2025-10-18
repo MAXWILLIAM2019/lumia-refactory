@@ -4,6 +4,13 @@ import { Type } from 'class-transformer';
 
 export class AtualizarAssuntoDto {
   @ApiPropertyOptional({
+    description: 'ID do assunto (para atualização de assunto existente)',
+    example: 1,
+  })
+  @IsOptional()
+  id?: number;
+
+  @ApiPropertyOptional({
     description: 'Nome do assunto',
     example: 'Álgebra Linear',
   })
@@ -23,8 +30,14 @@ export class AtualizarDisciplinaDto {
 
 
   @ApiPropertyOptional({
-    description: 'Lista de assuntos da disciplina',
+    description: 'Lista de assuntos da disciplina. ' +
+    'Assuntos com ID são atualizados, assuntos sem ID são criados. ' +
+    'NUNCA remove assuntos existentes para preservar integridade referencial.',
     type: [AtualizarAssuntoDto],
+    example: [
+      { "id": 1, "nome": "Álgebra Linear Atualizada" },  // Atualiza existente
+      { "nome": "Cálculo Diferencial" }  // Cria novo
+    ]
   })
   @IsArray()
   @ValidateNested({ each: true })

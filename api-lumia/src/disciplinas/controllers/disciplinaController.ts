@@ -81,7 +81,12 @@ export class DisciplinaController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Atualizar disciplina existente' })
+  @ApiOperation({
+    summary: 'Atualizar disciplina existente (seguro)',
+    description: 'Atualiza disciplina e assuntos preservando integridade referencial. ' +
+    'Assuntos existentes são atualizados, novos são adicionados. ' +
+    'NUNCA remove assuntos existentes para evitar quebra de referências.'
+  })
   @ApiParam({ name: 'id', description: 'ID da disciplina', type: 'number' })
   @ApiResponse({ status: 200, description: 'Disciplina atualizada com sucesso' })
   @ApiResponse({ status: 404, description: 'Disciplina não encontrada' })
