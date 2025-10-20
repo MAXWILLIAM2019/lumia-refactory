@@ -140,7 +140,7 @@ export class ServicoPlano {
         ativo: planoComDisciplinas.ativo,
         createdAt: planoComDisciplinas.createdAt,
         updatedAt: planoComDisciplinas.updatedAt,
-        disciplinas: disciplinasAssociadas, // ✅ NOVO: Array de disciplinas associadas
+        disciplinas: disciplinasAssociadas, 
       };
 
     } catch (error) {
