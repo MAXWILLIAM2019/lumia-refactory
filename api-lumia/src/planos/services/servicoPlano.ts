@@ -83,11 +83,46 @@ export class ServicoPlano {
     return await this.planoMestreRepository.save(planoMestre);
   }
 
-  async listarPlanosMestre(): Promise<PlanoMestre[]> {
-    return await this.planoMestreRepository.find({
+  async listarPlanosMestre(page: number = 1, limit: number = 5): Promise<{
+    data: any[];
+    meta: { total: number; page: number; limit: number; totalPages: number; }
+  }> {
+    const [planosMestre, total] = await this.planoMestreRepository.findAndCount({
       where: { ativo: true },
+      relations: ['sprintsMestre'],
       order: { createdAt: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
     });
+
+    // Para cada plano mestre, contar o total de disciplinas associadas
+    const data = await Promise.all(
+      planosMestre.map(async (plano) => {
+        const totalDisciplinas = await this.planoMestreDisciplinaRepository.count({
+          where: { planoMestreId: plano.id }
+        });
+
+        return {
+          idPlanoMestre: plano.id,
+          nome: plano.nome,
+          codigo: plano.codigo,
+          status: plano.ativo,
+          totalDisciplinas,
+          nomeCargo: plano.cargo,
+          dataCriacao: plano.createdAt.toISOString().split('T')[0], // Formato YYYY-MM-DD
+        };
+      })
+    );
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      }
+    };
   }
 
   async buscarPlanoMestrePorId(id: number): Promise<PlanoMestre> {

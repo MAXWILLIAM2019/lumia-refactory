@@ -22,6 +22,7 @@ import { AtualizarPlanoDto } from '../dto/atualizarPlano.dto';
 import { AssociarAlunoPlanoDto } from '../dto/associarAlunoPlano.dto';
 import { AssociarDisciplinaPlanoMestreDto } from '../dto/associarDisciplinaPlanoMestre.dto';
 import { CriarInstanciaDto } from '../dto/criarInstancia.dto';
+import { ListarPlanosMestreQueryDto } from '../dto/listarPlanosMestreQuery.dto';
 import { StatusPlano } from '../../common/enums/statusPlano.enum';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { GuardAdministrador } from '../../common/guards/guardAdministrador';
@@ -47,16 +48,72 @@ export class PlanoController {
   }
 
   @Get('mestre')
-  @ApiOperation({ summary: 'Listar todos os planos mestre (templates)' })
-  @ApiResponse({ status: 200, description: 'Lista de planos mestre retornada com sucesso' })
-  async listarPlanosMestre() {
-    return await this.servicoPlano.listarPlanosMestre();
+  @UseGuards(GuardAdministrador)
+  @ApiOperation({
+    summary: 'Listar planos mestre com paginação',
+    description: 'Retorna planos mestre ativos com paginação (5 itens por página por padrão)'
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Página atual (padrão: 1, mínimo: 1)',
+    example: 1
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Itens por página (padrão: 5, mínimo: 1, máximo: 100)',
+    example: 5
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de planos mestre retornada com sucesso',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              idPlanoMestre: { type: 'number', example: 1 },
+              nome: { type: 'string', example: 'Polícia Federal' },
+              codigo: { type: 'string', example: 'PFFED12345' },
+              status: { type: 'boolean', example: true },
+              totalDisciplinas: { type: 'number', example: 8 },
+              nomeCargo: { type: 'string', example: 'Agente de Polícia' },
+              dataCriacao: { type: 'string', format: 'date', example: '2025-01-15' }
+            }
+          }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number', example: 10 },
+            page: { type: 'number', example: 1 },
+            limit: { type: 'number', example: 5 },
+            totalPages: { type: 'number', example: 2 }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Parâmetros de paginação inválidos' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
+  async listarPlanosMestre(@Query() query: ListarPlanosMestreQueryDto): Promise<any> {
+    return await this.servicoPlano.listarPlanosMestre(query.page, query.limit);
   }
 
   @Get('mestre/:id')
+  @UseGuards(GuardAdministrador)
   @ApiOperation({ summary: 'Buscar plano mestre por ID' })
   @ApiParam({ name: 'id', description: 'ID do plano mestre', type: Number })
   @ApiResponse({ status: 200, description: 'Plano mestre encontrado com sucesso' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
+  @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
   @ApiResponse({ status: 404, description: 'Plano mestre não encontrado' })
   async buscarPlanoMestrePorId(@Param('id', ParseIntPipe) id: number) {
     return await this.servicoPlano.buscarPlanoMestrePorId(id);
