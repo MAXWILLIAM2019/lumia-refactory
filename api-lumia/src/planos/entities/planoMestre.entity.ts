@@ -19,8 +19,8 @@ export class PlanoMestre {
   @Column({ type: 'text' })
   descricao: string;
 
-  @Column({ type: 'int' })
-  duracao: number;
+  @Column({ type: 'int', nullable: true })
+  duracao: number | null;
 
   @Column({ type: 'varchar', length: 10, default: '1.0' })
   versao: string;

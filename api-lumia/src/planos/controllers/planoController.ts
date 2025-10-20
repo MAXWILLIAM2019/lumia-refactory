@@ -38,10 +38,49 @@ export class PlanoController {
 
   @Post('mestre')
   @UseGuards(GuardAdministrador)
-  @ApiOperation({ summary: 'Criar novo plano mestre (template)' })
-  @ApiResponse({ status: 201, description: 'Plano mestre criado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos' })
-  @ApiResponse({ status: 401, description: 'Não autorizado' })
+  @ApiOperation({
+    summary: 'Criar novo plano mestre com disciplinas',
+    description: 'Cria um plano mestre completo com suas disciplinas associadas em uma única operação transacional'
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Plano mestre criado com sucesso com disciplinas associadas',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'number', example: 1 },
+        nome: { type: 'string', example: 'Plano de Estudos - ALEAM 2025' },
+        codigo: { type: 'string', example: 'PALE20357' },
+        cargo: { type: 'string', example: 'Analista de Sistemas' },
+        descricao: { type: 'string', example: 'Plano completo...' },
+        duracao: { type: 'number', nullable: true, example: 36 },
+        versao: { type: 'string', example: '1.0' },
+        ativo: { type: 'boolean', example: true },
+        createdAt: { type: 'string', format: 'date-time' },
+        updatedAt: { type: 'string', format: 'date-time' },
+        disciplinas: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number', example: 1 },
+              nome: { type: 'string', example: 'Português' },
+              codigo: { type: 'string', example: 'PORT35258' },
+              versao: { type: 'string', example: '1.0' },
+              ativa: { type: 'boolean', example: true },
+              disciplinaOrigemId: { type: 'number', nullable: true, example: null },
+              createdAt: { type: 'string', format: 'date-time' },
+              updatedAt: { type: 'string', format: 'date-time' }
+            }
+          },
+          description: 'Lista de disciplinas associadas ao plano mestre'
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 400, description: 'Dados inválidos ou disciplinas não encontradas/ativas' })
+  @ApiResponse({ status: 409, description: 'Código do plano mestre já existe' })
+  @ApiResponse({ status: 401, description: 'Token inválido ou não fornecido' })
   @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
   async criarPlanoMestre(@Body() dadosPlanoMestre: CriarPlanoMestreDto) {
     return await this.servicoPlano.criarPlanoMestre(dadosPlanoMestre);

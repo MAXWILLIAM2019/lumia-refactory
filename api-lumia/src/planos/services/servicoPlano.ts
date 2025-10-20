@@ -56,31 +56,101 @@ export class ServicoPlano {
 
   // ===== MÉTODOS PARA PLANO MESTRE (TEMPLATES) =====
 
-  async criarPlanoMestre(dadosPlanoMestre: CriarPlanoMestreDto): Promise<PlanoMestre> {
-    // Gerar código único para o plano mestre (sempre automático)
-    const codigo = this.servicoCodigoPlanoMestre.gerarCodigoPlanoMestre(dadosPlanoMestre.nome);
+  async criarPlanoMestre(dadosPlanoMestre: CriarPlanoMestreDto): Promise<any> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    // Verificar se o código já existe
-    const codigoExistente = await this.planoMestreRepository.findOne({
-      where: { codigo }
-    });
+    try {
+      // Gerar código único para o plano mestre (sempre automático)
+      const codigo = this.servicoCodigoPlanoMestre.gerarCodigoPlanoMestre(dadosPlanoMestre.nome);
 
-    if (codigoExistente) {
-      throw new ConflictException(`Já existe um plano mestre com o código '${codigo}'`);
+      // Verificar se o código já existe
+      const codigoExistente = await queryRunner.manager.findOne(PlanoMestre, {
+        where: { codigo }
+      });
+
+      if (codigoExistente) {
+        throw new ConflictException(`Já existe um plano mestre com o código '${codigo}'`);
+      }
+
+      // Validar se todas as disciplinas existem e estão ativas
+      const disciplinasValidas = await queryRunner.manager.find(Disciplina, {
+        where: {
+          id: In(dadosPlanoMestre.disciplinaIds),
+          ativa: true
+        }
+      });
+
+      if (disciplinasValidas.length !== dadosPlanoMestre.disciplinaIds.length) {
+        throw new BadRequestException('Uma ou mais disciplinas não foram encontradas ou não estão ativas');
+      }
+
+      // Criar o plano mestre
+      const planoMestre = queryRunner.manager.create(PlanoMestre, {
+        nome: dadosPlanoMestre.nome,
+        codigo: codigo,
+        cargo: dadosPlanoMestre.cargo,
+        descricao: dadosPlanoMestre.descricao,
+        duracao: dadosPlanoMestre.duracao,
+        ativo: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const planoSalvo = await queryRunner.manager.save(PlanoMestre, planoMestre);
+
+      // Criar associações com disciplinas
+      const agora = new Date();
+      const associacoesPlano = dadosPlanoMestre.disciplinaIds.map(disciplinaId => ({
+        planoMestreId: planoSalvo.id,
+        disciplinaId: disciplinaId,
+        createdAt: agora,
+        updatedAt: agora,
+      }));
+
+      await queryRunner.manager.save(PlanoMestreDisciplina, associacoesPlano);
+
+      // Commit da transação
+      await queryRunner.commitTransaction();
+
+      // Retornar o plano mestre com as disciplinas associadas
+      const planoComDisciplinas = await this.planoMestreRepository.findOne({
+        where: { id: planoSalvo.id },
+        relations: ['sprintsMestre'],
+      });
+
+      // Carregar as disciplinas associadas
+      const associacoesDisciplinas = await this.planoMestreDisciplinaRepository.find({
+        where: { planoMestreId: planoSalvo.id },
+        relations: ['disciplina'],
+      });
+
+      const disciplinasAssociadas = associacoesDisciplinas.map(associacao => associacao.disciplina);
+
+      // Retornar objeto customizado com disciplinas ao invés de sprintsMestre
+      return {
+        id: planoComDisciplinas.id,
+        nome: planoComDisciplinas.nome,
+        codigo: planoComDisciplinas.codigo,
+        cargo: planoComDisciplinas.cargo,
+        descricao: planoComDisciplinas.descricao,
+        duracao: planoComDisciplinas.duracao,
+        versao: planoComDisciplinas.versao,
+        ativo: planoComDisciplinas.ativo,
+        createdAt: planoComDisciplinas.createdAt,
+        updatedAt: planoComDisciplinas.updatedAt,
+        disciplinas: disciplinasAssociadas, // ✅ NOVO: Array de disciplinas associadas
+      };
+
+    } catch (error) {
+      // Rollback em caso de erro
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      // Liberar o query runner
+      await queryRunner.release();
     }
-
-    const planoMestre = this.planoMestreRepository.create({
-      nome: dadosPlanoMestre.nome,
-      codigo: codigo, // Código gerado automaticamente
-      cargo: dadosPlanoMestre.cargo,
-      descricao: dadosPlanoMestre.descricao,
-      duracao: dadosPlanoMestre.duracao,
-      ativo: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-
-    return await this.planoMestreRepository.save(planoMestre);
   }
 
   async listarPlanosMestre(page: number = 1, limit: number = 5): Promise<{

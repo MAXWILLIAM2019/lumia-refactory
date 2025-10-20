@@ -1,5 +1,5 @@
-import { IsString, IsNotEmpty, IsNumber, Min, Max } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsNumber, Min, Max, IsOptional, IsArray, ArrayMinSize, IsInt } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
  * DTO para criação de plano mestre
@@ -32,14 +32,26 @@ export class CriarPlanoMestreDto {
   @IsNotEmpty()
   descricao: string;
 
-  @ApiProperty({
-    description: 'Duração estimada do plano em semanas',
+  @ApiPropertyOptional({
+    description: 'Duração estimada do plano em semanas (opcional)',
     example: 24,
     minimum: 1,
     maximum: 104,
+    required: false,
   })
+  @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(104)
-  duracao: number;
+  duracao?: number;
+
+  @ApiProperty({
+    description: 'IDs das disciplinas que farão parte do plano mestre (obrigatório)',
+    example: [1, 2, 3],
+    type: [Number],
+  })
+  @IsArray()
+  @ArrayMinSize(1, { message: 'O plano mestre deve ter pelo menos uma disciplina' })
+  @IsInt({ each: true, message: 'Cada ID de disciplina deve ser um número inteiro' })
+  disciplinaIds: number[];
 }
