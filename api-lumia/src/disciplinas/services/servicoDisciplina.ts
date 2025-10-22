@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, ILike } from 'typeorm';
 import { Disciplina } from '../entities/disciplina.entity';
 import { Assunto } from '../entities/assunto.entity';
 import { Meta } from '../../metas/entities/meta.entity';
@@ -25,13 +25,19 @@ export class ServicoDisciplina {
 
   // ===== MÉTODOS PARA DISCIPLINA =====
 
-  async listarDisciplinas(page: number = 1, limit: number = 5): Promise<{
+  async listarDisciplinas(page: number = 1, limit: number = 5, search?: string): Promise<{
     data: any[];
     meta: { total: number; page: number; limit: number; totalPages: number; }
   }> {
+    const where: any = { ativa: true };
+
+    if (search) {
+      where.nome = ILike(`%${search}%`);
+    }
+
     const [disciplinas, total] = await this.disciplinaRepository.findAndCount({
       relations: ['assuntos'],
-      where: { ativa: true },
+      where,
       order: { nome: 'ASC' },
       take: limit,
       skip: (page - 1) * limit,

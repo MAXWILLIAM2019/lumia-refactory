@@ -48,6 +48,13 @@ export class DisciplinaController {
     description: 'Itens por página (padrão: 5, mínimo: 1, máximo: 100)',
     example: 5
   })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Buscar por nome da disciplina (case-insensitive, busca parcial)',
+    example: 'portugues'
+  })
   @ApiResponse({
     status: 200,
     description: 'Lista paginada de disciplinas retornada com sucesso',
@@ -85,7 +92,7 @@ export class DisciplinaController {
   @ApiResponse({ status: 403, description: 'Acesso negado - apenas administradores' })
   @ApiResponse({ status: 500, description: 'Erro interno do servidor' })
   async listarDisciplinas(@Query() query: ListarDisciplinasQueryDto): Promise<any> {
-    return await this.servicoDisciplina.listarDisciplinas(query.page, query.limit);
+    return await this.servicoDisciplina.listarDisciplinas(query.page, query.limit, query.search);
   }
 
 

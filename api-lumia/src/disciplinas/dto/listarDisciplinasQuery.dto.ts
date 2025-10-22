@@ -1,4 +1,4 @@
-import { IsOptional, IsNumber, Min, Max } from 'class-validator';
+import { IsOptional, IsNumber, IsString, Min, Max } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -28,4 +28,12 @@ export class ListarDisciplinasQueryDto {
   @Min(1)
   @Max(100)
   limit?: number = 5;
+
+  @ApiPropertyOptional({
+    description: 'Buscar por nome da disciplina (case-insensitive, busca parcial)',
+    example: 'portugues'
+  })
+  @IsOptional()
+  @IsString()
+  search?: string;
 }
